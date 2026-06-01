@@ -6,6 +6,8 @@ Referencias iniciais:
 
 - `docs/aprovaenf-produto-mvp.md`
 - `docs/aprovaenf-prototipo_1.html`
+- `docs/aprovaenf-consolidado-respostas-enfermeiros.md`
+- `docs/aprovaenf-decisoes-tecnicas-iniciais.md`
 - `docs/bulk-question-import.md`
 
 ## 0. Objetivo da primeira producao
@@ -22,14 +24,17 @@ Colocar no ar uma versao web responsiva do aprovaenf em que:
 
 ## 1. Alinhamento de produto
 
+- [x] Registrar aceite da logica central recebido por PDF.
+- [x] Consolidar voto de Malaquias Junior de Lacerda Nascimento: aceitou a logica central e aprovou todos os blocos.
+- [x] Consolidar voto de Raimunda Maria Ferreira de Almeida: aceitou a logica central, com ajustes em comentarios por alternativa e texto da landing.
 - [x] Definir preco mensal recomendado para lancamento: R$ 29,90.
-- [x] Definir preco anual recomendado para lancamento: R$ 287,04.
-- [x] Definir desconto anual recomendado: 20% em relacao ao plano mensal.
+- [x] Definir preco anual recomendado para lancamento: R$ 287,00.
+- [x] Definir desconto anual recomendado: aproximadamente 20% em relacao ao plano mensal.
 - [x] Definir que os valores do prototipo eram placeholders e serao substituidos pelos valores consolidados.
 - [x] Definir comunicacao comercial do anual: equivalente a R$ 23,92 por mes, cobrado anualmente.
-- [x] Definir regra comercial da assinatura anual: oferecer pagamento integral e parcelado se o Abacate Pay permitir.
-- [ ] Validar no Abacate Pay se o plano anual pode ser parcelado sem atrasar o lancamento.
-- [ ] Confirmar se o valor anual sera mantido como R$ 287,04 ou arredondado para valor comercial.
+- [x] Definir regra comercial da assinatura anual: oferecer pagamento integral e parcelado pelo Abacate Pay.
+- [x] Validar que o Abacate Pay permitira parcelamento anual.
+- [x] Confirmar valor anual final: R$ 287,00.
 - [x] Definir carreiras do lancamento:
   - [x] Enfermagem
   - [x] Tecnico em enfermagem
@@ -85,8 +90,10 @@ Colocar no ar uma versao web responsiva do aprovaenf em que:
 - [x] Definir regra do trial: aluno sem assinatura nao revisa as 5 questoes gratuitas depois que o trial acabar.
 - [x] Definir regra do trial: comentarios aparecem durante as 5 questoes gratuitas.
 - [x] Definir regra de autoria: autor decide se comentara todas as alternativas, algumas ou nenhuma individualmente.
+- [x] Decidir se a sugestao da Raimunda altera a regra do MVP: comentario por alternativa permanece opcional.
 - [ ] Definir se os comentarios por alternativa aparecerao apenas da alternativa escolhida ou de todas apos a resposta.
-- [ ] Definir regra juridica e editorial para questoes de provas anteriores.
+- [x] Definir premissa juridica para questoes de provas oficiais: tratadas como material sem protecao autoral exclusiva.
+- [x] Definir regra editorial minima para questoes de provas anteriores: registrar fonte, banca, cargo, ano e orgao quando disponiveis.
 - [x] Definir headline recomendada da landing: "Sua aprovacao em concursos da saude na palma da mao."
 - [x] Definir subheadline recomendada da landing: "Resolva questoes comentadas por especialistas, treine por carreira e banca, e evolua no ritmo do seu celular."
 - [x] Definir beneficios principais da landing:
@@ -114,25 +121,92 @@ Colocar no ar uma versao web responsiva do aprovaenf em que:
 
 ## 2. Decisoes tecnicas iniciais
 
-- [ ] Escolher stack principal da aplicacao.
-- [ ] Escolher framework web.
-- [ ] Escolher banco de dados.
-- [ ] Escolher ORM ou camada de acesso a dados.
-- [ ] Escolher provedor de autenticacao.
-- [ ] Escolher provedor de hospedagem.
-- [ ] Escolher estrategia de envio de email transacional.
-- [ ] Escolher ferramenta de logs e monitoramento.
-- [ ] Escolher ferramenta de analytics de produto.
-- [ ] Definir padrao de ambientes:
-  - [ ] Desenvolvimento local
-  - [ ] Staging
-  - [ ] Producao
-- [ ] Definir estrategia de variaveis de ambiente.
-- [ ] Definir estrategia de backup do banco.
-- [ ] Definir estrategia de migrations.
+- [x] Registrar capacidade esperada inicial:
+  - [x] Aproximadamente 100 usuarios no lancamento.
+  - [x] Aproximadamente 500 usuarios no mes seguinte.
+  - [x] Conteudo somente texto no MVP.
+- [x] Definir arquitetura inicial: monolito modular full-stack.
+- [x] Definir que o volume inicial nao justifica microsservicos, Redis, fila dedicada ou infraestrutura propria.
+- [x] Escolher stack principal da aplicacao:
+  - [x] Next.js
+  - [x] TypeScript
+  - [x] React
+  - [x] Tailwind CSS
+  - [x] lucide-react para icones
+- [x] Escolher framework web: Next.js com App Router.
+- [x] Escolher hospedagem: Vercel.
+- [x] Escolher banco de dados: Supabase Postgres.
+- [x] Escolher autenticacao: Supabase Auth.
+- [x] Escolher camada de acesso a dados: Supabase JavaScript client com tipos TypeScript gerados e camada interna de repositorios/servicos.
+- [x] Decidir nao usar Prisma ou Drizzle no MVP, salvo aumento de complexidade antes da implementacao.
+- [x] Definir migrations: Supabase CLI com migrations SQL versionadas no repositorio.
+- [x] Definir regra de schema: nenhuma mudanca manual em producao sem migration equivalente.
+- [x] Definir autorizacao: Row Level Security em todas as tabelas sensiveis.
+- [x] Definir papeis iniciais:
+  - [x] Aluno
+  - [x] Autor
+  - [x] Administrador
+- [x] Definir integracao de pagamentos: Abacate Pay via endpoints server-side e webhooks idempotentes.
+- [x] Definir email transacional do MVP: Supabase Auth para cadastro, verificacao e recuperacao de senha.
+- [x] Adiar ferramenta dedicada de email, como Resend, ate haver necessidade de emails de produto.
+- [x] Escolher logs e monitoramento inicial:
+  - [x] Vercel Observability
+  - [x] Vercel Runtime Logs
+  - [x] Supabase Dashboard
+  - [x] Vercel Speed Insights
+- [x] Definir que Sentry fica opcional, apenas se Vercel/Supabase nao forem suficientes para diagnosticar erros.
+- [x] Escolher analytics inicial:
+  - [x] Vercel Web Analytics para trafego publico.
+  - [x] Tabela interna de eventos de produto no Postgres para funil do MVP.
+- [x] Definir eventos minimos de produto:
+  - [x] `landing_viewed`
+  - [x] `career_selected`
+  - [x] `question_viewed`
+  - [x] `question_answered`
+  - [x] `signup_required_shown`
+  - [x] `signup_completed`
+  - [x] `trial_finished`
+  - [x] `checkout_started`
+  - [x] `subscription_activated`
+  - [x] `favorite_attempted`
+  - [x] `favorite_saved`
+- [x] Definir padrao de ambientes:
+  - [x] Desenvolvimento local
+  - [x] Vercel Preview
+  - [x] Producao
+- [x] Definir Vercel Preview para branches e pull requests.
+- [x] Definir producao vinculada ao branch principal.
+- [x] Definir Supabase local para desenvolvimento.
+- [x] Definir que nao havera projeto Supabase separado para staging desde o primeiro deploy.
+- [x] Definir que o primeiro deploy usara um unico projeto Supabase Pro para producao.
+- [x] Definir que Vercel Preview sera usado para validar build, interface, rotas e fluxos controlados.
+- [x] Definir que testes com escrita de dados, assinatura ou pagamento nao devem usar usuarios reais de producao enquanto nao houver staging isolado.
+- [x] Definir estrategia de variaveis de ambiente:
+  - [x] `.env.local` apenas localmente.
+  - [x] `.env.example` sem segredos reais.
+  - [x] Variaveis reais configuradas no Vercel por ambiente.
+  - [x] Validacao de variaveis obrigatorias com schema.
+  - [x] Apenas variaveis publicas com prefixo `NEXT_PUBLIC_`.
+- [x] Definir estrategia de backup do banco:
+  - [x] Supabase Pro como plano inicial.
+  - [x] Backups automaticos do Supabase Pro.
+  - [x] Backup manual antes de migrations destrutivas.
+  - [x] Backup manual antes de importacoes grandes de questoes.
+- [x] Definir estrategia de testes:
+  - [x] Vitest para testes unitarios.
+  - [x] Playwright para E2E.
+  - [x] Supabase local para integracao quando houver acesso a banco.
+- [x] Decidir que o projeto pode usar GitHub Spec Kit nesta etapa.
+- [x] Definir Spec Kit como camada de especificacao e planejamento, nao como dependencia de runtime.
+- [x] Inicializar Spec Kit no repositorio com integracao Codex.
+- [x] Criar constituicao do projeto no Spec Kit.
+- [x] Criar especificacao funcional do MVP no Spec Kit.
+- [x] Criar plano tecnico do MVP no Spec Kit.
+- [x] Gerar tarefas implementaveis pelo Spec Kit antes do setup da aplicacao.
 
 ## 3. Setup do repositorio
 
+- [ ] Executar setup da aplicacao somente depois das tarefas iniciais do Spec Kit.
 - [ ] Inicializar projeto da aplicacao.
 - [ ] Configurar lint.
 - [ ] Configurar formatacao.
@@ -517,16 +591,16 @@ O arquivo `docs/bulk-question-import.md` descreve uma importacao com roles `ADMI
 ## 21. Infraestrutura e deploy
 
 - [ ] Criar projeto no provedor de hospedagem.
-- [ ] Criar banco de staging.
-- [ ] Criar banco de producao.
-- [ ] Configurar variaveis de staging.
+- [ ] Criar projeto Supabase Pro de producao.
+- [ ] Registrar que staging isolado de banco fica fora do primeiro deploy.
+- [ ] Configurar variaveis de preview no Vercel sem apontar testes destrutivos para dados reais.
 - [ ] Configurar variaveis de producao.
 - [ ] Configurar dominio de staging, se necessario.
 - [ ] Configurar dominio de producao.
 - [ ] Configurar HTTPS.
-- [ ] Rodar migrations em staging.
-- [ ] Rodar seeds em staging.
-- [ ] Validar app em staging.
+- [ ] Rodar migrations em Supabase local antes de producao.
+- [ ] Rodar seeds em Supabase local antes de producao.
+- [ ] Validar app em Vercel Preview com fluxos controlados.
 - [ ] Rodar migrations em producao.
 - [ ] Cadastrar planos reais no Abacate Pay.
 - [ ] Configurar webhooks reais do Abacate Pay.
@@ -540,9 +614,9 @@ O arquivo `docs/bulk-question-import.md` descreve uma importacao com roles `ADMI
 - [ ] Lint passa.
 - [ ] Typecheck passa, se aplicavel.
 - [ ] Testes automatizados passam.
-- [ ] Fluxo completo do aluno passa em staging.
-- [ ] Fluxo completo do autor passa em staging.
-- [ ] Fluxo completo do admin passa em staging.
+- [ ] Fluxo completo do aluno passa em ambiente local ou preview controlado.
+- [ ] Fluxo completo do autor passa em ambiente local ou preview controlado.
+- [ ] Fluxo completo do admin passa em ambiente local ou preview controlado.
 - [ ] Fluxo completo de pagamento passa.
 - [ ] Webhook de pagamento confirmado em logs.
 - [ ] Politica de privacidade publicada.
@@ -618,5 +692,5 @@ A aplicacao pode ser considerada pronta para a primeira producao quando:
 - [ ] Um admin consegue despublicar questoes problematicas.
 - [ ] As metricas basicas aparecem nos paineis.
 - [ ] O app funciona bem em smartphone, tablet e desktop.
-- [ ] Os principais fluxos foram testados em staging.
+- [ ] Os principais fluxos foram testados em ambiente local ou preview controlado.
 - [ ] Termos, privacidade, dominio, HTTPS, analytics, logs e backup estao ativos.
