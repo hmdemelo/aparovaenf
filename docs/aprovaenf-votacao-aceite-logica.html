@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>aprovaenf - Votação de aceite</title>
+  <style>
+    :root {
+      --bg: #f4f1ea;
+      --surface: #ffffff;
+      --ink: #162b25;
+      --muted: #64746e;
+      --line: rgba(22, 43, 37, .14);
+      --teal: #0f6e56;
+      --teal-2: #e2f4ee;
+      --amber: #8a5b12;
+      --amber-2: #fff3d7;
+      --red: #a83a32;
+      --red-2: #fae9e7;
+      --blue: #2d5f86;
+      --blue-2: #e7f0f7;
+      --radius: 8px;
+      --shadow: 0 20px 50px -34px rgba(18, 37, 31, .45);
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: var(--font);
+      background:
+        linear-gradient(135deg, rgba(15, 110, 86, .08), transparent 36%),
+        linear-gradient(315deg, rgba(45, 95, 134, .08), transparent 38%),
+        var(--bg);
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    .wrap {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 26px 0 48px;
+    }
+
+    .top {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 750;
+      letter-spacing: -.01em;
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 7px;
+      background: var(--teal);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 4vw, 42px);
+      line-height: 1.05;
+      letter-spacing: -.03em;
+    }
+
+    .lead {
+      max-width: 760px;
+      margin: 12px 0 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 16px;
+    }
+
+    .status {
+      min-width: 240px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .status-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+
+    .progress {
+      height: 8px;
+      background: #edf0ec;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--teal), var(--blue));
+      transition: width .2s ease;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .mini {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 8px;
+      background: #fbfbf8;
+    }
+
+    .mini b {
+      display: block;
+      font-size: 18px;
+    }
+
+    .mini span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 350px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel,
+    .decision,
+    .output {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    .panel h2,
+    .output h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: -.01em;
+    }
+
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      padding: 11px 12px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 86px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(15, 110, 86, .12);
+    }
+
+    .decision {
+      padding: 18px;
+      margin-bottom: 14px;
+    }
+
+    .decision-head {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .decision h3 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: -.01em;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 11px;
+      font-weight: 750;
+      color: var(--teal);
+      background: var(--teal-2);
+      white-space: nowrap;
+    }
+
+    .summary-list {
+      margin: 0 0 14px;
+      padding-left: 18px;
+      color: #2c423b;
+      line-height: 1.55;
+    }
+
+    .vote-options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin: 14px 0 12px;
+    }
+
+    .vote {
+      position: relative;
+    }
+
+    .vote input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .vote span {
+      display: flex;
+      min-height: 48px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 10px 8px;
+      font-size: 13px;
+      font-weight: 750;
+      color: var(--muted);
+      background: #fbfbf8;
+      transition: .15s ease;
+    }
+
+    .vote input:checked + span {
+      border-color: var(--teal);
+      color: var(--teal);
+      background: var(--teal-2);
+    }
+
+    .vote input[value="ajuste"]:checked + span {
+      border-color: #d49b27;
+      color: var(--amber);
+      background: var(--amber-2);
+    }
+
+    .vote input[value="reprovo"]:checked + span {
+      border-color: #d7827d;
+      color: var(--red);
+      background: var(--red-2);
+    }
+
+    .aside {
+      position: sticky;
+      top: 16px;
+    }
+
+    .output {
+      padding: 18px;
+    }
+
+    .actions {
+      display: grid;
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .btn {
+      border: 1px solid transparent;
+      border-radius: var(--radius);
+      padding: 11px 12px;
+      cursor: pointer;
+      color: #fff;
+      background: var(--teal);
+      font-weight: 750;
+      text-align: center;
+    }
+
+    .btn:hover {
+      filter: brightness(.95);
+    }
+
+    .btn.secondary {
+      color: var(--ink);
+      background: #fff;
+      border-color: var(--line);
+    }
+
+    .btn.warn {
+      color: var(--amber);
+      background: var(--amber-2);
+      border-color: rgba(138, 91, 18, .25);
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 8px 0 0;
+    }
+
+    .result {
+      min-height: 210px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+
+    .notice {
+      border-radius: var(--radius);
+      padding: 11px 12px;
+      background: var(--blue-2);
+      color: var(--blue);
+      line-height: 1.45;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .final-vote {
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+      margin-top: 14px;
+    }
+
+    .required {
+      color: var(--red);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 20px;
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+      z-index: 30;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+
+    @media (max-width: 920px) {
+      .top,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .status {
+        min-width: 0;
+      }
+
+      .aside {
+        position: static;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .wrap {
+        width: min(100% - 22px, 1180px);
+        padding-top: 16px;
+      }
+
+      .fields,
+      .vote-options {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .actions,
+      .status,
+      .aside .notice {
+        display: none;
+      }
+
+      .grid,
+      .top {
+        display: block;
+      }
+
+      .panel,
+      .decision,
+      .output {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="top">
+      <div>
+        <div class="brand"><span class="brand-mark">a</span> aprovaenf</div>
+        <h1>Votação de aceite da lógica de negócio central</h1>
+        <p class="lead">
+          Esta página resume as decisões julgadas mais plausíveis com base nas respostas dos enfermeiros.
+          Cada autor deve votar nos blocos abaixo e gerar um comprovante de aceite para envio.
+        </p>
+      </div>
+
+      <aside class="status" aria-live="polite">
+        <p class="status-title">Progresso do voto</p>
+        <div class="progress"><span id="progressBar"></span></div>
+        <div class="status-grid">
+          <div class="mini"><b id="doneCount">0</b><span>votados</span></div>
+          <div class="mini"><b id="approveCount">0</b><span>aceites</span></div>
+          <div class="mini"><b id="adjustCount">0</b><span>ajustes</span></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="grid">
+      <div>
+        <section class="panel">
+          <h2>Identificação do votante</h2>
+          <div class="fields">
+            <div class="field">
+              <label for="voterName">Nome completo <span class="required">*</span></label>
+              <input id="voterName" type="text" autocomplete="name" placeholder="Ex.: Raimunda Almeida">
+            </div>
+            <div class="field">
+              <label for="voterEmail">E-mail <span class="required">*</span></label>
+              <input id="voterEmail" type="email" autocomplete="email" placeholder="nome@email.com">
+            </div>
+          </div>
+          <p class="hint">
+            O voto fica salvo neste navegador enquanto você preenche. Ao final, gere o comprovante e envie para consolidação.
+          </p>
+        </section>
+
+        <section id="decisions"></section>
+
+        <section class="panel final-vote">
+          <h2>Aceite geral da lógica central</h2>
+          <p class="hint">
+            Use este voto final para indicar se você aceita a lógica geral do MVP mesmo que tenha sugerido ajustes pontuais em algum bloco.
+          </p>
+          <div class="vote-options">
+            <label class="vote">
+              <input type="radio" name="finalVote" value="aceito">
+              <span>Aceito a lógica central</span>
+            </label>
+            <label class="vote">
+              <input type="radio" name="finalVote" value="aceito_com_ressalvas">
+              <span>Aceito com ressalvas</span>
+            </label>
+            <label class="vote">
+              <input type="radio" name="finalVote" value="nao_aceito">
+              <span>Não aceito</span>
+            </label>
+          </div>
+          <label class="field" for="finalComment">
+            <span style="display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:5px">Observação final</span>
+            <textarea id="finalComment" placeholder="Escreva aqui qualquer ressalva geral ou condição para aceite."></textarea>
+          </label>
+        </section>
+      </div>
+
+      <aside class="aside">
+        <section class="output">
+          <h2>Comprovante do voto</h2>
+          <div class="notice">
+            Gere o resumo, copie o texto ou baixe o JSON. Sem backend, esta página não envia os dados automaticamente.
+          </div>
+          <textarea id="result" class="result" readonly placeholder="O comprovante aparecerá aqui depois de gerar o resumo."></textarea>
+          <div class="actions">
+            <button class="btn" id="generateBtn" type="button">Gerar comprovante</button>
+            <button class="btn secondary" id="copyBtn" type="button">Copiar texto</button>
+            <button class="btn secondary" id="emailBtn" type="button">Abrir no e-mail</button>
+            <button class="btn secondary" id="downloadBtn" type="button">Baixar JSON</button>
+            <button class="btn secondary" id="printBtn" type="button">Imprimir / salvar PDF</button>
+            <button class="btn warn" id="clearBtn" type="button">Limpar voto</button>
+          </div>
+          <p class="hint">
+            Sugestão: cada enfermeiro envia o comprovante por e-mail ou WhatsApp. Depois, consolide os votos no documento do produto.
+          </p>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const decisions = [
+      {
+        id: "precos",
+        title: "Preços e assinatura",
+        tag: "Comercial",
+        bullets: [
+          "Plano mensal recomendado: R$ 29,90.",
+          "Plano anual recomendado: R$ 287,04.",
+          "Desconto anual: 20% em relação ao mensal.",
+          "Comunicação do anual: equivalente a R$ 23,92 por mês, cobrado anualmente.",
+          "Parcelamento anual apenas se o Abacate Pay permitir sem atrasar o lançamento."
+        ]
+      },
+      {
+        id: "escopo",
+        title: "Escopo de carreiras do MVP",
+        tag: "Produto",
+        bullets: [
+          "Lançamento com Enfermagem e Técnico em enfermagem.",
+          "Médico fica para segunda fase.",
+          "Futuras carreiras a preparar: Fisioterapia, Farmácia/Farmacêutico e Nutrição.",
+          "Objetivo: começar focado, com maior qualidade de conteúdo."
+        ]
+      },
+      {
+        id: "bancas",
+        title: "Bancas iniciais prioritárias",
+        tag: "Conteúdo",
+        bullets: [
+          "Priorizar IDIB, IDECAN, FGV, Instituto AOCP, IBFC e Consulplan.",
+          "A opção Todas as bancas pode existir, mas a produção inicial deve focar nessas bancas.",
+          "A lista pode ser ajustada conforme editais mais próximos."
+        ]
+      },
+      {
+        id: "assuntos",
+        title: "Assuntos prioritários",
+        tag: "Conteúdo",
+        bullets: [
+          "Enfermagem: SUS, Saúde pública, Lei 8.080/1990, CF arts. 196 a 204, lei do exercício profissional, código de ética, cálculo de medicação, diluição, vias de administração, vacinas, urgência e emergência.",
+          "Técnico em enfermagem: cálculo de medicação, diluição, vias de administração, SUS básico, saúde pública, vacinas, fundamentos, urgência e emergência, ética e exercício profissional.",
+          "As 5 questões gratuitas devem misturar 2 de SUS/saúde pública, 2 de medicação/cálculo/vias e 1 de vacinas."
+        ]
+      },
+      {
+        id: "dificuldade",
+        title: "Níveis de dificuldade",
+        tag: "Classificação",
+        bullets: [
+          "Manter três níveis: Fácil, Média e Difícil.",
+          "Fácil: direta, curta, baseada em conceito, definição ou memória.",
+          "Média: exige interpretação e aplicação em contexto simples ou moderado.",
+          "Difícil: exige interpretação complexa, caso clínico, conduta ou integração de assuntos."
+        ]
+      },
+      {
+        id: "filtros",
+        title: "Filtros e configuração do feed",
+        tag: "Experiência",
+        bullets: [
+          "Landing: carreira obrigatória e banca opcional.",
+          "Não exibir filtro por assunto na landing inicial.",
+          "Todas as questões devem ser classificadas por assunto desde o início.",
+          "Filtro por assunto pode entrar dentro da plataforma se não atrasar, ou ficar para versão 1.1."
+        ]
+      },
+      {
+        id: "trial",
+        title: "Trial e bloqueios sem assinatura",
+        tag: "Conversão",
+        bullets: [
+          "Visitante responde 2 questões sem cadastro.",
+          "Depois do cadastro, responde mais 3 questões grátis.",
+          "Total: 5 questões gratuitas.",
+          "Comentários aparecem durante as 5 questões gratuitas.",
+          "Sem assinatura, o aluno não revisa as 5 questões gratuitas após o fim do trial.",
+          "Favoritos não ficam salvos sem assinatura."
+        ]
+      },
+      {
+        id: "comentarios",
+        title: "Comentários das questões",
+        tag: "Pedagógico",
+        bullets: [
+          "Comentário geral da questão é obrigatório.",
+          "Comentário por alternativa é opcional.",
+          "O autor decide se comentará todas as alternativas, apenas algumas ou nenhuma individualmente.",
+          "A decisão de exibir comentário apenas da alternativa escolhida ou de todas após a resposta ainda pode ser ajustada."
+        ]
+      },
+      {
+        id: "landing",
+        title: "Posicionamento da landing",
+        tag: "Marketing",
+        bullets: [
+          "Headline recomendada: Sua aprovação em concursos da saúde na palma da mão.",
+          "Subheadline: Resolva questões comentadas por especialistas, treine por carreira e banca, e evolua no ritmo do seu celular.",
+          "Destacar: questões comentadas por aprovados, estudo rápido pelo celular, comentários objetivos, foco em concursos da saúde, questões autorais e de provas anteriores, trial antes de pagar e custo-benefício.",
+          "Não prometer no MVP: simulados, ranking, mapas mentais, plano de estudo personalizado e IA."
+        ]
+      },
+      {
+        id: "responsabilidade",
+        title: "Responsabilidade, privacidade e provas anteriores",
+        tag: "Jurídico",
+        bullets: [
+          "Respeitar LGPD.",
+          "Informar fonte das questões de provas anteriores.",
+          "Ter cuidado com questões anuladas.",
+          "Exibir aviso de finalidade educacional.",
+          "Não prometer aprovação garantida."
+        ]
+      }
+    ];
+
+    const stateKey = "aprovaenf-votacao-aceite-v1";
+    const decisionsEl = document.getElementById("decisions");
+    const resultEl = document.getElementById("result");
+    const toastEl = document.getElementById("toast");
+
+    function renderDecisions() {
+      decisionsEl.innerHTML = decisions.map((item, index) => `
+        <article class="decision" data-decision="${item.id}">
+          <div class="decision-head">
+            <div>
+              <h3>${index + 1}. ${item.title}</h3>
+            </div>
+            <span class="tag">${item.tag}</span>
+          </div>
+          <ul class="summary-list">
+            ${item.bullets.map(bullet => `<li>${bullet}</li>`).join("")}
+          </ul>
+          <div class="vote-options" role="radiogroup" aria-label="Voto para ${item.title}">
+            <label class="vote">
+              <input type="radio" name="vote_${item.id}" value="aprovo">
+              <span>Aprovo</span>
+            </label>
+            <label class="vote">
+              <input type="radio" name="vote_${item.id}" value="ajuste">
+              <span>Aprovo com ajuste</span>
+            </label>
+            <label class="vote">
+              <input type="radio" name="vote_${item.id}" value="reprovo">
+              <span>Não aprovo</span>
+            </label>
+          </div>
+          <label class="field" for="comment_${item.id}">
+            <span style="display:block;font-size:12px;color:var(--muted);font-weight:700;margin-bottom:5px">Observação sobre este bloco</span>
+            <textarea id="comment_${item.id}" placeholder="Opcional. Informe ajuste, ressalva ou condição para aceite."></textarea>
+          </label>
+        </article>
+      `).join("");
+    }
+
+    function getFormState() {
+      const votes = {};
+      for (const item of decisions) {
+        const selected = document.querySelector(`input[name="vote_${item.id}"]:checked`);
+        votes[item.id] = {
+          title: item.title,
+          vote: selected ? selected.value : "",
+          comment: document.getElementById(`comment_${item.id}`).value.trim()
+        };
+      }
+
+      const finalSelected = document.querySelector('input[name="finalVote"]:checked');
+
+      return {
+        generatedAt: new Date().toISOString(),
+        voter: {
+          name: document.getElementById("voterName").value.trim(),
+          email: document.getElementById("voterEmail").value.trim()
+        },
+        votes,
+        finalVote: finalSelected ? finalSelected.value : "",
+        finalComment: document.getElementById("finalComment").value.trim()
+      };
+    }
+
+    function setFormState(data) {
+      if (!data) return;
+      document.getElementById("voterName").value = data.voter?.name || "";
+      document.getElementById("voterEmail").value = data.voter?.email || "";
+
+      for (const item of decisions) {
+        const vote = data.votes?.[item.id]?.vote;
+        if (vote) {
+          const input = document.querySelector(`input[name="vote_${item.id}"][value="${vote}"]`);
+          if (input) input.checked = true;
+        }
+        const comment = document.getElementById(`comment_${item.id}`);
+        if (comment) comment.value = data.votes?.[item.id]?.comment || "";
+      }
+
+      if (data.finalVote) {
+        const finalInput = document.querySelector(`input[name="finalVote"][value="${data.finalVote}"]`);
+        if (finalInput) finalInput.checked = true;
+      }
+      document.getElementById("finalComment").value = data.finalComment || "";
+    }
+
+    function saveDraft() {
+      localStorage.setItem(stateKey, JSON.stringify(getFormState()));
+      updateProgress();
+    }
+
+    function loadDraft() {
+      try {
+        const raw = localStorage.getItem(stateKey);
+        if (raw) setFormState(JSON.parse(raw));
+      } catch (error) {
+        console.warn("Não foi possível carregar rascunho", error);
+      }
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const data = getFormState();
+      const values = Object.values(data.votes).map(v => v.vote).filter(Boolean);
+      const done = values.length;
+      const approved = values.filter(v => v === "aprovo").length;
+      const adjusted = values.filter(v => v === "ajuste").length;
+      const percent = Math.round((done / decisions.length) * 100);
+
+      document.getElementById("doneCount").textContent = done;
+      document.getElementById("approveCount").textContent = approved;
+      document.getElementById("adjustCount").textContent = adjusted;
+      document.getElementById("progressBar").style.width = `${percent}%`;
+    }
+
+    function voteLabel(value) {
+      const map = {
+        aprovo: "Aprovo",
+        ajuste: "Aprovo com ajuste",
+        reprovo: "Não aprovo",
+        aceito: "Aceito a lógica central",
+        aceito_com_ressalvas: "Aceito com ressalvas",
+        nao_aceito: "Não aceito"
+      };
+      return map[value] || "Não respondido";
+    }
+
+    function validate(data) {
+      const missing = [];
+      if (!data.voter.name) missing.push("nome");
+      if (!data.voter.email) missing.push("e-mail");
+      for (const item of decisions) {
+        if (!data.votes[item.id].vote) missing.push(item.title);
+      }
+      if (!data.finalVote) missing.push("aceite geral");
+      return missing;
+    }
+
+    function buildSummary(data) {
+      const missing = validate(data);
+      const lines = [];
+      lines.push("aprovaenf - Comprovante de voto da lógica de negócio central");
+      lines.push("");
+      lines.push(`Nome: ${data.voter.name || "Não informado"}`);
+      lines.push(`E-mail: ${data.voter.email || "Não informado"}`);
+      lines.push(`Gerado em: ${new Date(data.generatedAt).toLocaleString("pt-BR")}`);
+      lines.push("");
+
+      if (missing.length) {
+        lines.push("Status: INCOMPLETO");
+        lines.push(`Pendências: ${missing.join(", ")}`);
+      } else {
+        lines.push("Status: COMPLETO");
+      }
+
+      lines.push("");
+      lines.push("Votos por bloco:");
+
+      for (const item of decisions) {
+        const vote = data.votes[item.id];
+        lines.push("");
+        lines.push(`${item.title}: ${voteLabel(vote.vote)}`);
+        if (vote.comment) lines.push(`Observação: ${vote.comment}`);
+      }
+
+      lines.push("");
+      lines.push(`Aceite geral: ${voteLabel(data.finalVote)}`);
+      if (data.finalComment) lines.push(`Observação final: ${data.finalComment}`);
+
+      lines.push("");
+      lines.push("Resumo das decisões votadas:");
+      lines.push("- Mensal R$ 29,90 e anual R$ 287,04.");
+      lines.push("- Lançamento com Enfermagem e Técnico em enfermagem; Médico na segunda fase.");
+      lines.push("- Bancas prioritárias: IDIB, IDECAN, FGV, Instituto AOCP, IBFC e Consulplan.");
+      lines.push("- Trial de 2 questões sem cadastro + 3 após cadastro.");
+      lines.push("- Comentários liberados no trial, sem revisão posterior sem assinatura.");
+      lines.push("- Favoritos persistentes apenas para assinantes.");
+      lines.push("- Comentário geral obrigatório e comentário por alternativa opcional.");
+
+      return lines.join("\n");
+    }
+
+    function generate() {
+      const data = getFormState();
+      data.generatedAt = new Date().toISOString();
+      const summary = buildSummary(data);
+      resultEl.value = summary;
+      saveDraft();
+
+      const missing = validate(data);
+      if (missing.length) {
+        toast(`Comprovante gerado com pendências: ${missing.length}`);
+      } else {
+        toast("Comprovante completo gerado");
+      }
+      return { data, summary };
+    }
+
+    async function copyText() {
+      const { summary } = generate();
+      try {
+        await navigator.clipboard.writeText(summary);
+        toast("Texto copiado");
+      } catch (error) {
+        resultEl.focus();
+        resultEl.select();
+        toast("Selecione e copie o texto");
+      }
+    }
+
+    function downloadJson() {
+      const { data } = generate();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const cleanName = (data.voter.name || "voto").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      a.href = url;
+      a.download = `aprovaenf-aceite-${cleanName || "voto"}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast("JSON baixado");
+    }
+
+    function openEmail() {
+      const { summary } = generate();
+      const subject = encodeURIComponent("Aceite da lógica central do aprovaenf");
+      const body = encodeURIComponent(summary);
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    }
+
+    function clearVote() {
+      const ok = window.confirm("Limpar todo o voto salvo neste navegador?");
+      if (!ok) return;
+      localStorage.removeItem(stateKey);
+      document.querySelectorAll("input[type='radio']").forEach(input => { input.checked = false; });
+      document.querySelectorAll("input[type='text'], input[type='email'], textarea").forEach(input => { input.value = ""; });
+      resultEl.value = "";
+      updateProgress();
+      toast("Voto limpo");
+    }
+
+    function toast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add("show");
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2200);
+    }
+
+    renderDecisions();
+    loadDraft();
+
+    document.addEventListener("input", saveDraft);
+    document.addEventListener("change", saveDraft);
+
+    document.getElementById("generateBtn").addEventListener("click", generate);
+    document.getElementById("copyBtn").addEventListener("click", copyText);
+    document.getElementById("emailBtn").addEventListener("click", openEmail);
+    document.getElementById("downloadBtn").addEventListener("click", downloadJson);
+    document.getElementById("printBtn").addEventListener("click", () => {
+      generate();
+      window.print();
+    });
+    document.getElementById("clearBtn").addEventListener("click", clearVote);
+  </script>
+</body>
+</html>
