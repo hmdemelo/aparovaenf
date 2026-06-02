@@ -118,7 +118,8 @@ function verifyAbacateSignature(
   return secureCompare(expected, signatureFromHeader)
 }
 
-function secureCompare(expected: string, received: string) {
+function secureCompare(expected?: string | null, received?: string | null) {
+  if (!expected || !received) return false
   const expectedBuffer = Buffer.from(expected)
   const receivedBuffer = Buffer.from(received)
   return (

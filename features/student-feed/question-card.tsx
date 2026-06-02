@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Heart } from 'lucide-react'
+import { Check, Heart, X } from 'lucide-react'
 import type { AnswerResponse, FeedQuestionDto } from './types'
 
 const DIFFICULTY_LABEL: Record<FeedQuestionDto['difficulty'], string> = {
@@ -44,30 +44,34 @@ export function QuestionCard({
   }
 
   const altClasses: Record<ReturnType<typeof altState>, string> = {
-    idle: 'border-slate-200 bg-white hover:border-emerald-400',
-    chosen: 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200',
-    correct: 'border-emerald-500 bg-emerald-50',
-    wrong: 'border-rose-400 bg-rose-50',
+    idle:
+      'border-[color:var(--line)] bg-white text-[var(--ink)] hover:border-[color:var(--line-2)]',
+    chosen:
+      'border-[color:var(--teal)] bg-[var(--teal-light)] text-[var(--teal-ink)]',
+    correct:
+      'border-[color:var(--teal)] bg-[var(--teal-light)] text-[var(--teal-ink)]',
+    wrong:
+      'border-[color:var(--danger)] bg-[var(--danger-bg)] text-[var(--danger)]',
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {question.subject && (
-          <span className="rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700">
+          <span className="rounded-full bg-[var(--teal-light)] px-3 py-1 font-medium text-[var(--teal-ink)]">
             {question.subject.name}
           </span>
         )}
-        <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+        <span className="rounded-full bg-[#f1efe9] px-3 py-1 font-medium text-[var(--muted)]">
           {DIFFICULTY_LABEL[question.difficulty]}
         </span>
         {question.board && (
-          <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+          <span className="rounded-full bg-[#f1efe9] px-3 py-1 font-medium text-[var(--muted)]">
             {question.board.name}
           </span>
         )}
         {question.annulled && (
-          <span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-700">
+          <span className="rounded-full bg-[var(--warn-bg)] px-3 py-1 font-medium text-[var(--warn)]">
             Questão anulada
           </span>
         )}
@@ -78,18 +82,18 @@ export function QuestionCard({
             aria-label="Favoritar questão"
             aria-pressed={favorited}
             data-testid="favorite-button"
-            className="ml-auto text-slate-300 transition hover:text-rose-500"
+            className="ml-auto text-[var(--hint)] transition hover:text-[var(--danger)]"
           >
             <Heart
               size={20}
-              className={favorited ? 'fill-rose-500 text-rose-500' : ''}
+              className={favorited ? 'fill-[var(--danger)] text-[var(--danger)]' : ''}
             />
           </button>
         )}
       </div>
 
       {question.source && (
-        <p className="text-xs text-slate-600">
+        <p className="text-xs text-[var(--muted)]">
           {[
             question.source.orgao,
             question.source.cargo,
@@ -100,7 +104,7 @@ export function QuestionCard({
         </p>
       )}
 
-      <p className="text-base leading-relaxed text-slate-800">
+      <p className="text-[16.5px] leading-[1.55] text-[var(--ink)]">
         {question.statement}
       </p>
 
@@ -115,10 +119,18 @@ export function QuestionCard({
                 disabled={answered || submitting}
                 aria-pressed={selected === alt.id}
                 onClick={() => setSelected(alt.id)}
-                className={`flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left text-sm transition disabled:cursor-default ${altClasses[state]}`}
+                className={`flex w-full items-start gap-3 rounded-[var(--radius-sm)] border-[1.5px] px-[15px] py-[14px] text-left text-[15px] transition disabled:cursor-default ${altClasses[state]}`}
               >
-                <span className="font-semibold text-slate-500">{alt.label}</span>
-                <span className="text-slate-700">{alt.text}</span>
+                <span className="min-w-5 font-semibold text-[var(--hint)]">
+                  {alt.label}
+                </span>
+                <span className="flex-1 leading-relaxed">{alt.text}</span>
+                {state === 'correct' && (
+                  <Check size={18} className="mt-0.5 shrink-0 text-[var(--teal)]" />
+                )}
+                {state === 'wrong' && (
+                  <X size={18} className="mt-0.5 shrink-0 text-[var(--danger)]" />
+                )}
               </button>
             </li>
           )
@@ -130,7 +142,7 @@ export function QuestionCard({
           type="button"
           disabled={!selected || submitting}
           onClick={() => selected && onAnswer(selected)}
-          className="mt-2 rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="mt-2 rounded-[var(--radius-sm)] bg-[var(--teal)] px-4 py-[15px] font-semibold text-white transition hover:bg-[#0c5b47] disabled:cursor-not-allowed disabled:bg-[var(--hint)]"
         >
           {submitting ? 'Enviando...' : 'Responder'}
         </button>

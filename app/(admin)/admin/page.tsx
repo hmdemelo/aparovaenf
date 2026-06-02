@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { BarChart3, BookOpen, Layers, PenTool, Users } from 'lucide-react'
 import { resolveAdminContext } from '@/features/admin/admin-permissions'
 import { getAdminMetrics } from '@/features/admin/admin-metrics-service'
 import { listUsers, listAllQuestions } from '@/features/admin/admin-service'
@@ -27,10 +28,26 @@ const FUNNEL_LABEL: Record<string, string> = {
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
-      <p className="text-xs text-slate-500">{label}</p>
+    <div className="aprova-metric-card">
+      <p className="aprova-metric-number">{value}</p>
+      <p className="aprova-metric-label">{label}</p>
     </div>
+  )
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const published = status === 'published'
+
+  return (
+    <span
+      className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+        published
+          ? 'bg-[var(--teal-light)] text-[var(--teal-ink)]'
+          : 'bg-[var(--warn-bg)] text-[var(--warn)]'
+      }`}
+    >
+      {STATUS_LABEL[status] ?? status}
+    </span>
   )
 }
 
@@ -45,98 +62,167 @@ export default async function AdminDashboardPage() {
   ])
 
   return (
-    <main className="mx-auto min-h-screen max-w-4xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">Painel administrativo</h1>
-        <Link
-          href="/admin/authors"
-          className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
-        >
-          Gerenciar autores
-        </Link>
+    <main className="min-h-screen px-4 py-6 sm:py-8">
+      <div className="aprova-admin-shell mx-auto flex w-full max-w-[980px] max-md:flex-col">
+        <aside className="aprova-sidebar flex w-[200px] shrink-0 flex-col border-r px-[14px] py-5 max-md:w-full max-md:border-r-0 max-md:border-b">
+          <p className="aprova-wordmark mb-6 text-[21px] max-md:mb-3">
+            aprova<span className="text-[var(--teal)]">enf</span>
+          </p>
+
+          <nav className="flex flex-col gap-0.5 max-md:flex-row max-md:flex-wrap">
+            <Link
+              href="/admin"
+              className="aprova-nav-item aprova-nav-item-active"
+            >
+              <BarChart3 size={18} />
+              Painel
+            </Link>
+            <Link href="/admin/authors" className="aprova-nav-item">
+              <Users size={18} />
+              Autores
+            </Link>
+            <Link href="/admin/subjects" className="aprova-nav-item">
+              <Layers size={18} />
+              Assuntos
+            </Link>
+          </nav>
+        </aside>
+
+        <section className="min-w-0 flex-1 bg-white px-5 py-6 sm:px-[30px]">
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.04em] text-[var(--muted)]">
+                Administrativo
+              </p>
+              <h1 className="mt-1 text-[27px] font-semibold leading-tight text-[var(--ink)]">
+                Painel administrativo
+              </h1>
+            </div>
+            <Link
+              href="/admin/authors"
+              className="aprova-button text-sm"
+            >
+              <PenTool size={17} />
+              Gerenciar autores
+            </Link>
+          </div>
+
+          <section className="mb-8">
+            <h2 className="text-[21px] font-semibold text-[var(--ink)]">
+              Visão geral
+            </h2>
+            <div className="mt-[18px] grid grid-cols-2 gap-[14px] lg:grid-cols-4">
+              <Metric label="Usuários" value={metrics.users.total} />
+              <Metric label="Autores" value={metrics.users.authors} />
+              <Metric
+                label="Assinaturas ativas"
+                value={metrics.subscriptions.active}
+              />
+              <Metric
+                label="Questões publicadas"
+                value={metrics.questions.published}
+              />
+            </div>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="text-[21px] font-semibold text-[var(--ink)]">Funil</h2>
+            <div className="mt-[18px] grid grid-cols-2 gap-[14px] lg:grid-cols-4">
+              {Object.entries(metrics.funnel).map(([name, value]) => (
+                <Metric key={name} label={FUNNEL_LABEL[name] ?? name} value={value} />
+              ))}
+            </div>
+          </section>
+
+          <section className="mb-8">
+            <div className="mb-2 flex items-center gap-2">
+              <Users size={18} className="text-[var(--teal)]" />
+              <h2 className="text-[21px] font-semibold text-[var(--ink)]">
+                Usuários
+              </h2>
+            </div>
+            <div className="overflow-x-auto" data-testid="admin-users">
+              <table className="aprova-table">
+                <thead>
+                  <tr>
+                    <th>E-mail</th>
+                    <th>Perfil</th>
+                    <th>Assinatura</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.id}>
+                      <td className="min-w-52 text-[var(--ink)]">{u.email}</td>
+                      <td>
+                        <span className="rounded-full bg-[#f1efe9] px-2.5 py-1 text-[11px] font-medium text-[var(--muted)]">
+                          {u.role}
+                        </span>
+                      </td>
+                      <td className="text-[var(--muted)]">
+                        {u.subscriptionStatus ? (
+                          <span className="rounded-full bg-[var(--teal-light)] px-2.5 py-1 text-[11px] font-medium text-[var(--teal-ink)]">
+                            {u.subscriptionPlan} · {u.subscriptionStatus}
+                          </span>
+                        ) : (
+                          'Sem assinatura'
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <div className="mb-2 flex items-center gap-2">
+              <BookOpen size={18} className="text-[var(--teal)]" />
+              <h2 className="text-[21px] font-semibold text-[var(--ink)]">
+                Questões
+              </h2>
+            </div>
+            <div className="overflow-x-auto" data-testid="admin-questions">
+              <table className="aprova-table">
+                <thead>
+                  <tr>
+                    <th>Enunciado</th>
+                    <th>Autor</th>
+                    <th>Assunto</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {questions.map((q) => (
+                    <tr key={q.id}>
+                      <td className="min-w-72 max-w-[360px]">
+                        <p className="line-clamp-1 text-[var(--ink)]">
+                          {q.statement}
+                        </p>
+                      </td>
+                      <td className="text-[var(--muted)]">
+                        {q.author ?? 'sem autor'}
+                      </td>
+                      <td className="text-[var(--muted)]">
+                        {q.subject ?? 'sem assunto'}
+                      </td>
+                      <td>
+                        <StatusBadge status={q.status} />
+                      </td>
+                      <td>
+                        {q.status === 'published' && (
+                          <UnpublishButton questionId={q.id} />
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
       </div>
-
-      <section className="mb-8">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
-          Visão geral
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Metric label="Usuários" value={metrics.users.total} />
-          <Metric label="Autores" value={metrics.users.authors} />
-          <Metric label="Assinaturas ativas" value={metrics.subscriptions.active} />
-          <Metric label="Questões publicadas" value={metrics.questions.published} />
-        </div>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
-          Funil
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {Object.entries(metrics.funnel).map(([name, value]) => (
-            <Metric key={name} label={FUNNEL_LABEL[name] ?? name} value={value} />
-          ))}
-        </div>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
-          Usuários
-        </h2>
-        <ul className="flex flex-col gap-1" data-testid="admin-users">
-          {users.map((u) => (
-            <li
-              key={u.id}
-              className="flex items-center justify-between rounded-lg border border-slate-100 bg-white px-3 py-2 text-sm"
-            >
-              <span className="text-slate-700">{u.email}</span>
-              <span className="flex items-center gap-2 text-xs">
-                <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-600">
-                  {u.role}
-                </span>
-                {u.subscriptionStatus && (
-                  <span className="rounded-full bg-emerald-100 px-2 py-1 text-emerald-700">
-                    {u.subscriptionPlan} · {u.subscriptionStatus}
-                  </span>
-                )}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
-          Questões
-        </h2>
-        <ul className="flex flex-col gap-2" data-testid="admin-questions">
-          {questions.map((q) => (
-            <li
-              key={q.id}
-              className="flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-4 py-3"
-            >
-              <div className="min-w-0">
-                <p className="line-clamp-1 text-sm text-slate-700">{q.statement}</p>
-                <p className="text-xs text-slate-600">
-                  {q.author ?? 'sem autor'} · {q.subject ?? 'sem assunto'}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <span
-                  className={`rounded-full px-2 py-1 text-xs font-medium ${
-                    q.status === 'published'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-slate-100 text-slate-500'
-                  }`}
-                >
-                  {STATUS_LABEL[q.status] ?? q.status}
-                </span>
-                {q.status === 'published' && <UnpublishButton questionId={q.id} />}
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
     </main>
   )
 }

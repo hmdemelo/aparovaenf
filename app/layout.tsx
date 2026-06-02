@@ -1,15 +1,17 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Bricolage_Grotesque, Hanken_Grotesk } from 'next/font/google'
 import './globals.css'
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const bricolageGrotesque = Bricolage_Grotesque({
+  variable: '--font-bricolage-grotesque',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
 })
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const hankenGrotesk = Hanken_Grotesk({
+  variable: '--font-hanken-grotesk',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
 })
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
@@ -21,7 +23,7 @@ export const metadata: Metadata = {
     template: '%s — aprovaenf',
   },
   description:
-    'Resolva questões comentadas de Enfermagem e Técnico em enfermagem, no seu ritmo e direto do celular. Comece grátis, sem cadastro.',
+    'Resolva questões comentadas para Enfermeiro(a) e Técnico em enfermagem, no seu ritmo e direto do celular. Comece grátis, sem cadastro.',
   applicationName: 'aprovaenf',
   openGraph: {
     title: 'aprovaenf — Questões comentadas para concursos da saúde',
@@ -43,7 +45,7 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${bricolageGrotesque.variable} ${hankenGrotesk.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

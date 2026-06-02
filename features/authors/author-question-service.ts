@@ -204,3 +204,51 @@ export async function getAuthorQuestion(
     .maybeSingle()
   return data
 }
+
+export type AuthorMetrics = {
+  totalQuestions: number
+  totalAnswers: number
+  /** Fraction of received answers that were correct, in [0, 1]. */
+  correctRate: number
+}
+
+/** Aggregate an author's question count and the answers received on them. */
+export function computeAuthorMetrics(
+  totalQuestions: number,
+  attempts: ReadonlyArray<{ is_correct: boolean }>,
+): AuthorMetrics {
+  const totalAnswers = attempts.length
+  const correct = attempts.filter((a) => a.is_correct).length
+  return {
+    totalQuestions,
+    totalAnswers,
+    correctRate: totalAnswers === 0 ? 0 : correct / totalAnswers,
+  }
+}
+
+/**
+ * Author-scoped metrics: questions created and answers received across all of
+ * them. The `answer_attempts` RLS only exposes a user's own rows, so reading
+ * answers from other students requires a service-role client. Safety relies on
+ * `authorId` coming from the authenticated `resolveAuthorContext()` — never from
+ * client input — so an author can never read another author's metrics.
+ */
+export async function getAuthorMetrics(
+  db: Db,
+  authorId: string,
+): Promise<AuthorMetrics> {
+  const { data: questions } = await db
+    .from('questions')
+    .select('id')
+    .eq('author_id', authorId)
+
+  const questionIds = (questions ?? []).map((q) => q.id)
+  if (questionIds.length === 0) return computeAuthorMetrics(0, [])
+
+  const { data: attempts } = await db
+    .from('answer_attempts')
+    .select('is_correct')
+    .in('question_id', questionIds)
+
+  return computeAuthorMetrics(questionIds.length, attempts ?? [])
+}

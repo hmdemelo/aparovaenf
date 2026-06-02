@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
+import { AccountDialog } from '@/features/account/account-dialog'
+import { loadAccountProfile } from '@/features/account/account-service'
 import { resolveAuthorContext } from '@/features/authors/author-context'
 import { getAuthorQuestion } from '@/features/authors/author-question-service'
 import { loadClassificationOptions } from '@/features/authors/classification-options'
@@ -21,6 +23,7 @@ export default async function EditQuestionPage({
   if (!question) notFound()
 
   const { careers, subjects, boards } = await loadClassificationOptions()
+  const account = await loadAccountProfile(ctx.db, ctx.userId)
 
   const alternatives = [...(question.alternatives ?? [])]
     .sort((a, b) => a.position - b.position)
@@ -43,9 +46,12 @@ export default async function EditQuestionPage({
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-4 py-8">
-      <Link href="/author/questions" className="text-sm text-emerald-700 underline">
-        ← Voltar
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/author/questions" className="text-sm text-emerald-700 underline">
+          ← Voltar
+        </Link>
+        <AccountDialog initialProfile={account} />
+      </div>
       <h1 className="mb-6 mt-2 text-2xl font-bold text-slate-900">Editar questão</h1>
       <QuestionEditor
         careers={careers}

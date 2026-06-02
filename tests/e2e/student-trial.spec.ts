@@ -24,10 +24,10 @@ test('visitor answers two questions then hits the signup gate', async ({ page })
   await page.goto('/')
 
   // Choose Enfermagem and start the feed (home compiles on first hit).
-  const careerButton = page.getByTestId('career-enfermagem')
+  const careerButton = page.getByTestId('career-enfermeiro-a')
   await careerButton.waitFor({ state: 'visible', timeout: 30_000 })
   await careerButton.click()
-  await expect(page).toHaveURL(/\/feed\?career=enfermagem/, { timeout: 30_000 })
+  await expect(page).toHaveURL(/\/feed\?career=enfermeiro-a/, { timeout: 30_000 })
 
   // First free question.
   await answerCurrentQuestion(page)

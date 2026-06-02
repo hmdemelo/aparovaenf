@@ -21,7 +21,7 @@ export function UnpublishButton({ questionId }: { questionId: string }) {
       onClick={onClick}
       disabled={busy}
       data-testid={`unpublish-${questionId}`}
-      className="rounded-lg border border-rose-200 px-3 py-1 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+      className="rounded-lg border border-[color:var(--line)] px-3 py-1 text-xs font-medium text-[var(--danger)] transition hover:border-[color:var(--danger)] hover:bg-[var(--danger-bg)] disabled:opacity-50"
     >
       {busy ? 'Despublicando...' : 'Despublicar'}
     </button>

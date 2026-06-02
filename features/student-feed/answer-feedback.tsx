@@ -17,8 +17,10 @@ export function AnswerFeedback({ feedback, onNext }: AnswerFeedbackProps) {
   return (
     <div className="flex flex-col gap-4" data-testid="answer-feedback">
       <div
-        className={`flex items-center gap-2 rounded-xl px-4 py-3 font-semibold ${
-          correct ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+        className={`flex items-center gap-2 rounded-[var(--radius-sm)] px-4 py-3 font-semibold ${
+          correct
+            ? 'bg-[var(--teal-light)] text-[var(--teal-ink)]'
+            : 'bg-[var(--danger-bg)] text-[var(--danger)]'
         }`}
       >
         {correct ? <Check size={18} /> : <X size={18} />}
@@ -26,22 +28,22 @@ export function AnswerFeedback({ feedback, onNext }: AnswerFeedbackProps) {
       </div>
 
       {feedback.general_comment && (
-        <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+        <div className="rounded-[var(--radius-sm)] border border-[color:var(--line)] bg-white p-4">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.04em] text-[var(--muted)]">
             Comentário
           </p>
-          <p className="text-sm leading-relaxed text-slate-700">
+          <p className="text-sm leading-relaxed text-[#384a44]">
             {feedback.general_comment}
           </p>
         </div>
       )}
 
       {feedback.selected_alternative_comment && (
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+        <div className="rounded-[var(--radius-sm)] border border-[color:var(--line)] bg-[#f6f4ef] p-4">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.04em] text-[var(--muted)]">
             Sobre a sua resposta
           </p>
-          <p className="text-sm leading-relaxed text-slate-700">
+          <p className="text-sm leading-relaxed text-[#384a44]">
             {feedback.selected_alternative_comment}
           </p>
         </div>
@@ -51,7 +53,7 @@ export function AnswerFeedback({ feedback, onNext }: AnswerFeedbackProps) {
         type="button"
         onClick={onNext}
         data-testid="next-question"
-        className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700"
+        className="rounded-[var(--radius-sm)] bg-[var(--teal)] px-4 py-[15px] font-semibold text-white transition hover:bg-[#0c5b47]"
       >
         Próxima questão
       </button>

@@ -34,7 +34,7 @@ vi.mock('@/features/analytics/product-events-server', () => ({
 }))
 
 const PUBLIC_KEY = 'test-abacate-public-key'
-const FIXTURE_HMAC_KEY = 'test-webhook-secret'
+const SECRET = 'test-webhook-secret'
 
 function signature(rawBody: string) {
   return createHmac('sha256', PUBLIC_KEY)
@@ -43,7 +43,7 @@ function signature(rawBody: string) {
 }
 
 function webhookRequest(rawBody: string, options?: { webhookKey?: string; signature?: string }) {
-  const secret = options?.webhookKey ?? FIXTURE_HMAC_KEY
+  const secret = options?.webhookKey ?? SECRET
   return new NextRequest(
     `http://localhost/api/webhooks/abacate-pay?webhookSecret=${secret}`,
     {
@@ -67,7 +67,7 @@ describe('POST /api/webhooks/abacate-pay', () => {
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
       SUPABASE_SERVICE_ROLE_KEY: 'service',
       ABACATE_PAY_API_KEY: 'abacate-secret',
-      ABACATE_PAY_WEBHOOK_FIXTURE_HMAC_KEY: FIXTURE_HMAC_KEY,
+      ABACATE_PAY_WEBHOOK_SECRET: SECRET,
       ABACATE_PAY_WEBHOOK_PUBLIC_KEY: PUBLIC_KEY,
       NEXT_PUBLIC_APP_URL: 'https://aprovaenf.test',
     })
@@ -213,7 +213,7 @@ describe('POST /api/webhooks/abacate-pay', () => {
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
       SUPABASE_SERVICE_ROLE_KEY: 'service',
       ABACATE_PAY_API_KEY: 'abacate-secret',
-      ABACATE_PAY_WEBHOOK_FIXTURE_HMAC_KEY: FIXTURE_HMAC_KEY,
+      ABACATE_PAY_WEBHOOK_SECRET: SECRET,
       NEXT_PUBLIC_APP_URL: 'https://aprovaenf.test',
     })
     const payload = { id: 'log_missing_key', event: 'checkout.completed', data: {} }

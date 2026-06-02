@@ -78,7 +78,7 @@ test('paywall starts checkout and simulated webhook unlocks the feed', async ({
   const student = await createTemporaryStudent(service, testInfo.project.name)
 
   try {
-    await login(page, student.email, '/feed?career=enfermagem')
+    await login(page, student.email, '/feed?career=enfermeiro-a')
 
     await answerAndAdvance(page)
     await answerAndAdvance(page)
@@ -97,7 +97,7 @@ test('paywall starts checkout and simulated webhook unlocks the feed', async ({
           data: {
             checkout_id: 'checkout_e2e',
             checkout_url:
-              'http://localhost:3000/feed?career=enfermagem&checkout=mock',
+              'http://localhost:3000/feed?career=enfermeiro-a&checkout=mock',
             subscription_id: '00000000-0000-0000-0000-00000000c001',
             plan: 'annual',
             amount_cents: 28700,
@@ -136,7 +136,7 @@ test('paywall starts checkout and simulated webhook unlocks the feed', async ({
     const webhookJson = await webhookResponse.json()
     expect(webhookJson.data?.activated).toBe(true)
 
-    await page.goto('/feed?career=enfermagem')
+    await page.goto('/feed?career=enfermeiro-a')
     await expect(page.getByTestId('paywall')).toBeHidden({ timeout: 30_000 })
     await expect(page.getByTestId('alternative').first()).toBeVisible({
       timeout: 30_000,

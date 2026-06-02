@@ -34,7 +34,7 @@ d('student feed integration (local Supabase)', () => {
   })
 
   it('returns a published question with alternatives and no correctness flag', async () => {
-    const question = await getNextQuestion(db, { careerSlug: 'enfermagem' })
+    const question = await getNextQuestion(db, { careerSlug: 'enfermeiro-a' })
     expect(question).not.toBeNull()
     expect(question!.alternatives.length).toBeGreaterThanOrEqual(2)
     // Feed payload must not leak which alternative is correct.
@@ -47,9 +47,9 @@ d('student feed integration (local Supabase)', () => {
   })
 
   it('excludes already-answered questions from the feed', async () => {
-    const first = await getNextQuestion(db, { careerSlug: 'enfermagem' })
+    const first = await getNextQuestion(db, { careerSlug: 'enfermeiro-a' })
     const next = await getNextQuestion(db, {
-      careerSlug: 'enfermagem',
+      careerSlug: 'enfermeiro-a',
       excludeIds: [first!.id],
     })
     expect(next!.id).not.toBe(first!.id)

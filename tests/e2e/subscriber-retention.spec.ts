@@ -28,7 +28,7 @@ async function answerCurrentQuestion(page: Page) {
 
 test('subscriber favorites a question and finds it in favorites', async ({ page }) => {
   test.setTimeout(120_000)
-  await login(page, 'assinante@aprovaenf.local', '/feed?career=enfermagem')
+  await login(page, 'assinante@aprovaenf.local', '/feed?career=enfermeiro-a')
 
   await answerCurrentQuestion(page)
   await page.getByTestId('favorite-button').click()
@@ -45,7 +45,7 @@ test('subscriber favorites a question and finds it in favorites', async ({ page 
 
 test('non-subscriber is prompted to subscribe when favoriting', async ({ page }) => {
   test.setTimeout(120_000)
-  await login(page, 'aluno@aprovaenf.local', '/feed?career=enfermagem')
+  await login(page, 'aluno@aprovaenf.local', '/feed?career=enfermeiro-a')
 
   await answerCurrentQuestion(page)
   await page.getByTestId('favorite-button').click()

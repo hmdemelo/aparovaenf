@@ -18,7 +18,7 @@ async function seriousViolations(page: import('@playwright/test').Page) {
 test('landing has no serious accessibility violations', async ({ page }) => {
   test.setTimeout(60_000)
   await page.goto('/')
-  await expect(page.getByTestId('career-enfermagem')).toBeVisible({
+  await expect(page.getByTestId('career-enfermeiro-a')).toBeVisible({
     timeout: 30_000,
   })
   const violations = await seriousViolations(page)
@@ -27,7 +27,7 @@ test('landing has no serious accessibility violations', async ({ page }) => {
 
 test('feed has no serious accessibility violations', async ({ page }) => {
   test.setTimeout(90_000)
-  await page.goto('/feed?career=enfermagem')
+  await page.goto('/feed?career=enfermeiro-a')
   await expect(page.getByTestId('alternative').first()).toBeVisible({
     timeout: 30_000,
   })

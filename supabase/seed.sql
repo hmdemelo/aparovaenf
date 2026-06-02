@@ -5,11 +5,11 @@
 -- dollar-quoted function bodies) so the Supabase seed runner batches it safely.
 
 -- =========================================================================
--- Careers (launch: Enfermagem, Tecnico em enfermagem)
+-- Careers (launch: Enfermeiro(a), Tecnico em enfermagem)
 -- =========================================================================
 
 insert into careers (id, name, slug, is_launch_career) values
-  ('00000000-0000-0000-0000-0000000000c1', 'Enfermagem', 'enfermagem', true),
+  ('00000000-0000-0000-0000-0000000000c1', 'Enfermeiro(a)', 'enfermeiro-a', true),
   ('00000000-0000-0000-0000-0000000000c2', 'Tecnico em enfermagem', 'tecnico-em-enfermagem', true)
 on conflict (slug) do nothing;
 
@@ -165,27 +165,27 @@ select
   'autoral', v.statement, v.general_comment, 'published', now()
 from (values
   ('00000000-0000-0000-0000-0000000000f1', '00000000-0000-0000-0000-0000000000b1',
-   'enfermagem', 'fundamentos-de-enfermagem', 'facil',
+   'enfermeiro-a', 'fundamentos-de-enfermagem', 'facil',
    'A lavagem das maos e considerada a principal medida para prevencao de infeccoes relacionadas a assistencia a saude. Sobre essa pratica, assinale a alternativa correta.',
    'A higienizacao das maos e a medida isolada mais eficaz na prevencao de infeccoes. A tecnica e os cinco momentos preconizados pela OMS sao fundamentais.'),
   ('00000000-0000-0000-0000-0000000000f2', '00000000-0000-0000-0000-0000000000b1',
-   'enfermagem', 'saude-publica-e-sus', 'media',
+   'enfermeiro-a', 'saude-publica-e-sus', 'media',
    'Sobre os principios doutrinarios do Sistema Unico de Saude (SUS), assinale a alternativa que apresenta corretamente esses principios.',
    'Os principios doutrinarios do SUS sao universalidade, equidade e integralidade. Os organizativos incluem descentralizacao, regionalizacao e participacao social.'),
   ('00000000-0000-0000-0000-0000000000f3', '00000000-0000-0000-0000-0000000000b2',
-   'enfermagem', 'urgencia-e-emergencia', 'media',
+   'enfermeiro-a', 'urgencia-e-emergencia', 'media',
    'Na avaliacao inicial de uma vitima em parada cardiorrespiratoria no ambiente extra-hospitalar, qual a sequencia correta de atendimento segundo as diretrizes atuais?',
    'As diretrizes atuais preconizam a sequencia C-A-B (compressoes, vias aereas, ventilacao) para adultos em PCR, priorizando as compressoes toracicas.'),
   ('00000000-0000-0000-0000-0000000000f4', '00000000-0000-0000-0000-0000000000b2',
-   'enfermagem', 'saude-da-mulher', 'facil',
+   'enfermeiro-a', 'saude-da-mulher', 'facil',
    'O exame preventivo do cancer do colo do utero (Papanicolau) deve ser oferecido as mulheres dentro de qual faixa etaria prioritaria, segundo o Ministerio da Saude?',
    'O rastreamento prioritario do cancer do colo do utero e recomendado para mulheres de 25 a 64 anos que ja tiveram atividade sexual.'),
   ('00000000-0000-0000-0000-0000000000f5', '00000000-0000-0000-0000-0000000000b1',
-   'enfermagem', 'biosseguranca', 'media',
+   'enfermeiro-a', 'biosseguranca', 'media',
    'Apos a administracao de medicamento por via intramuscular, qual a conduta correta em relacao ao descarte do material perfurocortante?',
    'Agulhas nao devem ser reencapadas. O descarte deve ser imediato em recipiente rigido, resistente a puncao (caixa de perfurocortantes).'),
   ('00000000-0000-0000-0000-0000000000f6', '00000000-0000-0000-0000-0000000000b2',
-   'enfermagem', 'saude-da-crianca', 'facil',
+   'enfermeiro-a', 'saude-da-crianca', 'facil',
    'Segundo o calendario nacional de vacinacao, a vacina BCG e administrada preferencialmente em qual momento e por qual via?',
    'A BCG e administrada ao nascer (dose unica), por via intradermica, geralmente na insercao inferior do musculo deltoide direito.'),
   ('00000000-0000-0000-0000-0000000000f7', '00000000-0000-0000-0000-0000000000b1',

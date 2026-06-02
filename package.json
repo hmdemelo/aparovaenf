@@ -12,7 +12,8 @@
     "test:integration": "vitest run tests/integration",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "abacate:setup": "node scripts/setup-abacate-pay.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

@@ -150,6 +150,34 @@ export const createAuthorInputSchema = z.object({
 })
 export type CreateAuthorInput = z.infer<typeof createAuthorInputSchema>
 
+// --- Admin: subject creation ---------------------------------------------
+
+/**
+ * Admin payload to register a new subject under a career. `slug` is optional and
+ * auto-derived from `name` (via slugify) when omitted; `career_id` is required so
+ * the subject is always attached to a career.
+ */
+export const createSubjectInputSchema = z.object({
+  career_id: uuidSchema,
+  name: z.string().trim().min(1, 'nome é obrigatório').max(120),
+  slug: z.string().trim().min(1).max(120).optional(),
+})
+export type CreateSubjectInput = z.infer<typeof createSubjectInputSchema>
+
+// --- Account profile ------------------------------------------------------
+
+export const accountProfileInputSchema = z.object({
+  name: z.string().trim().min(1, 'nome é obrigatório').max(120),
+  display_name: z
+    .string()
+    .trim()
+    .min(1, 'nome de exibição é obrigatório')
+    .max(120),
+  short_bio: z.string().trim().max(280, 'bio muito longa').optional().nullable(),
+  instagram: z.string().trim().max(60).optional().nullable(),
+})
+export type AccountProfileInput = z.infer<typeof accountProfileInputSchema>
+
 // --- Billing --------------------------------------------------------------
 
 export const checkoutInputSchema = z.object({

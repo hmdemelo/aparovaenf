@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
+import { BookOpen, Heart, History, UserCircle } from 'lucide-react'
 import { QuestionCard } from './question-card'
 import { AnswerFeedback } from './answer-feedback'
 import { SignupGate } from '@/features/trial/signup-gate'
@@ -35,6 +37,7 @@ export function FeedShell({
   const [error, setError] = useState<string | null>(null)
   const [favorited, setFavorited] = useState(false)
   const [favoriteMsg, setFavoriteMsg] = useState<string | null>(null)
+  const [subscriptionActive, setSubscriptionActive] = useState(false)
 
   const loadNext = useCallback(async () => {
     setLoading(true)
@@ -55,6 +58,7 @@ export function FeedShell({
       if (trial_status.signup_required) setGate('signup')
       else if (trial_status.paywall_required) setGate('paywall')
       else setGate('none')
+      setSubscriptionActive(trial_status.subscription_active)
       setQuestion(q)
     } catch {
       setError('Não foi possível carregar a questão.')
@@ -91,6 +95,7 @@ export function FeedShell({
         return
       }
       setFeedback(json.data)
+      setSubscriptionActive(json.data.trial_status.subscription_active)
     } catch {
       setError('Não foi possível enviar a resposta.')
     } finally {
@@ -146,27 +151,50 @@ export function FeedShell({
     touchStartY.current = null
   }
 
+  const feedParams = new URLSearchParams({ career: careerSlug })
+  if (boardSlug) feedParams.set('board', boardSlug)
+  const feedHref = `/feed?${feedParams.toString()}`
+
   return (
     <div
-      className="mx-auto flex w-full max-w-xl flex-col gap-4 px-4 py-6"
+      className="mx-auto flex w-full max-w-[430px] flex-col gap-4 px-4 py-5 sm:py-8"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
+      <header className="flex items-center justify-between px-1">
+        <p className="aprova-wordmark text-[21px]">
+          aprova<span className="text-[var(--teal)]">enf</span>
+        </p>
+        <span
+          className={`aprova-pill ${subscriptionActive ? 'aprova-pill-pro' : ''}`}
+        >
+          {subscriptionActive ? 'PRO' : 'Trial'}
+        </span>
+      </header>
+
       {error && (
-        <p className="rounded-lg bg-rose-50 px-4 py-2 text-sm text-rose-700">
+        <p className="rounded-[var(--radius-sm)] bg-[var(--danger-bg)] px-4 py-2 text-sm text-[var(--danger)]">
           {error}
         </p>
       )}
 
       {loading && (
-        <p className="py-12 text-center text-sm text-slate-600">Carregando...</p>
+        <p className="py-12 text-center text-sm text-[var(--muted)]">
+          Carregando...
+        </p>
       )}
 
       {!loading && gate === 'signup' && <SignupGate careerSlug={careerSlug} />}
       {!loading && gate === 'paywall' && <Paywall />}
 
       {!loading && gate === 'none' && question && (
-        <article className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+        <article className="relative rounded-[var(--radius)] border border-[color:var(--line-2)] bg-white p-[22px] shadow-[0_10px_30px_-15px_rgba(20,43,38,0.15)]">
+          <div className="mb-4 flex justify-end">
+            <span className="aprova-timer" aria-label="Indicador de leitura">
+              <span className="aprova-dot" aria-hidden="true" />
+              leitura
+            </span>
+          </div>
           <QuestionCard
             key={question.id}
             question={question}
@@ -179,7 +207,7 @@ export function FeedShell({
           />
           {favoriteMsg && (
             <p
-              className="mt-3 rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-700"
+              className="mt-3 rounded-[var(--radius-sm)] bg-[var(--warn-bg)] px-4 py-2 text-sm text-[var(--warn)]"
               data-testid="favorite-message"
             >
               {favoriteMsg}
@@ -188,7 +216,7 @@ export function FeedShell({
           {feedback && (
             <div className="mt-5">
               <AnswerFeedback feedback={feedback} onNext={advance} />
-              <p className="mt-2 text-center text-xs text-slate-300">
+              <p className="mt-2 text-center text-xs text-[var(--hint)]">
                 Deslize para cima para a próxima
               </p>
             </div>
@@ -197,10 +225,41 @@ export function FeedShell({
       )}
 
       {!loading && gate === 'none' && !question && (
-        <p className="py-12 text-center text-sm text-slate-500">
+        <p className="py-12 text-center text-sm text-[var(--muted)]">
           Não há mais questões disponíveis para esta configuração.
         </p>
       )}
+
+      <nav className="grid grid-cols-4 border-t border-[color:var(--line)] bg-white text-[10.5px] font-medium text-[var(--muted)]">
+        <Link
+          href={feedHref}
+          className="flex flex-col items-center gap-1 px-1 py-3 text-[var(--teal)]"
+        >
+          <BookOpen size={21} />
+          Questões
+        </Link>
+        <Link
+          href="/favorites"
+          className="flex flex-col items-center gap-1 px-1 py-3 transition hover:text-[var(--teal)]"
+        >
+          <Heart size={21} />
+          Favoritos
+        </Link>
+        <Link
+          href="/errors"
+          className="flex flex-col items-center gap-1 px-1 py-3 transition hover:text-[var(--teal)]"
+        >
+          <History size={21} />
+          Erros
+        </Link>
+        <Link
+          href="/login"
+          className="flex flex-col items-center gap-1 px-1 py-3 transition hover:text-[var(--teal)]"
+        >
+          <UserCircle size={21} />
+          Conta
+        </Link>
+      </nav>
     </div>
   )
 }
