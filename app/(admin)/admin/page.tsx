@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { resolveAdminContext } from '@/features/admin/admin-permissions'
 import { getAdminMetrics } from '@/features/admin/admin-metrics-service'
@@ -45,7 +46,15 @@ export default async function AdminDashboardPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-4xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-slate-900">Painel administrativo</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-slate-900">Painel administrativo</h1>
+        <Link
+          href="/admin/authors"
+          className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700"
+        >
+          Gerenciar autores
+        </Link>
+      </div>
 
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">

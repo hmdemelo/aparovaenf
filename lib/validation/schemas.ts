@@ -133,6 +133,23 @@ export const authorQuestionInputSchema = z.object({
 })
 export type AuthorQuestionInput = z.infer<typeof authorQuestionInputSchema>
 
+// --- Admin: author creation ----------------------------------------------
+
+/**
+ * Admin payload to provision a new author. The admin sets a temporary password
+ * the author can change later. `display_name` is what appears on questions and
+ * the public authors section; the optional fields populate the author profile.
+ */
+export const createAuthorInputSchema = z.object({
+  email: z.string().email('e-mail inválido'),
+  password: z.string().min(8, 'a senha deve ter pelo menos 8 caracteres'),
+  name: z.string().min(1, 'nome é obrigatório'),
+  display_name: z.string().min(1, 'nome de exibição é obrigatório'),
+  short_bio: z.string().max(280, 'bio muito longa').optional().nullable(),
+  instagram: z.string().max(60).optional().nullable(),
+})
+export type CreateAuthorInput = z.infer<typeof createAuthorInputSchema>
+
 // --- Billing --------------------------------------------------------------
 
 export const checkoutInputSchema = z.object({
