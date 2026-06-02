@@ -1,14 +1,55 @@
 'use client'
 
 import { Check } from 'lucide-react'
-import { PLAN_LIST } from './plans'
+import { useState } from 'react'
+import { PLAN_LIST, type PlanId } from './plans'
 
-/**
- * Shown after the 5 free questions are used. Presents the monthly and annual
- * plans. Checkout wiring (Abacate Pay) is delivered in US3; for now the CTA is
- * a placeholder the paywall renders so the trial gate is complete.
- */
-export function Paywall({ onChoosePlan }: { onChoosePlan?: (plan: string) => void }) {
+type ApiEnvelope<T> =
+  | { success: true; data: T }
+  | { success: false; error: { code: string; message: string } }
+
+type CheckoutResponse = {
+  checkout_url: string
+}
+
+export function Paywall({
+  onChoosePlan,
+}: {
+  onChoosePlan?: (plan: PlanId) => void
+}) {
+  const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  async function startCheckout(plan: PlanId) {
+    onChoosePlan?.(plan)
+    setLoadingPlan(plan)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/billing/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      })
+      const json: ApiEnvelope<CheckoutResponse> = await response.json()
+
+      if (!json.success) {
+        setError(
+          json.error.code === 'unauthenticated'
+            ? 'Entre na sua conta para assinar.'
+            : 'Não foi possível iniciar o checkout. Tente novamente.',
+        )
+        return
+      }
+
+      window.location.assign(json.data.checkout_url)
+    } catch {
+      setError('Não foi possível iniciar o checkout. Tente novamente.')
+    } finally {
+      setLoadingPlan(null)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-5" data-testid="paywall">
       <div className="text-center">
@@ -30,7 +71,7 @@ export function Paywall({ onChoosePlan }: { onChoosePlan?: (plan: string) => voi
             <div>
               <p className="text-sm font-semibold text-slate-500">{plan.label}</p>
               <p className="text-2xl font-bold text-slate-900">{plan.priceLabel}</p>
-              <p className="text-xs text-slate-400">{plan.cadenceLabel}</p>
+              <p className="text-xs text-slate-600">{plan.cadenceLabel}</p>
             </div>
             <ul className="flex flex-col gap-1 text-sm text-slate-600">
               <li className="flex items-center gap-2">
@@ -45,14 +86,28 @@ export function Paywall({ onChoosePlan }: { onChoosePlan?: (plan: string) => voi
             </ul>
             <button
               type="button"
-              onClick={() => onChoosePlan?.(plan.id)}
+              onClick={() => void startCheckout(plan.id)}
+              disabled={loadingPlan !== null}
+              data-testid={`checkout-${plan.id}`}
               className="mt-auto rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700"
             >
-              Assinar {plan.label.toLowerCase()}
+              {loadingPlan === plan.id
+                ? 'Abrindo checkout...'
+                : `Assinar ${plan.label.toLowerCase()}`}
             </button>
           </div>
         ))}
       </div>
+
+      {error && (
+        <p
+          className="rounded-lg bg-rose-50 px-4 py-2 text-center text-sm text-rose-700"
+          data-testid="checkout-error"
+          aria-live="polite"
+        >
+          {error}
+        </p>
+      )}
     </div>
   )
 }

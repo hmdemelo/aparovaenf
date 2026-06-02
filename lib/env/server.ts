@@ -25,6 +25,18 @@ const serverEnvSchema = z.object({
   ABACATE_PAY_WEBHOOK_SECRET: z
     .string()
     .min(1, 'ABACATE_PAY_WEBHOOK_SECRET is required'),
+  ABACATE_PAY_WEBHOOK_PUBLIC_KEY: z
+    .string()
+    .min(1, 'ABACATE_PAY_WEBHOOK_PUBLIC_KEY cannot be empty')
+    .optional(),
+  ABACATE_PAY_MONTHLY_PRODUCT_ID: z
+    .string()
+    .min(1, 'ABACATE_PAY_MONTHLY_PRODUCT_ID cannot be empty')
+    .optional(),
+  ABACATE_PAY_ANNUAL_PRODUCT_ID: z
+    .string()
+    .min(1, 'ABACATE_PAY_ANNUAL_PRODUCT_ID cannot be empty')
+    .optional(),
   NEXT_PUBLIC_APP_URL: z
     .string()
     .url('NEXT_PUBLIC_APP_URL must be a valid URL'),
