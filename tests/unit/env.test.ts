@@ -18,6 +18,19 @@ describe('parseServerEnv', () => {
     expect(env.NEXT_PUBLIC_APP_URL).toBe('http://localhost:3000')
   })
 
+  it('accepts optional Abacate Pay product and webhook signature settings', () => {
+    const env = parseServerEnv({
+      ...validEnv,
+      ABACATE_PAY_WEBHOOK_PUBLIC_KEY: 'abacate-public-key',
+      ABACATE_PAY_MONTHLY_PRODUCT_ID: 'prod_monthly',
+      ABACATE_PAY_ANNUAL_PRODUCT_ID: 'prod_annual',
+    })
+
+    expect(env.ABACATE_PAY_WEBHOOK_PUBLIC_KEY).toBe('abacate-public-key')
+    expect(env.ABACATE_PAY_MONTHLY_PRODUCT_ID).toBe('prod_monthly')
+    expect(env.ABACATE_PAY_ANNUAL_PRODUCT_ID).toBe('prod_annual')
+  })
+
   it('throws when a required variable is missing', () => {
     const { SUPABASE_SERVICE_ROLE_KEY, ...incomplete } = validEnv
     void SUPABASE_SERVICE_ROLE_KEY

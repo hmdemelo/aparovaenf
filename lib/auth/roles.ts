@@ -1,4 +1,5 @@
 import 'server-only'
+import { evaluateSubscriptionAccess } from '@/features/billing/subscription-rules'
 import { createSupabaseServerClient } from '@/lib/db/server'
 import type { UserRole } from '@/lib/validation/schemas'
 
@@ -78,12 +79,17 @@ export async function isSubscriber(): Promise<boolean> {
   const supabase = await createSupabaseServerClient()
   const { data } = await supabase
     .from('subscriptions')
-    .select('id')
+    .select('status, current_period_end')
     .eq('user_id', user.id)
     .eq('status', 'active')
+    .order('current_period_end', { ascending: false, nullsFirst: false })
     .maybeSingle()
 
-  return data !== null
+  return evaluateSubscriptionAccess({
+    isAuthenticated: true,
+    status: data?.status ?? null,
+    currentPeriodEnd: data?.current_period_end ?? null,
+  }).isSubscriber
 }
 
 export class AuthorizationError extends Error {

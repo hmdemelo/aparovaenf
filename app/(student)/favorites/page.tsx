@@ -40,7 +40,7 @@ export default async function FavoritesPage() {
               className="rounded-xl border border-slate-200 bg-white px-4 py-3"
             >
               {f.subject && (
-                <span className="text-xs text-slate-400">{f.subject}</span>
+                <span className="text-xs text-slate-600">{f.subject}</span>
               )}
               <p className="line-clamp-2 text-sm text-slate-700">{f.statement}</p>
             </li>

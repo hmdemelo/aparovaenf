@@ -17,7 +17,7 @@ export default async function FeedPage({
       <header className="border-b border-slate-100 bg-white">
         <div className="mx-auto flex max-w-xl items-center justify-between px-4 py-3">
           <span className="text-lg font-bold text-emerald-600">aprovaenf</span>
-          <span className="text-xs text-slate-400">Feed de questões</span>
+          <span className="text-xs text-slate-600">Feed de questões</span>
         </div>
       </header>
       <FeedShell careerSlug={career} boardSlug={board} />

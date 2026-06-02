@@ -27,7 +27,7 @@ export function AnswerFeedback({ feedback, onNext }: AnswerFeedbackProps) {
 
       {feedback.general_comment && (
         <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
             Comentário
           </p>
           <p className="text-sm leading-relaxed text-slate-700">
@@ -38,7 +38,7 @@ export function AnswerFeedback({ feedback, onNext }: AnswerFeedbackProps) {
 
       {feedback.selected_alternative_comment && (
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
             Sobre a sua resposta
           </p>
           <p className="text-sm leading-relaxed text-slate-700">

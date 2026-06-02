@@ -89,7 +89,7 @@ export function QuestionCard({
       </div>
 
       {question.source && (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-600">
           {[
             question.source.orgao,
             question.source.cargo,

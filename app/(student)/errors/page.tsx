@@ -49,7 +49,7 @@ export default async function ErrorsPage() {
               className="rounded-xl border border-slate-200 bg-white p-4"
             >
               {e.subject && (
-                <span className="text-xs text-slate-400">{e.subject}</span>
+                <span className="text-xs text-slate-600">{e.subject}</span>
               )}
               <p className="text-sm text-slate-800">{e.statement}</p>
               {e.generalComment && (

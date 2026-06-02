@@ -74,7 +74,7 @@ export function AlternativesEditor({ alternatives, onChange }: Props) {
               type="button"
               onClick={() => remove(index)}
               aria-label="Remover alternativa"
-              className="text-slate-400 hover:text-rose-500"
+              className="text-slate-600 hover:text-rose-500"
             >
               <Trash2 size={16} />
             </button>

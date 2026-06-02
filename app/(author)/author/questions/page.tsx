@@ -50,7 +50,7 @@ export default async function AuthorQuestionsPage() {
                   </span>
                   <span className="flex items-center gap-2 whitespace-nowrap text-xs">
                     {subject && (
-                      <span className="text-slate-400">{subject.name}</span>
+                      <span className="text-slate-600">{subject.name}</span>
                     )}
                     <span
                       className={`rounded-full px-2 py-1 font-medium ${

@@ -159,7 +159,7 @@ export function FeedShell({
       )}
 
       {loading && (
-        <p className="py-12 text-center text-sm text-slate-400">Carregando...</p>
+        <p className="py-12 text-center text-sm text-slate-600">Carregando...</p>
       )}
 
       {!loading && gate === 'signup' && <SignupGate careerSlug={careerSlug} />}
@@ -168,6 +168,7 @@ export function FeedShell({
       {!loading && gate === 'none' && question && (
         <article className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
           <QuestionCard
+            key={question.id}
             question={question}
             feedback={feedback}
             submitting={submitting}

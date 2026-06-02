@@ -8,15 +8,15 @@
 
 **Purpose**: Initialize the real application and shared tooling.
 
-- [ ] T001 Initialize Next.js app with TypeScript in `/Users/hugo/projetos/aprovaenf`
-- [ ] T002 Configure Tailwind CSS in `tailwind.config.ts` and `app/globals.css`
-- [ ] T003 [P] Configure ESLint and formatting scripts in `package.json`
-- [ ] T004 [P] Configure Vitest in `vitest.config.ts`
-- [ ] T005 [P] Configure Playwright in `playwright.config.ts`
-- [ ] T006 Create `.env.example` with Supabase, Abacate Pay, and app URL placeholders
-- [ ] T007 Create app route groups in `app/(public)`, `app/(student)`, `app/(author)`, `app/(admin)`, and `app/api`
-- [ ] T008 Create feature folders in `features/questions`, `features/trial`, `features/billing`, `features/authors`, `features/student-feed`, and `features/analytics`
-- [ ] T009 Create shared folders in `components`, `lib/auth`, `lib/db`, `lib/env`, and `lib/security`
+- [x] T001 Initialize Next.js app with TypeScript in `/Users/hugo/projetos/aprovaenf`
+- [x] T002 Configure Tailwind CSS in `tailwind.config.ts` and `app/globals.css`
+- [x] T003 [P] Configure ESLint and formatting scripts in `package.json`
+- [x] T004 [P] Configure Vitest in `vitest.config.ts`
+- [x] T005 [P] Configure Playwright in `playwright.config.ts`
+- [x] T006 Create `.env.example` with Supabase, Abacate Pay, and app URL placeholders
+- [x] T007 Create app route groups in `app/(public)`, `app/(student)`, `app/(author)`, `app/(admin)`, and `app/api`
+- [x] T008 Create feature folders in `features/questions`, `features/trial`, `features/billing`, `features/authors`, `features/student-feed`, and `features/analytics`
+- [x] T009 Create shared folders in `components`, `lib/auth`, `lib/db`, `lib/env`, and `lib/security`
 
 ---
 
@@ -24,19 +24,19 @@
 
 **Purpose**: Core infrastructure that MUST complete before user stories.
 
-- [ ] T010 Write env validation tests in `tests/unit/env.test.ts`
-- [ ] T011 Implement env validation in `lib/env/server.ts`
-- [ ] T012 Create Supabase migration for core enums and reference tables in `supabase/migrations/001_core.sql`
-- [ ] T013 Create Supabase migration for users, authors, questions, alternatives, answers, favorites, subscriptions, payment events, and product events in `supabase/migrations/002_mvp_schema.sql`
-- [ ] T014 Create RLS policies for student-owned data, author-owned questions, and admin access in `supabase/migrations/003_rls_policies.sql`
-- [ ] T015 [P] Create Supabase client helpers in `lib/db/server.ts` and `lib/db/browser.ts`
-- [ ] T016 [P] Create auth role helpers in `lib/auth/roles.ts`
-- [ ] T017 [P] Create API response envelope helpers in `lib/api/response.ts`
-- [ ] T018 [P] Create Zod schemas for shared validation in `lib/validation/schemas.ts`
-- [ ] T019 Seed careers, priority boards, subjects, and demo author users in `supabase/seed.sql`
-- [ ] T020 Create product event service tests in `tests/unit/product-events.test.ts`
-- [ ] T021 Implement product event service in `features/analytics/product-events.ts`
-- [ ] T022 Run local migration and seed validation with Supabase local
+- [x] T010 Write env validation tests in `tests/unit/env.test.ts`
+- [x] T011 Implement env validation in `lib/env/server.ts`
+- [x] T012 Create Supabase migration for core enums and reference tables in `supabase/migrations/001_core.sql`
+- [x] T013 Create Supabase migration for users, authors, questions, alternatives, answers, favorites, subscriptions, payment events, and product events in `supabase/migrations/002_mvp_schema.sql`
+- [x] T014 Create RLS policies for student-owned data, author-owned questions, and admin access in `supabase/migrations/003_rls_policies.sql`
+- [x] T015 [P] Create Supabase client helpers in `lib/db/server.ts` and `lib/db/browser.ts`
+- [x] T016 [P] Create auth role helpers in `lib/auth/roles.ts`
+- [x] T017 [P] Create API response envelope helpers in `lib/api/response.ts`
+- [x] T018 [P] Create Zod schemas for shared validation in `lib/validation/schemas.ts`
+- [x] T019 Seed careers, priority boards, subjects, and demo author users in `supabase/seed.sql`
+- [x] T020 Create product event service tests in `tests/unit/product-events.test.ts`
+- [x] T021 Implement product event service in `features/analytics/product-events.ts`
+- [x] T022 Run local migration and seed validation with Supabase local
 
 **Checkpoint**: Foundation ready; user stories can start.
 
@@ -50,24 +50,24 @@
 
 ### Tests
 
-- [ ] T023 [P] [US1] Write unit tests for trial counting in `tests/unit/trial-rules.test.ts`
-- [ ] T024 [P] [US1] Write integration tests for next-question and answer submission in `tests/integration/student-feed.test.ts`
-- [ ] T025 [P] [US1] Write E2E test for visitor-to-paywall flow in `tests/e2e/student-trial.spec.ts`
+- [x] T023 [P] [US1] Write unit tests for trial counting in `tests/unit/trial-rules.test.ts`
+- [x] T024 [P] [US1] Write integration tests for next-question and answer submission in `tests/integration/student-feed.test.ts`
+- [x] T025 [P] [US1] Write E2E test for visitor-to-paywall flow in `tests/e2e/student-trial.spec.ts`
 
 ### Implementation
 
-- [ ] T026 [P] [US1] Implement trial rule service in `features/trial/trial-service.ts`
-- [ ] T027 [P] [US1] Implement feed question repository in `features/questions/question-repository.ts`
-- [ ] T028 [US1] Implement next-question route in `app/api/feed/next/route.ts`
-- [ ] T029 [US1] Implement answer submission route in `app/api/answers/route.ts`
-- [ ] T030 [US1] Implement trial status route in `app/api/trial/status/route.ts`
-- [ ] T031 [US1] Build mobile-first question card in `features/student-feed/question-card.tsx`
-- [ ] T032 [US1] Build feedback/comment panel in `features/student-feed/answer-feedback.tsx`
-- [ ] T033 [US1] Build swipe/next navigation behavior in `features/student-feed/feed-shell.tsx`
-- [ ] T034 [US1] Build signup gate UI in `features/trial/signup-gate.tsx`
-- [ ] T035 [US1] Build paywall UI in `features/billing/paywall.tsx`
-- [ ] T036 [US1] Wire student feed route in `app/(student)/feed/page.tsx`
-- [ ] T037 [US1] Record `career_selected`, `question_viewed`, `question_answered`, `signup_required_shown`, and `trial_finished`
+- [x] T026 [P] [US1] Implement trial rule service in `features/trial/trial-service.ts`
+- [x] T027 [P] [US1] Implement feed question repository in `features/questions/question-repository.ts`
+- [x] T028 [US1] Implement next-question route in `app/api/feed/next/route.ts`
+- [x] T029 [US1] Implement answer submission route in `app/api/answers/route.ts`
+- [x] T030 [US1] Implement trial status route in `app/api/trial/status/route.ts`
+- [x] T031 [US1] Build mobile-first question card in `features/student-feed/question-card.tsx`
+- [x] T032 [US1] Build feedback/comment panel in `features/student-feed/answer-feedback.tsx`
+- [x] T033 [US1] Build swipe/next navigation behavior in `features/student-feed/feed-shell.tsx`
+- [x] T034 [US1] Build signup gate UI in `features/trial/signup-gate.tsx`
+- [x] T035 [US1] Build paywall UI in `features/billing/paywall.tsx`
+- [x] T036 [US1] Wire student feed route in `app/(student)/feed/page.tsx`
+- [x] T037 [US1] Record `career_selected`, `question_viewed`, `question_answered`, `signup_required_shown`, and `trial_finished`
 
 **Checkpoint**: Student trial loop is independently demoable.
 
@@ -82,21 +82,21 @@ comment, then succeeds with a valid question.
 
 ### Tests
 
-- [ ] T038 [P] [US2] Write unit tests for question publish validation in `tests/unit/question-validation.test.ts`
-- [ ] T039 [P] [US2] Write integration tests for author question routes in `tests/integration/author-questions.test.ts`
-- [ ] T040 [P] [US2] Write E2E test for author publishing in `tests/e2e/author-publish.spec.ts`
+- [x] T038 [P] [US2] Write unit tests for question publish validation in `tests/unit/question-validation.test.ts`
+- [x] T039 [P] [US2] Write integration tests for author question routes in `tests/integration/author-questions.test.ts`
+- [x] T040 [P] [US2] Write E2E test for author publishing in `tests/e2e/author-publish.spec.ts`
 
 ### Implementation
 
-- [ ] T041 [P] [US2] Implement question validation in `features/questions/question-validation.ts`
-- [ ] T042 [P] [US2] Implement author question service in `features/authors/author-question-service.ts`
-- [ ] T043 [US2] Implement author question list route in `app/api/author/questions/route.ts`
-- [ ] T044 [US2] Implement author question detail update route in `app/api/author/questions/[id]/route.ts`
-- [ ] T045 [US2] Implement publish route in `app/api/author/questions/[id]/publish/route.ts`
-- [ ] T046 [US2] Build author question list page in `app/(author)/author/questions/page.tsx`
-- [ ] T047 [US2] Build question editor form in `features/authors/question-editor.tsx`
-- [ ] T048 [US2] Build variable alternatives editor in `features/authors/alternatives-editor.tsx`
-- [ ] T049 [US2] Enforce author ownership checks in `features/authors/author-permissions.ts`
+- [x] T041 [P] [US2] Implement question validation in `features/questions/question-validation.ts`
+- [x] T042 [P] [US2] Implement author question service in `features/authors/author-question-service.ts`
+- [x] T043 [US2] Implement author question list route in `app/api/author/questions/route.ts`
+- [x] T044 [US2] Implement author question detail update route in `app/api/author/questions/[id]/route.ts`
+- [x] T045 [US2] Implement publish route in `app/api/author/questions/[id]/publish/route.ts`
+- [x] T046 [US2] Build author question list page in `app/(author)/author/questions/page.tsx`
+- [x] T047 [US2] Build question editor form in `features/authors/question-editor.tsx`
+- [x] T048 [US2] Build variable alternatives editor in `features/authors/alternatives-editor.tsx`
+- [x] T049 [US2] Enforce author ownership checks in `features/authors/author-permissions.ts`
 
 **Checkpoint**: Author content pipeline is independently demoable.
 
@@ -111,20 +111,20 @@ unlocks feed.
 
 ### Tests
 
-- [ ] T050 [P] [US3] Write unit tests for subscription access rules in `tests/unit/subscription-rules.test.ts`
-- [ ] T051 [P] [US3] Write integration tests for checkout route in `tests/integration/billing-checkout.test.ts`
-- [ ] T052 [P] [US3] Write integration tests for webhook idempotency in `tests/integration/abacate-webhook.test.ts`
-- [ ] T053 [P] [US3] Write E2E paywall-to-unlock smoke in `tests/e2e/subscription-unlock.spec.ts`
+- [x] T050 [P] [US3] Write unit tests for subscription access rules in `tests/unit/subscription-rules.test.ts`
+- [x] T051 [P] [US3] Write integration tests for checkout route in `tests/integration/billing-checkout.test.ts`
+- [x] T052 [P] [US3] Write integration tests for webhook idempotency in `tests/integration/abacate-webhook.test.ts`
+- [x] T053 [P] [US3] Write E2E paywall-to-unlock smoke in `tests/e2e/subscription-unlock.spec.ts`
 
 ### Implementation
 
-- [ ] T054 [P] [US3] Implement billing plan constants in `features/billing/plans.ts`
-- [ ] T055 [P] [US3] Implement subscription service in `features/billing/subscription-service.ts`
-- [ ] T056 [US3] Implement checkout route in `app/api/billing/checkout/route.ts`
-- [ ] T057 [US3] Implement Abacate Pay webhook route in `app/api/webhooks/abacate-pay/route.ts`
-- [ ] T058 [US3] Implement payment event repository in `features/billing/payment-event-repository.ts`
-- [ ] T059 [US3] Add paywall checkout actions to `features/billing/paywall.tsx`
-- [ ] T060 [US3] Record `checkout_started` and `subscription_activated` events
+- [x] T054 [P] [US3] Implement billing plan constants in `features/billing/plans.ts`
+- [x] T055 [P] [US3] Implement subscription service in `features/billing/subscription-service.ts`
+- [x] T056 [US3] Implement checkout route in `app/api/billing/checkout/route.ts`
+- [x] T057 [US3] Implement Abacate Pay webhook route in `app/api/webhooks/abacate-pay/route.ts`
+- [x] T058 [US3] Implement payment event repository in `features/billing/payment-event-repository.ts`
+- [x] T059 [US3] Add paywall checkout actions to `features/billing/paywall.tsx`
+- [x] T060 [US3] Record `checkout_started` and `subscription_activated` events
 
 **Checkpoint**: Paid access unlock is independently demoable.
 
@@ -138,18 +138,18 @@ unlocks feed.
 
 ### Tests
 
-- [ ] T061 [P] [US4] Write unit tests for favorite permission rules in `tests/unit/favorite-rules.test.ts`
-- [ ] T062 [P] [US4] Write integration tests for favorite routes in `tests/integration/favorites.test.ts`
-- [ ] T063 [P] [US4] Write E2E test for subscriber favorites and errors in `tests/e2e/subscriber-retention.spec.ts`
+- [x] T061 [P] [US4] Write unit tests for favorite permission rules in `tests/unit/favorite-rules.test.ts`
+- [x] T062 [P] [US4] Write integration tests for favorite routes in `tests/integration/favorites.test.ts`
+- [x] T063 [P] [US4] Write E2E test for subscriber favorites and errors in `tests/e2e/subscriber-retention.spec.ts`
 
 ### Implementation
 
-- [ ] T064 [P] [US4] Implement favorites service in `features/student-feed/favorites-service.ts`
-- [ ] T065 [P] [US4] Implement error history service in `features/student-feed/error-history-service.ts`
-- [ ] T066 [US4] Implement favorites routes in `app/api/favorites/route.ts` and `app/api/favorites/[questionId]/route.ts`
-- [ ] T067 [US4] Build favorites page in `app/(student)/favorites/page.tsx`
-- [ ] T068 [US4] Build error history page in `app/(student)/errors/page.tsx`
-- [ ] T069 [US4] Add favorite button behavior to `features/student-feed/question-card.tsx`
+- [x] T064 [P] [US4] Implement favorites service in `features/student-feed/favorites-service.ts`
+- [x] T065 [P] [US4] Implement error history service in `features/student-feed/error-history-service.ts`
+- [x] T066 [US4] Implement favorites routes in `app/api/favorites/route.ts` and `app/api/favorites/[questionId]/route.ts`
+- [x] T067 [US4] Build favorites page in `app/(student)/favorites/page.tsx`
+- [x] T068 [US4] Build error history page in `app/(student)/errors/page.tsx`
+- [x] T069 [US4] Add favorite button behavior to `features/student-feed/question-card.tsx`
 
 ---
 
@@ -161,18 +161,18 @@ unlocks feed.
 
 ### Tests
 
-- [ ] T070 [P] [US5] Write integration tests for admin routes in `tests/integration/admin.test.ts`
-- [ ] T071 [P] [US5] Write E2E test for admin moderation in `tests/e2e/admin-moderation.spec.ts`
+- [x] T070 [P] [US5] Write integration tests for admin routes in `tests/integration/admin.test.ts`
+- [x] T071 [P] [US5] Write E2E test for admin moderation in `tests/e2e/admin-moderation.spec.ts`
 
 ### Implementation
 
-- [ ] T072 [P] [US5] Implement admin permission guard in `features/admin/admin-permissions.ts`
-- [ ] T073 [P] [US5] Implement admin metrics service in `features/admin/admin-metrics-service.ts`
-- [ ] T074 [US5] Implement admin users route in `app/api/admin/users/route.ts`
-- [ ] T075 [US5] Implement admin questions route in `app/api/admin/questions/route.ts`
-- [ ] T076 [US5] Implement admin unpublish route in `app/api/admin/questions/[id]/unpublish/route.ts`
-- [ ] T077 [US5] Implement admin metrics route in `app/api/admin/metrics/route.ts`
-- [ ] T078 [US5] Build admin dashboard in `app/(admin)/admin/page.tsx`
+- [x] T072 [P] [US5] Implement admin permission guard in `features/admin/admin-permissions.ts`
+- [x] T073 [P] [US5] Implement admin metrics service in `features/admin/admin-metrics-service.ts`
+- [x] T074 [US5] Implement admin users route in `app/api/admin/users/route.ts`
+- [x] T075 [US5] Implement admin questions route in `app/api/admin/questions/route.ts`
+- [x] T076 [US5] Implement admin unpublish route in `app/api/admin/questions/[id]/unpublish/route.ts`
+- [x] T077 [US5] Implement admin metrics route in `app/api/admin/metrics/route.ts`
+- [x] T078 [US5] Build admin dashboard in `app/(admin)/admin/page.tsx`
 
 ---
 
@@ -184,18 +184,18 @@ unlocks feed.
 
 ### Tests
 
-- [ ] T079 [P] [US6] Write E2E landing-to-first-question test in `tests/e2e/landing.spec.ts`
-- [ ] T080 [P] [US6] Write accessibility smoke test for landing and feed in `tests/e2e/accessibility.spec.ts`
+- [x] T079 [P] [US6] Write E2E landing-to-first-question test in `tests/e2e/landing.spec.ts`
+- [x] T080 [P] [US6] Write accessibility smoke test for landing and feed in `tests/e2e/accessibility.spec.ts`
 
 ### Implementation
 
-- [ ] T081 [P] [US6] Convert prototype visual tokens into `app/globals.css`
-- [ ] T082 [US6] Build public landing page in `app/(public)/page.tsx`
-- [ ] T083 [US6] Build author trust section in `features/authors/public-authors.tsx`
-- [ ] T084 [US6] Build pricing section with R$ 29,90 and R$ 287,00 in `features/billing/pricing-section.tsx`
-- [ ] T085 [US6] Create terms page in `app/(public)/termos/page.tsx`
-- [ ] T086 [US6] Create privacy page in `app/(public)/privacidade/page.tsx`
-- [ ] T087 [US6] Configure metadata, Open Graph, and favicon in `app/layout.tsx`
+- [x] T081 [P] [US6] Convert prototype visual tokens into `app/globals.css`
+- [x] T082 [US6] Build public landing page in `app/(public)/page.tsx`
+- [x] T083 [US6] Build author trust section in `features/authors/public-authors.tsx`
+- [x] T084 [US6] Build pricing section with R$ 29,90 and R$ 287,00 in `features/billing/pricing-section.tsx`
+- [x] T085 [US6] Create terms page in `app/(public)/termos/page.tsx`
+- [x] T086 [US6] Create privacy page in `app/(public)/privacidade/page.tsx`
+- [x] T087 [US6] Configure metadata, Open Graph, and favicon in `app/layout.tsx`
 
 ---
 
@@ -203,8 +203,8 @@ unlocks feed.
 
 - [ ] T088 [P] Update docs with implemented behavior in `docs/aprovaenf-produto-mvp.md`
 - [ ] T089 [P] Add README setup and verification guide in `README.md`
-- [ ] T090 Run full verification: typecheck, lint, unit, integration, E2E, build
-- [ ] T091 Run security review for auth, RLS, Abacate Pay secrets, webhook, and admin routes
+- [x] T090 Run full verification: typecheck, lint, unit, integration, E2E, build
+- [x] T091 Run security review for auth, RLS, Abacate Pay secrets, webhook, and admin routes
 - [ ] T092 Configure Vercel production environment variables
 - [ ] T093 Configure Supabase Pro production project and backup settings
 - [ ] T094 Configure Abacate Pay production plans and webhook URL

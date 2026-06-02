@@ -48,7 +48,7 @@ export default async function AdminDashboardPage() {
       <h1 className="mb-6 text-2xl font-bold text-slate-900">Painel administrativo</h1>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
           Visão geral
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -60,7 +60,7 @@ export default async function AdminDashboardPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
           Funil
         </h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -71,7 +71,7 @@ export default async function AdminDashboardPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
           Usuários
         </h2>
         <ul className="flex flex-col gap-1" data-testid="admin-users">
@@ -97,7 +97,7 @@ export default async function AdminDashboardPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-600">
           Questões
         </h2>
         <ul className="flex flex-col gap-2" data-testid="admin-questions">
@@ -108,7 +108,7 @@ export default async function AdminDashboardPage() {
             >
               <div className="min-w-0">
                 <p className="line-clamp-1 text-sm text-slate-700">{q.statement}</p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-600">
                   {q.author ?? 'sem autor'} · {q.subject ?? 'sem assunto'}
                 </p>
               </div>
