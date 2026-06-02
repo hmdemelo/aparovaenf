@@ -2,11 +2,12 @@
 
 ## 1. Visao geral
 
-O **aprovaenf** sera uma plataforma web responsiva de resolucao de questoes comentadas para concursos da area da saude, com foco inicial em:
+O **aprovaenf** sera uma plataforma web responsiva de resolucao de questoes comentadas para concursos da area da saude, com foco inicial de lancamento em:
 
 - Enfermagem
 - Tecnico em enfermagem
-- Medico
+
+Medico fica previsto para uma segunda fase, depois que a base inicial de questoes de enfermagem e tecnico em enfermagem estiver consistente.
 
 A experiencia principal sera mobile-first, inspirada no consumo rapido de feeds verticais: uma questao por vez, leitura focada, resposta por toque, comentario imediato e avancar para a proxima questao.
 
@@ -18,7 +19,7 @@ A ideia central do produto e:
 
 ### 2.1 Alunos
 
-Pessoas estudando para concursos da area da saude, principalmente enfermagem, tecnico em enfermagem e medicina.
+Pessoas estudando para concursos da area da saude, principalmente enfermagem e tecnico em enfermagem no lancamento. Medicina pode ser atendida em uma fase posterior.
 
 O aluno podera usar a plataforma em:
 
@@ -57,10 +58,9 @@ O aluno nao sera obrigado a criar conta antes de testar o produto.
 Fluxo inicial:
 
 1. Aluno acessa a landing page.
-2. Escolhe a carreira desejada:
+2. Escolhe a carreira desejada entre as carreiras disponiveis no lancamento:
    - Enfermagem
    - Tecnico em enfermagem
-   - Medico
 3. Opcionalmente escolhe uma banca em uma opcao discreta.
 4. Comeca a responder questoes imediatamente.
 5. Responde 2 questoes sem cadastro.
@@ -165,8 +165,10 @@ O sistema deve aceitar questoes com diferentes quantidades de opcoes, sem presum
 
 O comentario geral da questao sera obrigatorio.
 
-O comentario por alternativa sera opcional e podera ser preenchido a criterio do enfermeiro/autor.
+Regra final do MVP: o comentario por alternativa sera opcional e podera ser preenchido a criterio do enfermeiro/autor.
 O autor podera decidir se comentara todas as alternativas, apenas algumas ou nenhuma alternativa individualmente.
+
+Na votacao de aceite, houve sugestao para tornar o comentario por alternativa obrigatorio, mas a decisao final para o MVP e manter esse campo opcional para nao travar a producao inicial de questoes.
 
 Isso permite dois niveis de explicacao:
 
@@ -509,14 +511,21 @@ Campos iniciais:
 - Nome do produto: aprovaenf
 - Plataforma: web responsiva
 - Conteudo inicial: somente texto
+- Logica central do MVP aceita em PDFs por Malaquias Junior de Lacerda Nascimento e Raimunda Maria Ferreira de Almeida em 01/06/2026
+- Lancamento focado em Enfermagem e Tecnico em enfermagem
+- Medico fica para segunda fase
 - Navegacao mobile/tablet: swipe
 - Navegacao desktop: botao "Proxima"
 - Planos: mensal e anual
+- Preco mensal recomendado: R$ 29,90
+- Preco anual recomendado: R$ 287,00
 - Pagamento: Abacate Pay
+- Parcelamento anual: permitido pelo Abacate Pay
 - Trial: 2 questoes antes do cadastro + 3 depois do cadastro
 - Trial vinculado apenas a conta
 - Sem assinatura, o aluno nao revisa as 5 questoes gratuitas apos o fim do trial
 - Questoes: autorais e de provas anteriores
+- Questoes de provas oficiais: tratadas como material sem protecao autoral exclusiva, mantendo fonte, banca, cargo, ano e orgao quando disponiveis
 - Alternativas: quantidade variavel
 - Comentario geral: obrigatorio
 - Comentario por alternativa: opcional
@@ -531,10 +540,9 @@ Campos iniciais:
 
 Pontos para definir nas proximas conversas:
 
-- Quais planos e precos serao usados no lancamento
 - Se o aluno podera filtrar por assunto ja no MVP
-- Como lidar juridicamente com questoes de provas anteriores
 - Se havera limite de autores no MVP
 - Como sera a area publica de apresentacao dos quatro especialistas
+- Qual padrao visual sera usado para fonte, banca, cargo, ano e orgao em questoes de provas anteriores
 - Se o comentario por alternativa aparecera apenas da alternativa escolhida ou de todas apos resposta
 - Quais metricas o administrador vera no painel inicial

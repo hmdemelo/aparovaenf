@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+/*
+ * aprovaenf brand tokens. The product is a light, mobile-first experience built
+ * on slate/emerald; we keep a single light theme (no auto dark switch) so the
+ * explicit bg-slate-50 / bg-white surfaces stay consistent.
+ */
+:root {
+  --background: #f8fafc; /* slate-50 */
+  --foreground: #0f172a; /* slate-900 */
+  --brand: #059669; /* emerald-600 */
+  --brand-strong: #047857; /* emerald-700 */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/*
+ * Darken the emerald scale so the primary brand color meets WCAG AA contrast
+ * (4.5:1) as both text-on-white and white-on-button. Tailwind v4's default
+ * emerald-600 (#009966) only reaches 3.65:1. Overriding the tokens fixes every
+ * bg-emerald-600 / text-emerald-600 usage at once; emerald-700 stays darker so
+ * hover states remain distinct.
+ */
+@theme {
+  --color-emerald-600: #047857;
+  --color-emerald-700: #065f46;
+  /* Default slate-400 (#90a1b9) only reaches 2.63:1 on white; darken so muted
+     secondary text meets WCAG AA. */
+  --color-slate-400: #5b6779;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}

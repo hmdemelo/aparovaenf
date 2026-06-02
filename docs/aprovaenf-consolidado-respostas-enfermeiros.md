@@ -1,6 +1,11 @@
 # aprovaenf - Consolidado das respostas dos enfermeiros
 
-Fonte: planilha `aprovaenf - Decisoes para lancamento da plataforma (respostas).xlsx`.
+Fonte principal: planilha `aprovaenf - Decisoes para lancamento da plataforma (respostas).xlsx`.
+
+Fonte complementar: PDFs de aceite da logica central enviados em 01/06/2026:
+
+- `aprovaenf - Votacao de aceite(1).PDF`
+- `aprovaenf - Votacao de aceite.pdf`
 
 Respondentes analisados:
 
@@ -52,17 +57,16 @@ Motivos:
 ### Decisao recomendada para a plataforma
 
 - Plano mensal: R$ 29,90 por mes.
-- Plano anual: R$ 287,04 por ano.
+- Plano anual: R$ 287,00 por ano.
 - Comunicacao do anual: equivalente a R$ 23,92 por mes, cobrado anualmente.
-- Desconto anual: 20% em relacao ao mensal.
-- Cobranca anual: oferecer pagamento integral e parcelado se o Abacate Pay permitir.
-- Se o parcelamento gerar friccao tecnica, lancar primeiro com cobranca integral anual.
+- Desconto anual: aproximadamente 20% em relacao ao mensal.
+- Cobranca anual: oferecer pagamento integral e parcelado pelo Abacate Pay.
 
 ### Possivel texto comercial
 
 > Mensal: R$ 29,90 por mes.
 
-> Anual: R$ 287,04 por ano, equivalente a R$ 23,92 por mes.
+> Anual: R$ 287,00 por ano, equivalente a R$ 23,92 por mes.
 
 ## 3. Carreiras do lancamento
 
@@ -540,6 +544,12 @@ Pontos consolidados:
 - Nao prometer aprovacao garantida.
 - Reforcar que a plataforma ajuda, mas a disciplina do candidato continua essencial.
 
+Premissa juridica definida para o MVP:
+
+- Questoes de provas oficiais serao tratadas como material sem protecao autoral exclusiva, com base no entendimento de que atos oficiais nao sao objeto de protecao autoral pela Lei 9.610/1998, art. 8, IV.
+- Mesmo assim, toda questao de prova anterior deve registrar fonte, banca, cargo, ano e orgao quando essas informacoes estiverem disponiveis.
+- Questoes anuladas ou com gabarito alterado devem receber aviso editorial claro.
+
 ### Texto recomendado de aviso curto
 
 > O aprovaenf e uma plataforma de estudo complementar para concursos da saude. As questoes e comentarios tem finalidade educacional. Consulte sempre o edital, a bibliografia oficial e as atualizacoes normativas aplicaveis.
@@ -584,9 +594,9 @@ Respostas consolidadas dos enfermeiros apontam para 3 prioridades:
 ### Preco
 
 - Mensal: R$ 29,90.
-- Anual: R$ 287,04.
-- Anual com 20% de desconto.
-- Parcelamento anual somente se o Abacate Pay permitir sem atrasar o lancamento.
+- Anual: R$ 287,00.
+- Anual com desconto aproximado de 20%.
+- Parcelamento anual via Abacate Pay.
 
 ### Bancas
 
@@ -649,13 +659,84 @@ Subheadline recomendada:
 - Confirmar grafia das redes sociais.
 - Confirmar qualquer titulo academico antes de exibir publicamente.
 
-## 18. Pontos que ainda precisam de confirmacao
+## 18. Validacao por votacao de aceite
 
-- Confirmar se o preco anual sera exatamente R$ 287,04 ou arredondado para valor comercial, como R$ 287,00 ou R$ 289,90.
-- Confirmar se o Abacate Pay permite parcelamento anual da forma desejada.
+Dois enfermeiros enviaram comprovantes em PDF com o aceite da logica central do MVP.
+
+### 18.1 Malaquias Junior de Lacerda Nascimento
+
+E-mail identificado no PDF: `malakasjunior31@gmail.com`.
+
+Resultado:
+
+- Aceite geral: aceitou a logica central.
+- Aprovou todos os blocos sem inserir observacoes.
+
+Blocos aprovados:
+
+- Precos e assinatura.
+- Escopo de carreiras do MVP.
+- Bancas iniciais prioritarias.
+- Assuntos prioritarios.
+- Niveis de dificuldade.
+- Filtros e configuracao do feed.
+- Trial e bloqueios sem assinatura.
+- Comentarios das questoes.
+- Posicionamento da landing.
+- Responsabilidade, privacidade e provas anteriores.
+
+### 18.2 Raimunda Maria Ferreira de Almeida
+
+E-mail identificado no PDF: `rmfalmeida2020@gmail.com`.
+
+Resultado:
+
+- Aceite geral: aceitou a logica central.
+- Aprovou os blocos 1 a 7 e o bloco 10 sem observacoes.
+- Aprovou os blocos 8 e 9 com ajustes.
+
+Observacao no bloco 8, comentarios das questoes:
+
+> Comentario por alternativa e obrigatorio, pois ajuda o aluno a nao cometer o mesmo erro ou ficar com duvidas.
+
+Observacao no bloco 9, posicionamento da landing:
+
+> Sua aprovacao na palma da mao: Concursos saude.
+
+Observacao: no PDF, a palavra "palma" aparece digitada como "pama". A interpretacao acima corrige o provavel erro de digitacao.
+
+### 18.3 Consolidacao do aceite
+
+A logica central do MVP foi aceita pelos dois enfermeiros que responderam aos PDFs.
+
+Pontos confirmados pelo aceite:
+
+- Preco mensal e anual recomendados seguem como base do lancamento.
+- Lancamento focado em Enfermagem e Tecnico em enfermagem, com Medico em segunda fase.
+- Bancas iniciais seguem como IDIB, IDECAN, FGV, Instituto AOCP, IBFC e Consulplan.
+- Trial segue com 2 questoes antes do cadastro e 3 apos cadastro.
+- Comentarios ficam liberados durante o trial.
+- Sem assinatura, o aluno nao revisa as questoes gratuitas apos o fim do trial.
+- Sem assinatura, favoritos nao ficam salvos.
+- Comentario geral da questao segue obrigatorio.
+- Landing deve reforcar aprovacao, concursos da saude e uso pelo celular.
+
+Ponto de negocio ainda aberto:
+
+- Decidir somente como exibir os comentarios por alternativa apos a resposta: apenas o comentario da alternativa escolhida ou todos os comentarios disponiveis.
+
+Decisao final apos alinhamento:
+
+- Manter comentario geral obrigatorio.
+- Manter comentario por alternativa opcional no MVP.
+- Incentivar os autores a comentar alternativas sempre que isso melhorar o aprendizado.
+- Reavaliar a obrigatoriedade apos medir velocidade de cadastro, qualidade das explicacoes e feedback dos alunos.
+
+## 19. Pontos que ainda precisam de confirmacao
+
 - Confirmar se o filtro por assunto entra na versao 1.0 ou 1.1.
 - Confirmar lista final de bancas com base nos concursos mais proximos.
-- Confirmar fontes e regra editorial para questoes de provas anteriores.
+- Confirmar padrao de exibicao de fonte para questoes de provas anteriores.
 - Confirmar fotos e bios finais dos autores.
 - Confirmar titulo academico de Martinho antes de publicar "doutorado".
 - Confirmar grafia do Instagram de Raimunda.
