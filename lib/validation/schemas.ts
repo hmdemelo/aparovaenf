@@ -102,6 +102,37 @@ export const questionInputSchema = z.object({
 })
 export type QuestionInput = z.infer<typeof questionInputSchema>
 
+// --- Author authoring input (from the editor UI) -------------------------
+
+export const authorAlternativeSchema = z.object({
+  label: z.string().min(1).max(8),
+  text: z.string().min(1, 'alternative text is required'),
+  is_correct: z.boolean(),
+  alternative_comment: z.string().optional().nullable(),
+})
+export type AuthorAlternativeInput = z.infer<typeof authorAlternativeSchema>
+
+/**
+ * Author create/update payload. Looser than publish: a draft may be incomplete
+ * (publish-time invariants are enforced by validateForPublish). `statement` is
+ * always required so there is something to save.
+ */
+export const authorQuestionInputSchema = z.object({
+  career_id: uuidSchema,
+  subject_id: uuidSchema,
+  board_id: uuidSchema.optional().nullable(),
+  difficulty: difficultySchema,
+  source_type: sourceTypeSchema.default('autoral'),
+  source_orgao: z.string().optional().nullable(),
+  source_cargo: z.string().optional().nullable(),
+  source_year: z.number().int().min(1900).max(2100).optional().nullable(),
+  source_reference: z.string().optional().nullable(),
+  statement: z.string().min(1, 'statement is required'),
+  general_comment: z.string().optional().nullable(),
+  alternatives: z.array(authorAlternativeSchema).optional(),
+})
+export type AuthorQuestionInput = z.infer<typeof authorQuestionInputSchema>
+
 // --- Billing --------------------------------------------------------------
 
 export const checkoutInputSchema = z.object({

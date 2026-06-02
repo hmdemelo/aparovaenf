@@ -86,6 +86,23 @@ insert into auth.users (
   )
 on conflict (id) do nothing;
 
+-- GoTrue scans these token columns as Go strings; NULL breaks sign-in
+-- ("converting NULL to string is unsupported"). Seed them as empty strings.
+update auth.users set
+  confirmation_token = '',
+  recovery_token = '',
+  email_change_token_new = '',
+  email_change = '',
+  email_change_token_current = '',
+  phone_change = '',
+  phone_change_token = '',
+  reauthentication_token = ''
+where id in (
+  '00000000-0000-0000-0000-0000000000a1',
+  '00000000-0000-0000-0000-0000000000a2',
+  '00000000-0000-0000-0000-0000000000a3'
+);
+
 -- Elevate roles (handle_new_user defaults everyone to 'student').
 update user_profiles set role = 'admin'
   where id = '00000000-0000-0000-0000-0000000000a1';
