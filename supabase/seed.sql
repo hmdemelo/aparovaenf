@@ -83,6 +83,24 @@ insert into auth.users (
     now(), now(), now(),
     '{"provider":"email","providers":["email"]}',
     '{"name":"Raimunda Almeida"}'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '00000000-0000-0000-0000-0000000000a4',
+    'authenticated', 'authenticated', 'aluno@aprovaenf.local',
+    crypt('aprovaenf123', gen_salt('bf')),
+    now(), now(), now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"name":"Aluno Sem Assinatura"}'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '00000000-0000-0000-0000-0000000000a5',
+    'authenticated', 'authenticated', 'assinante@aprovaenf.local',
+    crypt('aprovaenf123', gen_salt('bf')),
+    now(), now(), now(),
+    '{"provider":"email","providers":["email"]}',
+    '{"name":"Aluno Assinante"}'
   )
 on conflict (id) do nothing;
 
@@ -100,7 +118,9 @@ update auth.users set
 where id in (
   '00000000-0000-0000-0000-0000000000a1',
   '00000000-0000-0000-0000-0000000000a2',
-  '00000000-0000-0000-0000-0000000000a3'
+  '00000000-0000-0000-0000-0000000000a3',
+  '00000000-0000-0000-0000-0000000000a4',
+  '00000000-0000-0000-0000-0000000000a5'
 );
 
 -- Elevate roles (handle_new_user defaults everyone to 'student').
@@ -120,6 +140,16 @@ insert into author_profiles (id, user_id, display_name, short_bio, is_public) va
   ('00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000a3',
    'Raimunda Almeida', 'Enfermeira especialista em preparacao para concursos.', true)
 on conflict (user_id) do nothing;
+
+-- Active subscription for the demo subscriber (stands in for US3 billing in
+-- local dev so favorites / error history can be exercised).
+insert into subscriptions (
+  user_id, plan, status, provider, current_period_start, current_period_end
+) values (
+  '00000000-0000-0000-0000-0000000000a5', 'annual', 'active', 'abacate_pay',
+  now(), now() + interval '365 days'
+)
+on conflict do nothing;
 
 -- =========================================================================
 -- Sample published questions (local demo content for the student feed)

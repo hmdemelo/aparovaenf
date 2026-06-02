@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Heart } from 'lucide-react'
 import type { AnswerResponse, FeedQuestionDto } from './types'
 
 const DIFFICULTY_LABEL: Record<FeedQuestionDto['difficulty'], string> = {
@@ -14,6 +15,9 @@ type QuestionCardProps = {
   feedback: AnswerResponse | null
   submitting: boolean
   onAnswer: (alternativeId: string) => void
+  // Favorite affordance (only wired once the question has been answered).
+  favorited?: boolean
+  onToggleFavorite?: () => void
 }
 
 /**
@@ -26,6 +30,8 @@ export function QuestionCard({
   feedback,
   submitting,
   onAnswer,
+  favorited,
+  onToggleFavorite,
 }: QuestionCardProps) {
   const [selected, setSelected] = useState<string | null>(null)
   const answered = feedback !== null
@@ -64,6 +70,21 @@ export function QuestionCard({
           <span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-700">
             Questão anulada
           </span>
+        )}
+        {onToggleFavorite && (
+          <button
+            type="button"
+            onClick={onToggleFavorite}
+            aria-label="Favoritar questão"
+            aria-pressed={favorited}
+            data-testid="favorite-button"
+            className="ml-auto text-slate-300 transition hover:text-rose-500"
+          >
+            <Heart
+              size={20}
+              className={favorited ? 'fill-rose-500 text-rose-500' : ''}
+            />
+          </button>
         )}
       </div>
 

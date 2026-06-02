@@ -33,11 +33,15 @@ export function FeedShell({
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [favorited, setFavorited] = useState(false)
+  const [favoriteMsg, setFavoriteMsg] = useState<string | null>(null)
 
   const loadNext = useCallback(async () => {
     setLoading(true)
     setError(null)
     setFeedback(null)
+    setFavorited(false)
+    setFavoriteMsg(null)
     try {
       const params = new URLSearchParams({ career: careerSlug })
       if (boardSlug) params.set('board', boardSlug)
@@ -100,6 +104,36 @@ export function FeedShell({
     void loadNext()
   }, [loadNext])
 
+  async function toggleFavorite() {
+    if (!question) return
+    setFavoriteMsg(null)
+    try {
+      if (favorited) {
+        await fetch(`/api/favorites/${question.id}`, { method: 'DELETE' })
+        setFavorited(false)
+        return
+      }
+      const res = await fetch('/api/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question_id: question.id }),
+      })
+      const json: ApiEnvelope<{ saved: boolean }> = await res.json()
+      if (json.success) {
+        setFavorited(true)
+        return
+      }
+      // Non-subscribers (and anonymous) cannot persist favorites.
+      setFavoriteMsg(
+        json.error.code === 'unauthenticated'
+          ? 'Entre na sua conta para salvar favoritos.'
+          : 'Assine para salvar favoritos.',
+      )
+    } catch {
+      setFavoriteMsg('Não foi possível salvar o favorito.')
+    }
+  }
+
   // Vertical swipe-to-next on touch devices, active only after feedback shows.
   const touchStartY = useRef<number | null>(null)
   function onTouchStart(e: React.TouchEvent) {
@@ -138,7 +172,18 @@ export function FeedShell({
             feedback={feedback}
             submitting={submitting}
             onAnswer={submitAnswer}
+            favorited={favorited}
+            // Favoriting becomes available after the question is answered.
+            onToggleFavorite={feedback ? toggleFavorite : undefined}
           />
+          {favoriteMsg && (
+            <p
+              className="mt-3 rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-700"
+              data-testid="favorite-message"
+            >
+              {favoriteMsg}
+            </p>
+          )}
           {feedback && (
             <div className="mt-5">
               <AnswerFeedback feedback={feedback} onNext={advance} />
