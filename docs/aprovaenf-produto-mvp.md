@@ -536,13 +536,14 @@ Campos iniciais:
 - Historico de erros para pagantes
 - IA prevista para o futuro, fora do MVP inicial
 
-## 19. Decisoes pendentes
+## 19. Decisões do MVP Resolvidas e Implementadas
 
-Pontos para definir nas proximas conversas:
+As decisões que estavam pendentes foram resolvidas e incorporadas ao código final do MVP:
 
-- Se o aluno podera filtrar por assunto ja no MVP
-- Se havera limite de autores no MVP
-- Como sera a area publica de apresentacao dos quatro especialistas
-- Qual padrao visual sera usado para fonte, banca, cargo, ano e orgao em questoes de provas anteriores
-- Se o comentario por alternativa aparecera apenas da alternativa escolhida ou de todas apos resposta
-- Quais metricas o administrador vera no painel inicial
+- **Filtro por Assunto**: Não incluído no feed do aluno para o MVP. O feed é filtrado por Carreira (obrigatório) e Banca (opcional). A classificação por assunto existe na base de dados e no editor para estruturação futura.
+- **Limite de Autores**: Não há limite rígido. O sistema suporta múltiplos autores provisionados de forma segura pelo painel administrativo (`/admin/authors`), que se conecta ao Supabase Auth Admin API.
+- **Apresentação dos Especialistas**: Integrada na landing page pública como uma seção de depoimentos e confiança, exibindo foto, mini-bio profissional e link para rede social.
+- **Metadados de Provas Anteriores**: Exibidos de forma concisa no topo do card da questão no formato `Órgão · Cargo · Ano`, posicionado logo abaixo das tags de assunto e dificuldade.
+- **Comentários por Alternativa**: O comentário específico da alternativa é revelado **apenas** para a alternativa que o aluno de fato escolheu e respondeu, evitando poluição visual e mantendo o foco no aprendizado do erro ou acerto.
+- **Métricas do Painel Admin**: O painel inicial do administrador (`/admin`) exibe indicadores em tempo real de alunos cadastrados, assinantes ativos, trials em andamento, questões publicadas e taxa de conversão (trial para pago).
+

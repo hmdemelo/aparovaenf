@@ -201,8 +201,8 @@ unlocks feed.
 
 ## Phase 9: Polish & Production Readiness
 
-- [ ] T088 [P] Update docs with implemented behavior in `docs/aprovaenf-produto-mvp.md`
-- [ ] T089 [P] Add README setup and verification guide in `README.md`
+- [x] T088 [P] Update docs with implemented behavior in `docs/aprovaenf-produto-mvp.md`
+- [x] T089 [P] Add README setup and verification guide in `README.md`
 - [x] T090 Run full verification: typecheck, lint, unit, integration, E2E, build
 - [x] T091 Run security review for auth, RLS, Abacate Pay secrets, webhook, and admin routes
 - [ ] T092 Configure Vercel production environment variables
