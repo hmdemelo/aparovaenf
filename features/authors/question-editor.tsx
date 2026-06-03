@@ -140,7 +140,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
   return (
     <div className="flex flex-col gap-4" data-testid="question-editor">
       <div className="grid gap-3 sm:grid-cols-3">
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
           Carreira
           <select
             value={careerId}
@@ -149,7 +149,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
               setSubjectId('')
             }}
             data-testid="career"
-            className="rounded-lg border border-slate-200 px-3 py-2"
+            className="aprova-field"
           >
             {careers.map((c) => (
               <option key={c.id} value={c.id}>
@@ -158,13 +158,13 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
           Assunto
           <select
             value={subjectId}
             onChange={(e) => setSubjectId(e.target.value)}
             data-testid="subject"
-            className="rounded-lg border border-slate-200 px-3 py-2"
+            className="aprova-field"
           >
             <option value="">Selecione</option>
             {careerSubjects.map((s) => (
@@ -174,13 +174,13 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm">
+        <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
           Dificuldade
           <select
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as Difficulty)}
             data-testid="difficulty"
-            className="rounded-lg border border-slate-200 px-3 py-2"
+            className="aprova-field"
           >
             {DIFFICULTIES.map((d) => (
               <option key={d.value} value={d.value}>
@@ -191,12 +191,12 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
         </label>
       </div>
 
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
         Banca (opcional)
         <select
           value={boardId}
           onChange={(e) => setBoardId(e.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 sm:w-1/3"
+          className="aprova-field sm:w-1/3"
         >
           <option value="">Nenhuma</option>
           {boards.map((b) => (
@@ -207,33 +207,33 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
         </select>
       </label>
 
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
         Enunciado
         <textarea
           value={statement}
           onChange={(e) => setStatement(e.target.value)}
           rows={4}
           data-testid="statement"
-          className="rounded-lg border border-slate-200 px-3 py-2"
+          className="aprova-field"
         />
       </label>
 
       <AlternativesEditor alternatives={alternatives} onChange={setAlternatives} />
 
-      <label className="flex flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
         Comentário geral (obrigatório para publicar)
         <textarea
           value={generalComment}
           onChange={(e) => setGeneralComment(e.target.value)}
           rows={3}
           data-testid="general-comment"
-          className="rounded-lg border border-slate-200 px-3 py-2"
+          className="aprova-field"
         />
       </label>
 
       {errors.length > 0 && (
         <ul
-          className="rounded-lg bg-rose-50 px-4 py-2 text-sm text-rose-700"
+          className="rounded-[var(--radius-sm)] bg-[var(--danger-bg)] px-4 py-2 text-sm text-[var(--danger)]"
           data-testid="editor-errors"
         >
           {errors.map((e) => (
@@ -241,15 +241,15 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
           ))}
         </ul>
       )}
-      {savedMsg && <p className="text-sm text-emerald-700">{savedMsg}</p>}
+      {savedMsg && <p className="text-sm text-[var(--teal)]">{savedMsg}</p>}
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <button
           type="button"
           onClick={onSaveDraft}
           disabled={busy}
           data-testid="save-draft"
-          className="rounded-xl border border-slate-300 px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+          className="aprova-button aprova-button-ghost py-3 disabled:opacity-50"
         >
           Salvar rascunho
         </button>
@@ -258,7 +258,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
           onClick={onPublish}
           disabled={busy}
           data-testid="publish"
-          className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white hover:bg-emerald-700 disabled:bg-slate-300"
+          className="aprova-button py-3 disabled:bg-[var(--hint)]"
         >
           Publicar
         </button>

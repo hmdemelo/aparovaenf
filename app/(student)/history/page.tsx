@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { createSupabaseServerClient } from '@/lib/db/server'
-import { getCurrentUser } from '@/lib/auth/roles'
-import { isPayingOrExPaying } from '@/features/account/account-service'
+import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
+import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { listAnswerHistory } from '@/features/account/answer-history-service'
 
 export const dynamic = 'force-dynamic'
@@ -14,42 +14,27 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   year: 'numeric',
 })
 
-// Answered-questions history is for paying or ex-paying students (Ajuste 4).
+// Answered-questions history requires an active subscription (navigation spec).
 export default async function HistoryPage() {
   const user = await getCurrentUser()
   if (!user) redirect('/login?next=/history')
+  // Blocked for students without an active plan (navigation spec).
+  if (!(await isSubscriber())) redirect('/assinar')
 
   const db = await createSupabaseServerClient()
-
-  if (!(await isPayingOrExPaying(db, user.id))) {
-    return (
-      <main className="mx-auto min-h-screen max-w-xl px-4 py-8">
-        <h1 className="mb-6 text-2xl font-bold text-slate-900">
-          Histórico de questões
-        </h1>
-        <div
-          className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center"
-          data-testid="history-locked"
-        >
-          <p className="text-sm text-emerald-800">
-            O histórico de questões respondidas está disponível para assinantes.
-            Assine para acompanhar o seu progresso.
-          </p>
-        </div>
-      </main>
-    )
-  }
-
   const history = await listAnswerHistory(db, user.id)
 
   return (
     <main className="mx-auto min-h-screen max-w-xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-slate-900">
+      <Link href="/" aria-label="aprovaenf início">
+        <AprovaenfLogo className="mb-8 text-[var(--teal)]" />
+      </Link>
+      <h1 className="font-display mb-6 text-[28px] font-semibold text-[var(--ink)]">
         Histórico de questões
       </h1>
 
       {history.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-slate-500">
+        <p className="rounded-[18px] border border-dashed border-[color:var(--line-2)] p-8 text-center text-[var(--muted)]">
           Você ainda não respondeu nenhuma questão. Comece a praticar!
         </p>
       ) : (
@@ -62,26 +47,26 @@ export default async function HistoryPage() {
               <li key={item.attemptId}>
                 <Link
                   href={href}
-                  className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 transition hover:border-emerald-300"
+                  className="flex items-start gap-3 rounded-[18px] border border-[color:var(--line)] bg-white/82 p-4 transition hover:border-[rgba(0,84,64,0.28)]"
                 >
                   {item.isCorrect ? (
                     <CheckCircle2
                       size={20}
-                      className="mt-0.5 shrink-0 text-emerald-600"
+                      className="mt-0.5 shrink-0 text-[var(--teal)]"
                       aria-label="Resposta correta"
                     />
                   ) : (
                     <XCircle
                       size={20}
-                      className="mt-0.5 shrink-0 text-rose-500"
+                      className="mt-0.5 shrink-0 text-[var(--danger)]"
                       aria-label="Resposta incorreta"
                     />
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 text-sm text-slate-800">
+                    <p className="line-clamp-2 text-sm text-[var(--ink)]">
                       {item.statement}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-[var(--muted)]">
                       {dateFormatter.format(new Date(item.answeredAt))}
                     </p>
                   </div>
@@ -94,7 +79,7 @@ export default async function HistoryPage() {
 
       <Link
         href="/"
-        className="mt-6 inline-block text-sm text-emerald-700 underline"
+        className="mt-6 inline-block text-sm font-semibold text-[var(--teal)] underline"
       >
         ← Voltar ao início
       </Link>

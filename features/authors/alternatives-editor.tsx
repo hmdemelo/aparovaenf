@@ -45,20 +45,21 @@ export function AlternativesEditor({ alternatives, onChange }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm font-semibold text-slate-700">Alternativas</p>
+      <p className="text-sm font-semibold text-[var(--ink)]">Alternativas</p>
       {alternatives.map((alt, index) => (
         <div
           key={index}
-          className="flex flex-col gap-2 rounded-xl border border-slate-200 p-3"
+          className="flex flex-col gap-3 rounded-[18px] border border-[color:var(--line)] bg-white/72 p-3"
         >
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+            <label className="flex items-center gap-2 text-sm font-semibold text-[var(--muted)]">
               <input
                 type="radio"
                 name="correct-alternative"
                 checked={alt.is_correct}
                 onChange={() => setCorrect(index)}
                 data-testid={`correct-${index}`}
+                className="accent-[var(--teal)]"
               />
               {labelForIndex(index)}
             </label>
@@ -68,13 +69,13 @@ export function AlternativesEditor({ alternatives, onChange }: Props) {
               value={alt.text}
               onChange={(e) => update(index, { text: e.target.value })}
               data-testid={`alt-text-${index}`}
-              className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className="aprova-field min-w-0 flex-1 py-2.5 text-sm"
             />
             <button
               type="button"
               onClick={() => remove(index)}
               aria-label="Remover alternativa"
-              className="text-slate-600 hover:text-rose-500"
+              className="rounded-full p-2 text-[var(--muted)] transition hover:bg-[var(--danger-bg)] hover:text-[var(--danger)]"
             >
               <Trash2 size={16} />
             </button>
@@ -84,7 +85,7 @@ export function AlternativesEditor({ alternatives, onChange }: Props) {
             placeholder="Comentário da alternativa (opcional)"
             value={alt.alternative_comment}
             onChange={(e) => update(index, { alternative_comment: e.target.value })}
-            className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-xs"
+            className="aprova-field bg-[var(--surface-paper)] py-2.5 text-xs"
           />
         </div>
       ))}
@@ -92,7 +93,7 @@ export function AlternativesEditor({ alternatives, onChange }: Props) {
         type="button"
         onClick={add}
         data-testid="add-alternative"
-        className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-emerald-300 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50"
+        className="flex items-center justify-center gap-2 rounded-[18px] border border-dashed border-[rgba(0,84,64,0.34)] px-4 py-3 text-sm font-semibold text-[var(--teal)] transition hover:bg-[rgba(160,243,212,0.24)]"
       >
         <Plus size={16} /> Adicionar alternativa
       </button>

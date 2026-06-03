@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { Check, Sparkles } from 'lucide-react'
 import { PLAN_LIST } from './plans'
 
 /**
@@ -7,39 +7,106 @@ import { PLAN_LIST } from './plans'
  */
 export function PricingSection() {
   return (
-    <section aria-labelledby="pricing-heading" className="mx-auto max-w-xl">
+    <section aria-labelledby="pricing-heading" className="mx-auto max-w-4xl">
       <h2
         id="pricing-heading"
-        className="mb-4 text-center text-xl font-bold text-slate-900"
+        className="font-display mb-2 text-center text-[26px] font-semibold text-[var(--teal)]"
       >
-        Planos
+        Escolha seu plano
       </h2>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <p className="mx-auto mb-6 max-w-xl text-center text-[15px] leading-relaxed text-[var(--muted)]">
+        Continue resolvendo questões comentadas, salve favoritas e revise seus
+        erros com acesso de assinante.
+      </p>
+
+      <div className="grid gap-4 md:grid-cols-[0.9fr_1.1fr_1.1fr]">
+        <div className="aprova-paper-card flex flex-col p-5">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
+              Trial
+            </p>
+            <h3 className="font-display mt-1 text-[21px] font-semibold text-[var(--ink)]">
+              Gratuito
+            </h3>
+            <p className="mt-1 text-2xl font-semibold text-[var(--ink)]">R$ 0</p>
+          </div>
+          <ul className="mt-5 flex flex-col gap-3 text-sm text-[var(--muted)]">
+            <li className="flex items-center gap-2">
+              <Check size={16} className="text-[var(--teal)]" /> 5 questões no teste
+            </li>
+            <li className="flex items-center gap-2">
+              <Check size={16} className="text-[var(--teal)]" /> Comentários das questões
+            </li>
+            <li className="flex items-center gap-2 text-[var(--hint)]">
+              Favoritos e histórico liberados na assinatura
+            </li>
+          </ul>
+        </div>
+
         {PLAN_LIST.map((plan) => (
           <div
             key={plan.id}
-            className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5"
+            className={`flex flex-col gap-4 rounded-[22px] p-5 shadow-[0_18px_46px_-34px_rgba(20,43,38,0.45)] ${
+              plan.id === 'annual'
+                ? 'bg-[var(--teal)] text-white'
+                : 'border border-[color:var(--line)] bg-white/82'
+            }`}
           >
-            <div>
-              <p className="text-sm font-semibold text-slate-500">{plan.label}</p>
-              <p className="text-2xl font-bold text-slate-900">{plan.priceLabel}</p>
-              <p className="text-xs text-slate-600">{plan.cadenceLabel}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p
+                  className={`text-[11px] font-bold uppercase tracking-[0.08em] ${
+                    plan.id === 'annual'
+                      ? 'text-[var(--mint-dim)]'
+                      : 'text-[var(--muted)]'
+                  }`}
+                >
+                  Plano PRO
+                </p>
+                <h3 className="font-display mt-1 text-[21px] font-semibold">
+                  {plan.label}
+                </h3>
+              </div>
+              {plan.id === 'annual' && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[rgba(160,243,212,0.18)] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.04em] text-[var(--mint-strong)]">
+                  <Sparkles size={13} />
+                  Melhor valor
+                </span>
+              )}
             </div>
-            <ul className="flex flex-col gap-1 text-sm text-slate-600">
+
+            <div>
+              <p className="font-display text-[30px] font-semibold leading-none">
+                {plan.priceLabel}
+              </p>
+              <p
+                className={`mt-1 text-xs ${
+                  plan.id === 'annual' ? 'text-[var(--mint-dim)]' : 'text-[var(--muted)]'
+                }`}
+              >
+                {plan.cadenceLabel}
+              </p>
+            </div>
+
+            <ul
+              className={`flex flex-col gap-2 text-sm ${
+                plan.id === 'annual' ? 'text-white/86' : 'text-[var(--muted)]'
+              }`}
+            >
               <li className="flex items-center gap-2">
-                <Check size={14} className="text-emerald-600" /> Questões ilimitadas
+                <Check size={16} className="text-[var(--mint-dim)]" /> Questões ilimitadas
               </li>
               <li className="flex items-center gap-2">
-                <Check size={14} className="text-emerald-600" /> Favoritos
+                <Check size={16} className="text-[var(--mint-dim)]" /> Favoritos salvos
               </li>
               <li className="flex items-center gap-2">
-                <Check size={14} className="text-emerald-600" /> Histórico de erros
+                <Check size={16} className="text-[var(--mint-dim)]" /> Histórico de erros
               </li>
             </ul>
           </div>
         ))}
       </div>
-      <p className="mt-3 text-center text-xs text-slate-600">
+      <p className="mt-4 text-center text-xs text-[var(--muted)]">
         Plano anual com parcelamento disponível no checkout.
       </p>
     </section>

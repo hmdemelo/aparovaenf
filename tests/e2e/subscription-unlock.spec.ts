@@ -17,9 +17,7 @@ async function login(page: Page, email: string, next: string) {
   await page.getByTestId('email').fill(email)
   await page.getByTestId('password').fill(testUserPwd)
   await page.getByTestId('submit').click()
-  await expect(page).toHaveURL(new RegExp(next.replace(/[/?]/g, '\\$&')), {
-    timeout: 30_000,
-  })
+  await expect(page).toHaveURL(/\/assinar/, { timeout: 30_000 })
 }
 
 async function answerCurrentQuestion(page: Page) {
@@ -80,10 +78,6 @@ test('paywall starts checkout and simulated webhook unlocks the feed', async ({
   try {
     await login(page, student.email, '/feed?career=enfermeiro-a')
 
-    await answerAndAdvance(page)
-    await answerAndAdvance(page)
-    await answerAndAdvance(page)
-
     await expect(page.getByTestId('paywall')).toBeVisible({ timeout: 30_000 })
 
     let checkoutBody: unknown
@@ -97,7 +91,7 @@ test('paywall starts checkout and simulated webhook unlocks the feed', async ({
           data: {
             checkout_id: 'checkout_e2e',
             checkout_url:
-              'http://localhost:3000/feed?career=enfermeiro-a&checkout=mock',
+              'http://localhost:3000/?checkout=mock',
             subscription_id: '00000000-0000-0000-0000-00000000c001',
             plan: 'annual',
             amount_cents: 28700,

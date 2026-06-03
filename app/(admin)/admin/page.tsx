@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { BarChart3, BookOpen, Layers, PenTool, Users } from 'lucide-react'
+import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { resolveAdminContext } from '@/features/admin/admin-permissions'
 import { getAdminMetrics } from '@/features/admin/admin-metrics-service'
 import { listUsers, listAllQuestions } from '@/features/admin/admin-service'
 import { UnpublishButton } from '@/features/admin/unpublish-button'
+import { LogoutButton } from '@/components/logout-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,9 +67,10 @@ export default async function AdminDashboardPage() {
     <main className="min-h-screen px-4 py-6 sm:py-8">
       <div className="aprova-admin-shell mx-auto flex w-full max-w-[980px] max-md:flex-col">
         <aside className="aprova-sidebar flex w-[200px] shrink-0 flex-col border-r px-[14px] py-5 max-md:w-full max-md:border-r-0 max-md:border-b">
-          <p className="aprova-wordmark mb-6 text-[21px] max-md:mb-3">
-            aprova<span className="text-[var(--teal)]">enf</span>
-          </p>
+          <AprovaenfLogo
+            className="mb-6 text-[var(--teal)] max-md:mb-3"
+            textClassName="text-[21px]"
+          />
 
           <nav className="flex flex-col gap-0.5 max-md:flex-row max-md:flex-wrap">
             <Link
@@ -86,6 +89,10 @@ export default async function AdminDashboardPage() {
               Assuntos
             </Link>
           </nav>
+
+          <div className="mt-auto pt-5 max-md:mt-3 max-md:pt-0">
+            <LogoutButton />
+          </div>
         </aside>
 
         <section className="min-w-0 flex-1 bg-white px-5 py-6 sm:px-[30px]">

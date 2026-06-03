@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { BarChart3, BookOpen, PenLine, Plus } from 'lucide-react'
 import { AccountDialog } from '@/features/account/account-dialog'
+import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { loadAccountProfile } from '@/features/account/account-service'
 import { resolveAuthorContext } from '@/features/authors/author-context'
 import {
@@ -9,6 +10,7 @@ import {
   listAuthorQuestions,
 } from '@/features/authors/author-question-service'
 import { createSupabaseServiceClient } from '@/lib/db/server'
+import { LogoutButton } from '@/components/logout-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,9 +59,10 @@ export default async function AuthorQuestionsPage() {
     <main className="min-h-screen px-4 py-6 sm:py-8">
       <div className="aprova-admin-shell mx-auto flex w-full max-w-[980px] max-md:flex-col">
         <aside className="aprova-sidebar flex w-[200px] shrink-0 flex-col border-r px-[14px] py-5 max-md:w-full max-md:border-r-0 max-md:border-b">
-          <p className="aprova-wordmark mb-6 text-[21px] max-md:mb-3">
-            aprova<span className="text-[var(--teal)]">enf</span>
-          </p>
+          <AprovaenfLogo
+            className="mb-6 text-[var(--teal)] max-md:mb-3"
+            textClassName="text-[21px]"
+          />
 
           <nav className="flex flex-col gap-0.5 max-md:flex-row max-md:flex-wrap">
             <Link
@@ -83,8 +86,9 @@ export default async function AuthorQuestionsPage() {
             </span>
           </nav>
 
-          <div className="mt-auto pt-5 max-md:mt-3 max-md:pt-0">
+          <div className="mt-auto flex flex-col gap-2 pt-5 max-md:mt-3 max-md:pt-0">
             <AccountDialog initialProfile={account} />
+            <LogoutButton />
           </div>
         </aside>
 

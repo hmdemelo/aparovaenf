@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createSupabaseBrowserClient } from '@/lib/db/browser'
+import { fetchPostLoginDestination } from './post-login-destination'
 
 /** Email/password sign-in. On success, navigates to `next` (default home). */
 export function LoginForm({ next }: { next: string }) {
@@ -24,7 +25,8 @@ export function LoginForm({ next }: { next: string }) {
       setLoading(false)
       return
     }
-    router.push(next)
+    const destination = await fetchPostLoginDestination(next)
+    router.push(destination)
     router.refresh()
   }
 
@@ -37,7 +39,7 @@ export function LoginForm({ next }: { next: string }) {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         data-testid="email"
-        className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
+        className="aprova-field"
       />
       <input
         type="password"
@@ -46,20 +48,20 @@ export function LoginForm({ next }: { next: string }) {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         data-testid="password"
-        className="rounded-xl border border-slate-200 px-4 py-3 text-sm"
+        className="aprova-field"
       />
-      {error && <p className="text-sm text-rose-600">{error}</p>}
+      {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
       <button
         type="submit"
         disabled={loading}
         data-testid="submit"
-        className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700 disabled:bg-slate-300"
+        className="aprova-button py-3.5 disabled:bg-[var(--hint)]"
       >
         {loading ? 'Entrando...' : 'Entrar'}
       </button>
       <Link
         href={`/signup?next=${encodeURIComponent(next)}`}
-        className="text-center text-sm text-emerald-700 underline"
+        className="text-center text-sm font-semibold text-[var(--teal)] underline"
       >
         Criar conta
       </Link>

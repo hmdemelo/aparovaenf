@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/db/server'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
+import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { listErrorHistory } from '@/features/student-feed/error-history-service'
 
 export const dynamic = 'force-dynamic'
@@ -10,35 +11,23 @@ export const dynamic = 'force-dynamic'
 export default async function ErrorsPage() {
   const user = await getCurrentUser()
   if (!user) redirect('/login?next=/errors')
-
-  const subscriber = await isSubscriber()
-
-  if (!subscriber) {
-    return (
-      <main className="mx-auto min-h-screen max-w-xl px-4 py-8">
-        <h1 className="mb-6 text-2xl font-bold text-slate-900">Meus erros</h1>
-        <div
-          className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center"
-          data-testid="errors-locked"
-        >
-          <p className="text-sm text-emerald-800">
-            O histórico de erros é um recurso para assinantes. Assine para
-            revisar as questões que você errou.
-          </p>
-        </div>
-      </main>
-    )
-  }
+  // Blocked for students without an active plan (navigation spec).
+  if (!(await isSubscriber())) redirect('/assinar')
 
   const db = await createSupabaseServerClient()
   const errors = await listErrorHistory(db, user.id)
 
   return (
     <main className="mx-auto min-h-screen max-w-xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-slate-900">Meus erros</h1>
+      <Link href="/" aria-label="aprovaenf início">
+        <AprovaenfLogo className="mb-8 text-[var(--teal)]" />
+      </Link>
+      <h1 className="font-display mb-6 text-[28px] font-semibold text-[var(--ink)]">
+        Meus erros
+      </h1>
 
       {errors.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-slate-500">
+        <p className="rounded-[18px] border border-dashed border-[color:var(--line-2)] p-8 text-center text-[var(--muted)]">
           Você ainda não errou nenhuma questão. Continue praticando!
         </p>
       ) : (
@@ -46,14 +35,16 @@ export default async function ErrorsPage() {
           {errors.map((e) => (
             <li
               key={e.questionId}
-              className="rounded-xl border border-slate-200 bg-white p-4"
+              className="rounded-[18px] border border-[color:var(--line)] bg-white/82 p-4"
             >
               {e.subject && (
-                <span className="text-xs text-slate-600">{e.subject}</span>
+                <span className="text-xs font-semibold text-[var(--muted)]">
+                  {e.subject}
+                </span>
               )}
-              <p className="text-sm text-slate-800">{e.statement}</p>
+              <p className="text-sm text-[var(--ink)]">{e.statement}</p>
               {e.generalComment && (
-                <p className="mt-2 border-l-2 border-emerald-200 pl-3 text-xs text-slate-500">
+                <p className="mt-2 border-l-2 border-[var(--mint-dim)] pl-3 text-xs leading-relaxed text-[var(--muted)]">
                   {e.generalComment}
                 </p>
               )}
@@ -64,7 +55,7 @@ export default async function ErrorsPage() {
 
       <Link
         href="/"
-        className="mt-6 inline-block text-sm text-emerald-700 underline"
+        className="mt-6 inline-block text-sm font-semibold text-[var(--teal)] underline"
       >
         ← Voltar ao início
       </Link>

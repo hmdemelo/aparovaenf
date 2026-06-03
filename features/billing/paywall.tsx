@@ -1,6 +1,6 @@
 'use client'
 
-import { Check } from 'lucide-react'
+import { Check, CreditCard, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { PLAN_LIST, type PlanId } from './plans'
 
@@ -12,10 +12,18 @@ type CheckoutResponse = {
   checkout_url: string
 }
 
+const DEFAULT_TITLE = 'Você concluiu as questões gratuitas'
+const DEFAULT_DESCRIPTION =
+  'Assine para continuar resolvendo questões sem limite, salvar favoritos e revisar seus erros.'
+
 export function Paywall({
   onChoosePlan,
+  title = DEFAULT_TITLE,
+  description = DEFAULT_DESCRIPTION,
 }: {
   onChoosePlan?: (plan: PlanId) => void
+  title?: string
+  description?: string
 }) {
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -51,14 +59,16 @@ export function Paywall({
   }
 
   return (
-    <div className="flex flex-col gap-5" data-testid="paywall">
+    <div className="aprova-study-card flex flex-col gap-5 p-6" data-testid="paywall">
       <div className="text-center">
-        <h2 className="text-xl font-bold text-slate-900">
-          Você concluiu as questões gratuitas
+        <span className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[rgba(160,243,212,0.42)] text-[var(--teal)]">
+          <Sparkles size={21} />
+        </span>
+        <h2 className="font-display text-[24px] font-semibold leading-tight text-[var(--ink)]">
+          {title}
         </h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Assine para continuar resolvendo questões sem limite, salvar favoritos
-          e revisar seus erros.
+        <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+          {description}
         </p>
       </div>
 
@@ -66,22 +76,49 @@ export function Paywall({
         {PLAN_LIST.map((plan) => (
           <div
             key={plan.id}
-            className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5"
+            className={`flex flex-col gap-4 rounded-[22px] p-5 ${
+              plan.id === 'annual'
+                ? 'bg-[var(--teal)] text-white'
+                : 'border border-[color:var(--line)] bg-white'
+            }`}
           >
             <div>
-              <p className="text-sm font-semibold text-slate-500">{plan.label}</p>
-              <p className="text-2xl font-bold text-slate-900">{plan.priceLabel}</p>
-              <p className="text-xs text-slate-600">{plan.cadenceLabel}</p>
+              <p
+                className={`text-[11px] font-bold uppercase tracking-[0.08em] ${
+                  plan.id === 'annual'
+                    ? 'text-[var(--mint-dim)]'
+                    : 'text-[var(--muted)]'
+                }`}
+              >
+                Plano PRO
+              </p>
+              <p className="font-display mt-1 text-[25px] font-semibold">
+                {plan.label}
+              </p>
+              <p className="font-display mt-3 text-[30px] font-semibold leading-none">
+                {plan.priceLabel}
+              </p>
+              <p
+                className={`mt-1 text-xs ${
+                  plan.id === 'annual' ? 'text-[var(--mint-dim)]' : 'text-[var(--muted)]'
+                }`}
+              >
+                {plan.cadenceLabel}
+              </p>
             </div>
-            <ul className="flex flex-col gap-1 text-sm text-slate-600">
+            <ul
+              className={`flex flex-col gap-2 text-sm ${
+                plan.id === 'annual' ? 'text-white/86' : 'text-[var(--muted)]'
+              }`}
+            >
               <li className="flex items-center gap-2">
-                <Check size={14} className="text-emerald-600" /> Questões ilimitadas
+                <Check size={16} className="text-[var(--mint-dim)]" /> Questões ilimitadas
               </li>
               <li className="flex items-center gap-2">
-                <Check size={14} className="text-emerald-600" /> Favoritos
+                <Check size={16} className="text-[var(--mint-dim)]" /> Favoritos salvos
               </li>
               <li className="flex items-center gap-2">
-                <Check size={14} className="text-emerald-600" /> Histórico de erros
+                <Check size={16} className="text-[var(--mint-dim)]" /> Histórico de erros
               </li>
             </ul>
             <button
@@ -89,8 +126,13 @@ export function Paywall({
               onClick={() => void startCheckout(plan.id)}
               disabled={loadingPlan !== null}
               data-testid={`checkout-${plan.id}`}
-              className="mt-auto rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700"
+              className={`mt-auto flex items-center justify-center gap-2 rounded-[16px] px-4 py-3 font-semibold transition active:scale-[0.98] disabled:opacity-70 ${
+                plan.id === 'annual'
+                  ? 'bg-[var(--mint-strong)] text-[var(--teal-ink)] hover:brightness-105'
+                  : 'bg-[var(--teal)] text-white hover:bg-[var(--teal-mid)]'
+              }`}
             >
+              <CreditCard size={17} />
               {loadingPlan === plan.id
                 ? 'Abrindo checkout...'
                 : `Assinar ${plan.label.toLowerCase()}`}
@@ -101,7 +143,7 @@ export function Paywall({
 
       {error && (
         <p
-          className="rounded-lg bg-rose-50 px-4 py-2 text-center text-sm text-rose-700"
+          className="rounded-[var(--radius-sm)] bg-[var(--danger-bg)] px-4 py-2 text-center text-sm text-[var(--danger)]"
           data-testid="checkout-error"
           aria-live="polite"
         >

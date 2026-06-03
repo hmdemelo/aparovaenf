@@ -1,6 +1,10 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { ArrowRight, CheckCircle2, MessageCircle } from 'lucide-react'
 import { createSupabaseServiceClient } from '@/lib/db/server'
+import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
+import { resolvePostLoginPath } from '@/lib/auth/post-login'
+import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { track } from '@/features/analytics/product-events-server'
 import { ProductEventNames } from '@/features/analytics/product-events'
 import { PublicAuthors } from '@/features/authors/public-authors'
@@ -41,25 +45,58 @@ export default async function LandingPage() {
       career_id: id || null,
       metadata: { career_slug: slug },
     })
-    redirect(`/feed?career=${slug}`)
+
+    const next = `/feed?career=${slug}`
+    const user = await getCurrentUser()
+    // Visitors must authenticate before reaching the feed; the chosen career
+    // travels in `next` so it survives signup/login.
+    if (!user) {
+      redirect(`/signup?next=${encodeURIComponent(next)}`)
+    }
+
+    const subscriber = user.role === 'student' ? await isSubscriber() : false
+    redirect(
+      resolvePostLoginPath({
+        role: user.role,
+        isSubscriber: subscriber,
+        launchCareerSlug: null,
+        next,
+      }),
+    )
   }
 
   return (
-    <main className="flex flex-col">
+    <>
+      <header className="absolute inset-x-0 top-0 z-30">
+        <div className="mx-auto flex max-w-[980px] items-center justify-end px-4 py-3 sm:px-6">
+          <Link
+            href="/login"
+            data-testid="landing-login"
+            className="rounded-full border border-[color:var(--line)] bg-white/80 px-5 py-2 text-sm font-semibold text-[var(--teal)] shadow-[0_8px_20px_-16px_rgba(0,84,64,0.8)] backdrop-blur transition hover:bg-white active:scale-[0.98]"
+          >
+            Login
+          </Link>
+        </div>
+      </header>
+
+      <main id="top" className="flex flex-col">
       {/* Hero + career selection */}
-      <section className="bg-white px-4 py-14">
-        <div className="mx-auto max-w-xl text-center">
-          <p className="text-sm font-semibold text-emerald-600">aprovaenf</p>
-          <h1 className="mt-2 text-3xl font-bold leading-tight text-slate-900 sm:text-4xl">
+      <section className="aprova-hero-brand px-4 pb-12 pt-9 sm:pb-14 sm:pt-12">
+        <div className="mx-auto max-w-[640px] text-center">
+          <AprovaenfLogo
+            className="justify-center text-[var(--teal)]"
+            textClassName="text-[1.65rem]"
+          />
+          <h1 className="font-display mt-5 text-[34px] font-semibold leading-[1.05] text-[var(--ink)] sm:text-[44px]">
             Questões comentadas para concursos da saúde
           </h1>
-          <p className="mt-3 text-slate-600">
+          <p className="mx-auto mt-4 max-w-xl text-[16.5px] leading-[1.55] text-[var(--muted)]">
             Pratique no seu ritmo, direto do celular: uma questão por vez,
             resposta na hora e comentário de quem já foi aprovado.
           </p>
 
-          <div className="mt-8 flex flex-col gap-3">
-            <p className="text-sm font-medium text-slate-700">
+          <div className="mx-auto mt-8 flex max-w-md flex-col gap-3">
+            <p className="text-sm font-semibold text-[var(--ink)]">
               Escolha sua carreira para começar:
             </p>
             {(careers ?? []).map((career) => (
@@ -69,15 +106,19 @@ export default async function LandingPage() {
                 <button
                   type="submit"
                   data-testid={`career-${career.slug}`}
-                  className="w-full rounded-xl bg-emerald-600 px-4 py-4 font-semibold text-white transition hover:bg-emerald-700"
+                  className="group flex w-full items-center justify-between rounded-[18px] bg-[var(--teal)] px-5 py-4 font-semibold text-white shadow-[0_18px_34px_-26px_rgba(0,84,64,0.9)] transition hover:bg-[var(--teal-mid)] active:scale-[0.98]"
                 >
-                  {career.name}
+                  <span>{career.name}</span>
+                  <ArrowRight
+                    size={18}
+                    className="transition group-hover:translate-x-0.5"
+                  />
                 </button>
               </form>
             ))}
           </div>
-          <p className="mt-4 text-xs text-slate-600">
-            2 questões grátis antes do cadastro · mais 3 após criar a conta
+          <p className="mt-4 text-xs font-semibold text-[var(--muted)]">
+            Crie sua conta e assine para praticar sem limites.
           </p>
         </div>
       </section>
@@ -85,24 +126,22 @@ export default async function LandingPage() {
       {/* How it works */}
       <section
         aria-labelledby="how-heading"
-        className="bg-slate-50 px-4 py-12"
+        className="px-4 py-12"
       >
-        <div className="mx-auto max-w-xl">
+        <div className="mx-auto max-w-[760px]">
           <h2
             id="how-heading"
-            className="mb-4 text-center text-xl font-bold text-slate-900"
+            className="font-display mb-6 text-center text-[26px] font-semibold text-[var(--ink)]"
           >
             Como funciona
           </h2>
-          <ol className="flex flex-col gap-3">
-            {STEPS.map((step, i) => (
+          <ol className="grid gap-3 md:grid-cols-3">
+            {STEPS.map((step) => (
               <li
                 key={step}
-                className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700"
+                className="aprova-paper-card flex items-start gap-3 p-4 text-sm leading-relaxed text-[var(--muted)]"
               >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-xs font-bold text-emerald-700">
-                  {i + 1}
-                </span>
+                <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-[var(--teal)]" />
                 {step}
               </li>
             ))}
@@ -111,48 +150,51 @@ export default async function LandingPage() {
       </section>
 
       {/* Authors */}
-      <section className="bg-white px-4 py-12">
+      <section className="bg-[rgba(247,245,240,0.72)] px-4 py-12">
         <PublicAuthors authors={authors ?? []} />
       </section>
 
       {/* Pricing */}
-      <section className="bg-slate-50 px-4 py-12">
+      <section className="px-4 py-12">
         <PricingSection />
       </section>
 
       {/* Final CTA */}
-      <section className="bg-emerald-600 px-4 py-12 text-center">
+      <section className="bg-[var(--teal)] px-4 py-12 text-center">
         <div className="mx-auto max-w-xl">
-          <h2 className="text-xl font-bold text-white">
-            Comece agora, sem cadastro
+          <MessageCircle className="mx-auto mb-3 text-[var(--mint-dim)]" size={26} />
+          <h2 className="font-display text-[26px] font-semibold text-white">
+            Comece agora mesmo
           </h2>
-          <p className="mt-2 text-sm text-emerald-50">
-            Experimente o valor antes de assinar. Role para cima e escolha sua
-            carreira.
+          <p className="mt-2 text-sm leading-relaxed text-[var(--mint-dim)]">
+            Crie sua conta e escolha seu plano para praticar com questões
+            comentadas. Role para cima e escolha sua carreira.
           </p>
           <Link
             href="#top"
-            className="mt-5 inline-block rounded-xl bg-white px-6 py-3 font-semibold text-emerald-700"
+            className="mt-5 inline-flex items-center gap-2 rounded-[18px] bg-[var(--mint-strong)] px-6 py-3 font-semibold text-[var(--teal-ink)] transition hover:brightness-105 active:scale-[0.98]"
           >
             Quero começar
+            <ArrowRight size={17} />
           </Link>
         </div>
       </section>
 
-      <footer className="bg-white px-4 py-8 text-center text-xs text-slate-600">
+      <footer className="bg-white/80 px-4 py-8 text-center text-xs text-[var(--muted)]">
         <nav className="flex justify-center gap-4">
-          <Link href="/termos" className="underline">
+          <Link href="/termos" className="font-semibold underline">
             Termos de uso
           </Link>
-          <Link href="/privacidade" className="underline">
+          <Link href="/privacidade" className="font-semibold underline">
             Política de privacidade
           </Link>
-          <Link href="/login" className="underline">
+          <Link href="/login" className="font-semibold underline">
             Entrar
           </Link>
         </nav>
         <p className="mt-3">© {new Date().getFullYear()} aprovaenf</p>
       </footer>
     </main>
+    </>
   )
 }

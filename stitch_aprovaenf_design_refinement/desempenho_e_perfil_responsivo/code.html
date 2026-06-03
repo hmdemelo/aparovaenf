@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&amp;family=Hanken+Grotesk:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface-variant": "#3f4944",
+                    "graphite-muted": "#4A5D58",
+                    "on-tertiary-fixed": "#3b0804",
+                    "primary-fixed-dim": "#84d6b9",
+                    "on-tertiary-container": "#ffd3cc",
+                    "surface-dim": "#cbded7",
+                    "on-primary-fixed-variant": "#00513e",
+                    "background": "#eafef6",
+                    "on-secondary-fixed-variant": "#484741",
+                    "surface-container": "#def2ea",
+                    "surface-bright": "#eafef6",
+                    "tertiary-fixed-dim": "#ffb4a8",
+                    "on-error": "#ffffff",
+                    "on-primary-container": "#9aedcf",
+                    "inverse-primary": "#84d6b9",
+                    "surface-tint": "#086b53",
+                    "primary-fixed": "#a0f3d4",
+                    "success-soft": "#D1FAE5",
+                    "inverse-on-surface": "#e1f5ed",
+                    "on-secondary-fixed": "#1c1c17",
+                    "error-text": "#991B1B",
+                    "tertiary-container": "#954c41",
+                    "primary": "#005440",
+                    "secondary": "#605e58",
+                    "on-background": "#0e1f1a",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#0f6e56",
+                    "on-secondary-container": "#66645e",
+                    "on-primary": "#ffffff",
+                    "surface": "#eafef6",
+                    "tertiary": "#78352b",
+                    "surface-container-highest": "#d3e7df",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed": "#002117",
+                    "on-surface": "#0e1f1a",
+                    "success-text": "#065F46",
+                    "outline-variant": "#bec9c3",
+                    "inverse-surface": "#23342f",
+                    "on-tertiary-fixed-variant": "#743329",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed": "#ffdad4",
+                    "on-error-container": "#93000a",
+                    "surface-container-high": "#d9ede5",
+                    "error": "#ba1a1a",
+                    "secondary-fixed": "#e6e2da",
+                    "surface-variant": "#d3e7df",
+                    "secondary-container": "#e6e2da",
+                    "secondary-fixed-dim": "#cac6bf",
+                    "error-container": "#ffdad6",
+                    "surface-container-low": "#e4f8f0",
+                    "outline": "#6f7a74",
+                    "error-soft": "#FEE2E2",
+                    "surface-paper": "#F7F5F0"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "20px",
+                    "base": "8px",
+                    "gutter": "16px",
+                    "margin-desktop": "40px",
+                    "stack-sm": "12px",
+                    "stack-md": "24px",
+                    "stack-lg": "40px"
+            },
+            "fontFamily": {
+                    "label-sm": ["Hanken Grotesk"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "headline-md": ["Bricolage Grotesque"],
+                    "headline-sm": ["Bricolage Grotesque"],
+                    "display-lg-mobile": ["Bricolage Grotesque"],
+                    "display-lg": ["Bricolage Grotesque"],
+                    "body-md": ["Hanken Grotesk"],
+                    "label-md": ["Hanken Grotesk"]
+            },
+            "fontSize": {
+                    "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-md": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "display-lg-mobile": ["28px", {"lineHeight": "1.1", "fontWeight": "800"}],
+                    "display-lg": ["32px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            background-color: #EFEBE3;
+            color: #0e1f1a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass-nav {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .chart-bar {
+            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .active-scale:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md antialiased pb-32">
+<main class="max-w-7xl mx-auto min-h-screen" id="app-container">
+<!-- TOP APP BAR -->
+<header class="w-full top-0 sticky bg-background dark:bg-background z-40">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 w-full">
+<div class="flex items-center gap-3">
+<img alt="aprovaenf" class="w-auto object-contain h-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXQ6FuZHGqPWHt4dTpnYJGB10HHY-yscu2o-YvHj8aAbqSWSn5-czfrMoeDhueF1yf-ttnNgyX0GapLvmLVkNrVa1a2mP5Lx4a4IQNookEh8JWosQxwjZPtGP-CdiZkSwAt61e-xPIlDKJDd3QUMFhsBga0Aa9iK_O8U6EBGjgMrgXstteXUhwURq_ZtIytScWNbq67YnEyCY_O_B5x4CJWu2DhgWuI7GUho1LsaD5CNpWeUf648WvyiWNTvcYvhrwsLZQ8iwUvh0"/>
+</div>
+<button class="bg-primary px-4 py-1.5 rounded-full text-on-primary font-label-md hover:opacity-80 transition-opacity active:scale-95 flex items-center gap-1 shadow-md">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                    PRO
+                </button>
+</div>
+</header>
+<!-- PERFORMANCE DASHBOARD SECTION -->
+<section class="px-margin-mobile md:px-margin-desktop pt-4 space-y-stack-md" id="performance-screen">
+<div class="space-y-1">
+<h2 class="font-headline-sm md:text-headline-md text-primary">Seu Desempenho</h2>
+<p class="text-graphite-muted font-body-md">Você está no caminho certo para a aprovação.</p>
+</div>
+<!-- Dashboard Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Stats and Chart Column -->
+<div class="lg:col-span-8 space-y-gutter">
+<div class="grid grid-cols-2 md:grid-cols-2 gap-gutter">
+<div class="bg-surface-paper p-6 rounded-3xl border border-on-surface/5 shadow-[0px_10px_30px_rgba(15,110,86,0.06)] active-scale transition-transform">
+<div class="text-primary-container mb-2">
+<span class="material-symbols-outlined">quiz</span>
+</div>
+<div class="font-display-lg-mobile md:text-display-lg text-primary">1,240</div>
+<div class="font-label-sm md:text-label-md text-graphite-muted">Questões</div>
+</div>
+<div class="bg-surface-paper p-6 rounded-3xl border border-on-surface/5 shadow-[0px_10px_30px_rgba(15,110,86,0.06)] active-scale transition-transform">
+<div class="text-tertiary mb-2">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<div class="font-display-lg-mobile md:text-display-lg text-primary">84%</div>
+<div class="font-label-sm md:text-label-md text-graphite-muted">Acertos</div>
+</div>
+</div>
+<!-- Activity Chart Card -->
+<div class="bg-surface-paper p-6 rounded-3xl border border-on-surface/5 shadow-[0px_10px_30px_rgba(15,110,86,0.06)]">
+<div class="flex justify-between items-end mb-8">
+<div>
+<h3 class="font-headline-sm text-primary">Atividade Semanal</h3>
+<p class="text-label-md text-graphite-muted">Questões respondidas por dia</p>
+</div>
+<div class="text-right">
+<div class="font-headline-sm text-primary">+12%</div>
+<div class="text-[10px] uppercase font-bold text-graphite-muted">vs. ontem</div>
+</div>
+</div>
+<div class="flex items-end justify-between h-48 gap-3 md:gap-6">
+<div class="flex flex-col items-center gap-2 flex-1">
+<div class="chart-bar w-full bg-primary/10 rounded-t-lg h-[40%]"></div>
+<span class="text-[10px] font-bold text-graphite-muted">S</span>
+</div>
+<div class="flex flex-col items-center gap-2 flex-1">
+<div class="chart-bar w-full bg-primary/10 rounded-t-lg h-[65%]"></div>
+<span class="text-[10px] font-bold text-graphite-muted">T</span>
+</div>
+<div class="flex flex-col items-center gap-2 flex-1">
+<div class="chart-bar w-full bg-primary/10 rounded-t-lg h-[50%]"></div>
+<span class="text-[10px] font-bold text-graphite-muted">Q</span>
+</div>
+<div class="flex flex-col items-center gap-2 flex-1">
+<div class="chart-bar w-full bg-primary/20 rounded-t-lg h-[85%]"></div>
+<span class="text-[10px] font-bold text-graphite-muted">Q</span>
+</div>
+<div class="flex flex-col items-center gap-2 flex-1">
+<div class="chart-bar w-full bg-primary-container rounded-t-lg h-[95%]"></div>
+<span class="text-[10px] font-bold text-primary">S</span>
+</div>
+<div class="flex flex-col items-center gap-2 flex-1">
+<div class="chart-bar w-full bg-primary/10 rounded-t-lg h-[30%]"></div>
+<span class="text-[10px] font-bold text-graphite-muted">S</span>
+</div>
+<div class="flex flex-col items-center gap-2 flex-1">
+<div class="chart-bar w-full bg-primary/10 rounded-t-lg h-[20%]"></div>
+<span class="text-[10px] font-bold text-graphite-muted">D</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Subjects Side/Below Column -->
+<div class="lg:col-span-4 space-y-3">
+<h3 class="font-label-md text-label-md text-graphite-muted uppercase tracking-wider">Assuntos Recentes</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-3">
+<!-- Subject Card 1 -->
+<div class="bg-surface-paper p-4 rounded-2xl border border-on-surface/5 flex items-center justify-between active-scale transition-transform">
+<div class="flex items-center gap-4">
+<div class="relative w-12 h-12 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-primary/10" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="31.4" stroke-width="4"></circle>
+</svg>
+<span class="absolute text-[10px] font-bold text-primary">75%</span>
+</div>
+<div>
+<div class="font-headline-sm text-[16px] text-primary">Fundamentos de Enfermagem</div>
+<div class="text-label-sm text-graphite-muted">240 questões</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-graphite-muted">chevron_right</span>
+</div>
+<!-- Subject Card 2 -->
+<div class="bg-surface-paper p-4 rounded-2xl border border-on-surface/5 flex items-center justify-between active-scale transition-transform">
+<div class="flex items-center gap-4">
+<div class="relative w-12 h-12 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-primary/10" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="75.3" stroke-width="4"></circle>
+</svg>
+<span class="absolute text-[10px] font-bold text-primary">40%</span>
+</div>
+<div>
+<div class="font-headline-sm text-[16px] text-primary">Saúde da Mulher</div>
+<div class="text-label-sm text-graphite-muted">112 questões</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-graphite-muted">chevron_right</span>
+</div>
+<!-- Subject Card 3 (Added for balance on large screen) -->
+<div class="bg-surface-paper p-4 rounded-2xl border border-on-surface/5 flex items-center justify-between active-scale transition-transform hidden md:flex">
+<div class="flex items-center gap-4">
+<div class="relative w-12 h-12 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90">
+<circle class="text-primary/10" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary" cx="24" cy="24" fill="transparent" r="20" stroke="currentColor" stroke-dasharray="125.6" stroke-dashoffset="100.4" stroke-width="4"></circle>
+</svg>
+<span class="absolute text-[10px] font-bold text-primary">20%</span>
+</div>
+<div>
+<div class="font-headline-sm text-[16px] text-primary">Ética Profissional</div>
+<div class="text-label-sm text-graphite-muted">56 questões</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-graphite-muted">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+<!-- PRO Banner - Wide Responsive -->
+<div class="relative bg-primary-container overflow-hidden p-8 md:p-12 rounded-[32px] text-on-primary-container shadow-lg mt-8 lg:mt-12 group">
+<div class="absolute -right-8 -top-8 w-64 h-64 bg-primary-fixed/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
+<div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+<div class="max-w-2xl">
+<div class="bg-primary-fixed/30 p-3 rounded-xl w-fit mb-4">
+<span class="material-symbols-outlined text-on-primary-container text-3xl" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+<h4 class="font-headline-md md:text-display-lg-mobile text-on-primary leading-tight">Desbloqueie todo o conteúdo e potencialize seus estudos</h4>
+<p class="font-body-md opacity-90 mt-2 text-lg">Acesso ilimitado a 20.000+ questões comentadas, simulados inéditos e análise de erros personalizada.</p>
+</div>
+<div class="flex-shrink-0">
+<button class="bg-primary-fixed text-on-primary-fixed font-label-md px-10 py-4 rounded-full active-scale transition-all shadow-xl text-lg hover:bg-primary-fixed/90 whitespace-nowrap">
+                            Assinar aprovaenf PRO
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- PROFILE SECTION (Hidden by default) -->
+<section class="hidden px-margin-mobile md:px-margin-desktop pt-4 pb-12 space-y-stack-md" id="profile-screen">
+<div class="flex flex-col items-center py-8 space-y-4">
+<div class="relative">
+<div class="w-32 h-32 rounded-[48px] bg-surface-paper overflow-hidden border-4 border-primary/20 shadow-xl">
+<img alt="Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPJrVGg-5scLVobUG8Q73_2jylmKSPtdNjDO5i0qiLrx24tYoTnJauMlVgQD8YcYZjwVHtxkcqD7Y4_-IeX2ZUbeCVmJ2OjFbGZlDw-mLnccfIvWdPDQdNJ29mI0KcoIMR--U3_PjF6np7DI9vCeid4mzb2xSu0w5QwHlyn51zAGe2eiIGT7YhrbVmCTEe77Qqa6lKaAh5Qlcd3aqny9usM5bkeASgMowSCzXvcXUBiqhM3kZbJg4iuLowwsA93s9ZX96-tLdE9gU"/>
+</div>
+<div class="absolute -bottom-2 -right-2 bg-primary p-2 rounded-full border-4 border-background shadow-lg">
+<span class="material-symbols-outlined text-white text-[20px]" style="font-variation-settings: 'FILL' 1;">edit</span>
+</div>
+</div>
+<div class="text-center">
+<h2 class="font-headline-md text-primary">Mariana Silva</h2>
+<p class="text-graphite-muted font-label-md uppercase tracking-wider">Estudante de Enfermagem</p>
+</div>
+</div>
+<div class="bg-surface-paper rounded-[32px] overflow-hidden border border-on-surface/5 shadow-[0px_10px_30px_rgba(15,110,86,0.06)] max-w-2xl mx-auto">
+<div class="divide-y divide-on-surface/5">
+<button class="w-full flex items-center justify-between p-5 active:bg-primary/5 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">person_outline</span>
+</div>
+<span class="font-headline-sm text-[16px] text-on-surface">Configurações da Conta</span>
+</div>
+<span class="material-symbols-outlined text-graphite-muted">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-5 active:bg-primary/5 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">notifications_active</span>
+</div>
+<span class="font-headline-sm text-[16px] text-on-surface">Lembretes de Estudo</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-label-sm text-primary bg-primary/10 px-2 py-0.5 rounded-full">Ativo</span>
+<span class="material-symbols-outlined text-graphite-muted">chevron_right</span>
+</div>
+</button>
+<button class="w-full flex items-center justify-between p-5 active:bg-error-soft/20 transition-colors group">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-2xl bg-error-soft flex items-center justify-center text-error group-hover:bg-error group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">logout</span>
+</div>
+<span class="font-headline-sm text-[16px] text-error">Sair da Conta</span>
+</div>
+<span class="material-symbols-outlined text-error-text opacity-50">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- BOTTOM NAVBAR CAPSULE - ADAPTIVE -->
+<nav class="fixed bottom-6 left-0 right-0 mx-auto z-50 flex justify-around items-center p-2 max-w-lg md:max-w-xl bg-surface-container-lowest/80 dark:bg-surface-container/80 backdrop-blur-md border border-on-surface-variant/5 rounded-full w-[90%] shadow-[0px_10px_40px_rgba(15,110,86,0.12)] transition-all">
+<button class="flex flex-col items-center justify-center text-graphite-muted dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant/50 rounded-full transition-colors active:scale-[0.98]" onclick="switchTab('Home')">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-graphite-muted dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant/50 rounded-full transition-colors active:scale-[0.98]" onclick="switchTab('Estudo')">
+<span class="material-symbols-outlined">quiz</span>
+<span class="font-label-sm text-label-sm">Estudo</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim bg-primary-fixed/20 rounded-full px-4 py-1 transition-all duration-200 active:scale-[0.98]" id="nav-desempenho" onclick="switchTab('Desempenho')">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">insights</span>
+<span class="font-label-sm text-label-sm">Desempenho</span>
+</button>
+<button class="flex flex-col items-center justify-center text-graphite-muted dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant/50 rounded-full transition-colors active:scale-[0.98]" id="nav-perfil" onclick="switchTab('Perfil')">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-label-sm">Perfil</span>
+</button>
+</nav>
+<script>
+        function switchTab(tabName) {
+            const perfScreen = document.getElementById('performance-screen');
+            const profScreen = document.getElementById('profile-screen');
+            const navPerf = document.getElementById('nav-desempenho');
+            const navProf = document.getElementById('nav-perfil');
+            
+            const inactiveClasses = "flex flex-col items-center justify-center text-graphite-muted dark:text-on-surface-variant px-4 py-1 hover:bg-surface-variant/50 rounded-full transition-colors active:scale-[0.98]";
+            const activeClasses = "flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim bg-primary-fixed/20 rounded-full px-4 py-1 transition-all duration-200 active:scale-[0.98]";
+
+            if (tabName === 'Desempenho') {
+                perfScreen.classList.remove('hidden');
+                profScreen.classList.add('hidden');
+                navPerf.className = activeClasses;
+                navPerf.querySelector('span:first-child').style.fontVariationSettings = "'FILL' 1";
+                navProf.className = inactiveClasses;
+                navProf.querySelector('span:first-child').style.fontVariationSettings = "'FILL' 0";
+            } else if (tabName === 'Perfil') {
+                perfScreen.classList.add('hidden');
+                profScreen.classList.remove('hidden');
+                navProf.className = activeClasses;
+                navProf.querySelector('span:first-child').style.fontVariationSettings = "'FILL' 1";
+                navPerf.className = inactiveClasses;
+                navPerf.querySelector('span:first-child').style.fontVariationSettings = "'FILL' 0";
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        document.querySelectorAll('.chart-bar').forEach(bar => {
+            bar.addEventListener('mouseenter', () => {
+                bar.style.filter = 'brightness(1.1)';
+            });
+            bar.addEventListener('mouseleave', () => {
+                bar.style.filter = 'brightness(1)';
+            });
+        });
+    </script>
+</body></html>

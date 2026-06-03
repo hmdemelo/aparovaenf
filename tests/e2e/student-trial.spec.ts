@@ -1,45 +1,29 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 
-/**
- * US1 — student trial loop (anonymous portion).
- *
- * A visitor selects a career, answers the 2 free anonymous questions, and is
- * then asked to sign up. The post-signup → paywall portion depends on the auth
- * UI (signup/login), delivered in a later slice.
- */
-
-async function answerCurrentQuestion(page: Page) {
-  // Wait for the question card and its alternatives, pick the first one.
-  const firstAlternative = page.getByTestId('alternative').first()
-  await firstAlternative.waitFor({ state: 'visible' })
-  await firstAlternative.click()
-  await page.getByRole('button', { name: 'Responder' }).click()
-  // Feedback panel confirms the answer was graded (first API hit compiles in dev).
-  await expect(page.getByTestId('answer-feedback')).toBeVisible({ timeout: 30_000 })
-}
-
-test('visitor answers two questions then hits the signup gate', async ({ page }) => {
-  // Dev-mode on-demand compilation makes the first navigations slow.
+test('visitor is redirected to signup and non-subscriber to paywall', async ({ page }) => {
   test.setTimeout(90_000)
   await page.goto('/')
 
-  // Choose Enfermagem and start the feed (home compiles on first hit).
+  // Choose Enfermagem and start the feed.
   const careerButton = page.getByTestId('career-enfermeiro-a')
   await careerButton.waitFor({ state: 'visible', timeout: 30_000 })
   await careerButton.click()
-  await expect(page).toHaveURL(/\/feed\?career=enfermeiro-a/, { timeout: 30_000 })
+  
+  // 1. Visitor redirected immediately to signup.
+  await expect(page).toHaveURL(/\/signup\?next=%2Ffeed%3Fcareer%3Denfermeiro-a/, { timeout: 30_000 })
+  await expect(page.getByTestId('signup-form')).toBeVisible({ timeout: 15_000 })
 
-  // First free question.
-  await answerCurrentQuestion(page)
-  await page.getByTestId('next-question').click()
+  // Go to login.
+  await page.getByRole('link', { name: 'Já tenho conta' }).click()
+  await expect(page).toHaveURL(/\/login\?next=%2Ffeed%3Fcareer%3Denfermeiro-a/, { timeout: 15_000 })
 
-  // Second free question.
-  await answerCurrentQuestion(page)
-  await page.getByTestId('next-question').click()
+  // Log in as non-subscriber.
+  await page.getByTestId('email').fill('aluno@aprovaenf.local')
+  await page.getByTestId('password').fill('aprovaenf123')
+  await page.getByTestId('submit').click()
 
-  // After 2 answers, the signup gate must appear.
-  await expect(page.getByTestId('signup-gate')).toBeVisible({ timeout: 15_000 })
-  await expect(
-    page.getByRole('link', { name: 'Criar conta gratuita' }),
-  ).toBeVisible()
+  // 2. Non-subscriber redirected to paywall (/assinar).
+  await expect(page).toHaveURL(/\/assinar/, { timeout: 30_000 })
+  await expect(page.getByTestId('paywall')).toBeVisible({ timeout: 15_000 })
 })
+

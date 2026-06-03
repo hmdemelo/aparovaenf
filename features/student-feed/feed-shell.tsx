@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { BookOpen, Heart, History, UserCircle } from 'lucide-react'
+import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { QuestionCard } from './question-card'
 import { AnswerFeedback } from './answer-feedback'
 import { SignupGate } from '@/features/trial/signup-gate'
@@ -157,104 +158,135 @@ export function FeedShell({
 
   return (
     <div
-      className="mx-auto flex w-full max-w-[430px] flex-col gap-4 px-4 py-5 sm:py-8"
+      className="min-h-dvh pb-28"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <header className="flex items-center justify-between px-1">
-        <p className="aprova-wordmark text-[21px]">
-          aprova<span className="text-[var(--teal)]">enf</span>
-        </p>
-        <span
-          className={`aprova-pill ${subscriptionActive ? 'aprova-pill-pro' : ''}`}
-        >
-          {subscriptionActive ? 'PRO' : 'Trial'}
-        </span>
+      <header className="aprova-appbar sticky top-0 z-40">
+        <div className="mx-auto flex h-16 w-full max-w-[980px] items-center justify-between px-4 sm:px-6">
+          <Link href="/" aria-label="aprovaenf início">
+            <AprovaenfLogo className="text-[var(--teal)]" />
+          </Link>
+
+          <nav className="hidden items-center gap-5 text-sm font-semibold text-[var(--muted)] md:flex">
+            <Link href={feedHref} className="text-[var(--teal)]">
+              Estudo
+            </Link>
+            <Link href="/favorites" className="transition hover:text-[var(--teal)]">
+              Favoritos
+            </Link>
+            <Link href="/errors" className="transition hover:text-[var(--teal)]">
+              Erros
+            </Link>
+            <Link href="/login" className="transition hover:text-[var(--teal)]">
+              Conta
+            </Link>
+          </nav>
+
+          <span
+            className={`aprova-pill ${subscriptionActive ? 'aprova-pill-pro' : ''}`}
+          >
+            {subscriptionActive ? 'PRO' : 'Trial'}
+          </span>
+        </div>
+        <div className="mx-auto h-1.5 w-full max-w-[980px] px-4 sm:px-6">
+          <div className="h-full overflow-hidden rounded-full bg-[var(--surface)]">
+            <div className="h-full w-[42%] rounded-full bg-[var(--teal-mid)]" />
+          </div>
+        </div>
       </header>
 
-      {error && (
-        <p className="rounded-[var(--radius-sm)] bg-[var(--danger-bg)] px-4 py-2 text-sm text-[var(--danger)]">
-          {error}
-        </p>
-      )}
+      <main className="mx-auto flex w-full max-w-[430px] flex-col gap-4 px-4 py-6 sm:py-8">
+        {error && (
+          <p className="rounded-[var(--radius-sm)] bg-[var(--danger-bg)] px-4 py-2 text-sm text-[var(--danger)]">
+            {error}
+          </p>
+        )}
 
-      {loading && (
-        <p className="py-12 text-center text-sm text-[var(--muted)]">
-          Carregando...
-        </p>
-      )}
-
-      {!loading && gate === 'signup' && <SignupGate careerSlug={careerSlug} />}
-      {!loading && gate === 'paywall' && <Paywall />}
-
-      {!loading && gate === 'none' && question && (
-        <article className="relative rounded-[var(--radius)] border border-[color:var(--line-2)] bg-white p-[22px] shadow-[0_10px_30px_-15px_rgba(20,43,38,0.15)]">
-          <div className="mb-4 flex justify-end">
-            <span className="aprova-timer" aria-label="Indicador de leitura">
+        {loading && (
+          <div className="aprova-study-card px-5 py-12 text-center">
+            <span className="aprova-timer justify-center" aria-label="Carregando">
               <span className="aprova-dot" aria-hidden="true" />
-              leitura
+              Carregando questão
             </span>
           </div>
-          <QuestionCard
-            key={question.id}
-            question={question}
-            feedback={feedback}
-            submitting={submitting}
-            onAnswer={submitAnswer}
-            favorited={favorited}
-            // Favoriting becomes available after the question is answered.
-            onToggleFavorite={feedback ? toggleFavorite : undefined}
-          />
-          {favoriteMsg && (
-            <p
-              className="mt-3 rounded-[var(--radius-sm)] bg-[var(--warn-bg)] px-4 py-2 text-sm text-[var(--warn)]"
-              data-testid="favorite-message"
-            >
-              {favoriteMsg}
-            </p>
-          )}
-          {feedback && (
-            <div className="mt-5">
-              <AnswerFeedback feedback={feedback} onNext={advance} />
-              <p className="mt-2 text-center text-xs text-[var(--hint)]">
-                Deslize para cima para a próxima
-              </p>
+        )}
+
+        {!loading && gate === 'signup' && <SignupGate careerSlug={careerSlug} />}
+        {!loading && gate === 'paywall' && <Paywall />}
+
+        {!loading && gate === 'none' && question && (
+          <article className="aprova-study-card relative p-6 sm:p-7">
+            <div className="mb-5 flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-[0.04em] text-[var(--muted)]">
+                Questão ativa
+              </span>
+              <span className="aprova-timer" aria-label="Indicador de leitura">
+                <span className="aprova-dot" aria-hidden="true" />
+                leitura
+              </span>
             </div>
-          )}
-        </article>
-      )}
+            <QuestionCard
+              key={question.id}
+              question={question}
+              feedback={feedback}
+              submitting={submitting}
+              onAnswer={submitAnswer}
+              favorited={favorited}
+              // Favoriting becomes available after the question is answered.
+              onToggleFavorite={feedback ? toggleFavorite : undefined}
+            />
+            {favoriteMsg && (
+              <p
+                className="mt-4 rounded-[var(--radius-sm)] bg-[var(--warn-bg)] px-4 py-2 text-sm text-[var(--warn)]"
+                data-testid="favorite-message"
+              >
+                {favoriteMsg}
+              </p>
+            )}
+            {feedback && (
+              <div className="mt-6">
+                <AnswerFeedback feedback={feedback} onNext={advance} />
+                <p className="mt-3 text-center text-xs text-[var(--hint)]">
+                  Deslize para cima para a próxima
+                </p>
+              </div>
+            )}
+          </article>
+        )}
 
-      {!loading && gate === 'none' && !question && (
-        <p className="py-12 text-center text-sm text-[var(--muted)]">
-          Não há mais questões disponíveis para esta configuração.
-        </p>
-      )}
+        {!loading && gate === 'none' && !question && (
+          <p className="aprova-study-card px-5 py-12 text-center text-sm text-[var(--muted)]">
+            Não há mais questões disponíveis para esta configuração.
+          </p>
+        )}
+      </main>
 
-      <nav className="grid grid-cols-4 border-t border-[color:var(--line)] bg-white text-[10.5px] font-medium text-[var(--muted)]">
+      <nav className="aprova-bottom-nav fixed bottom-5 left-1/2 z-50 grid w-[min(92vw,420px)] -translate-x-1/2 grid-cols-4 p-2 md:hidden">
         <Link
           href={feedHref}
-          className="flex flex-col items-center gap-1 px-1 py-3 text-[var(--teal)]"
+          className="aprova-nav-tab aprova-nav-tab-active"
         >
           <BookOpen size={21} />
-          Questões
+          Estudo
         </Link>
         <Link
           href="/favorites"
-          className="flex flex-col items-center gap-1 px-1 py-3 transition hover:text-[var(--teal)]"
+          className="aprova-nav-tab"
         >
           <Heart size={21} />
           Favoritos
         </Link>
         <Link
           href="/errors"
-          className="flex flex-col items-center gap-1 px-1 py-3 transition hover:text-[var(--teal)]"
+          className="aprova-nav-tab"
         >
           <History size={21} />
           Erros
         </Link>
         <Link
           href="/login"
-          className="flex flex-col items-center gap-1 px-1 py-3 transition hover:text-[var(--teal)]"
+          className="aprova-nav-tab"
         >
           <UserCircle size={21} />
           Conta

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 
 type ApiError = { error?: { message?: string } }
 
-const FIELD_CLASS = 'rounded-xl border border-slate-200 px-4 py-3 text-sm'
+const FIELD_CLASS = 'aprova-field'
 
 /**
  * Admin form to provision a new author. Posts to /api/admin/authors and refreshes
@@ -67,7 +67,7 @@ export function CreateAuthorForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5"
+      className="flex flex-col gap-3 rounded-[18px] border border-[color:var(--line)] bg-white/82 p-5"
       data-testid="create-author-form"
     >
       <div className="grid gap-3 sm:grid-cols-2">
@@ -127,14 +127,14 @@ export function CreateAuthorForm() {
         className={FIELD_CLASS}
       />
 
-      {error && <p className="text-sm text-rose-600">{error}</p>}
-      {success && <p className="text-sm text-emerald-700">{success}</p>}
+      {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
+      {success && <p className="text-sm text-[var(--teal)]">{success}</p>}
 
       <button
         type="submit"
         disabled={loading}
         data-testid="author-submit"
-        className="rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700 disabled:bg-slate-300"
+        className="aprova-button py-3 disabled:bg-[var(--hint)]"
       >
         {loading ? 'Criando...' : 'Criar autor'}
       </button>

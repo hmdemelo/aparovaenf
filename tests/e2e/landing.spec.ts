@@ -24,13 +24,13 @@ test('landing presents the offer and starts the feed from a career', async ({
   await expect(page.getByText('R$ 29,90')).toBeVisible()
   await expect(page.getByText('R$ 287,00')).toBeVisible()
 
-  // Choosing a career starts the feed without a signup wall.
+  // Choosing a career redirects to the signup wall.
   const career = page.getByTestId('career-enfermeiro-a')
   await career.waitFor({ state: 'visible', timeout: 30_000 })
   await career.click()
 
-  await expect(page).toHaveURL(/\/feed\?career=enfermeiro-a/, { timeout: 30_000 })
-  await expect(page.getByTestId('alternative').first()).toBeVisible({
+  await expect(page).toHaveURL(/\/signup\?next=%2Ffeed%3Fcareer%3Denfermeiro-a/, { timeout: 30_000 })
+  await expect(page.getByTestId('signup-form')).toBeVisible({
     timeout: 30_000,
   })
 })

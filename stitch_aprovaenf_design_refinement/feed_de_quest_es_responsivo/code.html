@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html class="light" lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&amp;family=Hanken+Grotesk:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary": "#ffffff",
+                      "on-background": "#0e1f1a",
+                      "background": "#eafef6",
+                      "outline-variant": "#bec9c3",
+                      "on-secondary-container": "#66645e",
+                      "tertiary-fixed-dim": "#ffb4a8",
+                      "on-error-container": "#93000a",
+                      "surface-bright": "#eafef6",
+                      "primary-fixed-dim": "#84d6b9",
+                      "primary": "#005440",
+                      "success-soft": "#D1FAE5",
+                      "surface-container": "#def2ea",
+                      "on-primary": "#ffffff",
+                      "tertiary": "#78352b",
+                      "surface-container-high": "#d9ede5",
+                      "on-secondary-fixed-variant": "#484741",
+                      "surface-container-highest": "#d3e7df",
+                      "graphite-muted": "#4A5D58",
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-container": "#ffd3cc",
+                      "on-primary-fixed-variant": "#00513e",
+                      "secondary": "#605e58",
+                      "on-tertiary-fixed": "#3b0804",
+                      "on-surface-variant": "#3f4944",
+                      "on-primary-container": "#9aedcf",
+                      "surface": "#eafef6",
+                      "primary-fixed": "#a0f3d4",
+                      "secondary-container": "#e6e2da",
+                      "surface-dim": "#cbded7",
+                      "primary-container": "#0f6e56",
+                      "surface-variant": "#d3e7df",
+                      "surface-container-low": "#e4f8f0",
+                      "on-secondary-fixed": "#1c1c17",
+                      "error": "#ba1a1a",
+                      "success-text": "#065F46",
+                      "on-primary-fixed": "#002117",
+                      "error-text": "#991B1B",
+                      "secondary-fixed": "#e6e2da",
+                      "tertiary-fixed": "#ffdad4",
+                      "on-surface": "#0e1f1a",
+                      "outline": "#6f7a74",
+                      "inverse-surface": "#23342f",
+                      "on-error": "#ffffff",
+                      "secondary-fixed-dim": "#cac6bf",
+                      "inverse-on-surface": "#e1f5ed",
+                      "error-soft": "#FEE2E2",
+                      "inverse-primary": "#84d6b9",
+                      "surface-tint": "#086b53",
+                      "tertiary-container": "#954c41",
+                      "on-secondary": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "surface-paper": "#F7F5F0",
+                      "on-tertiary-fixed-variant": "#743329"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "2xl": "1rem",
+                      "3xl": "1.5rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "stack-sm": "12px",
+                      "stack-md": "24px",
+                      "margin-desktop": "40px",
+                      "base": "8px",
+                      "gutter": "16px",
+                      "stack-lg": "40px",
+                      "margin-mobile": "20px"
+              },
+              "fontFamily": {
+                      "label-md": ["Hanken Grotesk"],
+                      "display-lg-mobile": ["Bricolage Grotesque"],
+                      "display-lg": ["Bricolage Grotesque"],
+                      "body-md": ["Hanken Grotesk"],
+                      "body-lg": ["Hanken Grotesk"],
+                      "headline-sm": ["Bricolage Grotesque"],
+                      "label-sm": ["Hanken Grotesk"],
+                      "headline-md": ["Bricolage Grotesque"]
+              },
+              "fontSize": {
+                      "label-md": ["14px", {"lineHeight": "1.2", "letterSpacing": "0.01em", "fontWeight": "600"}],
+                      "display-lg-mobile": ["28px", {"lineHeight": "1.1", "fontWeight": "800"}],
+                      "display-lg": ["32px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                      "body-md": ["16px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                      "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                      "headline-sm": ["20px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                      "label-sm": ["12px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                      "headline-md": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .question-card {
+            box-shadow: 0px 10px 30px rgba(15, 110, 86, 0.08);
+            border: 1px solid rgba(26, 43, 38, 0.05);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .author-expansion {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .author-expansion.open {
+            max-height: 1000px;
+        }
+        body {
+          min-height: 100dvh;
+        }
+    </style>
+</head>
+<body class="bg-[#EFEBE3] text-on-surface font-body-md min-h-screen flex flex-col items-center">
+<!-- Top Bar -->
+<header class="w-full top-0 sticky z-40 bg-background/80 backdrop-blur-md flex justify-center items-center py-4 border-b border-surface-container shadow-sm">
+<div class="max-w-7xl w-full px-margin-mobile md:px-margin-desktop flex flex-col gap-1">
+<div class="flex justify-between items-center">
+<h1 class="font-headline-md text-primary tracking-tight">
+<img alt="aprovaenf logo" class="w-auto object-contain h-10 md:h-12" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgUlr6x4CM0a3cYiTskZbwrnJ22QMXshGI5mkqZSpqNuxwvHttXrcq4IlNpUgOdyl-W5wIotGg5q8hyZ5WvRhuGr83JpAd73dW-pL-G5g8ZWmN303ZRQ_E5jbKAGBBaK3Fd-k0Ee0qXaUGpS6VC6n0PPRwYsnXZeZqz_FQ2LsbvJeHmNsREiZWTm8e8vJtXE0tR1QYDC4lEgW1Heqsje3_5PBbWWcUD6wXWQBv6AaICfh9BEEmBlMr-GoYPSoyfc0SbXAzqdQ8DsA"/>
+</h1>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center gap-6 mr-8">
+<a class="text-primary font-label-md flex items-center gap-2 border-b-2 border-primary pb-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span> Home
+                        </a>
+<a class="text-graphite-muted font-label-md flex items-center gap-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">quiz</span> Estudo
+                        </a>
+<a class="text-graphite-muted font-label-md flex items-center gap-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">insights</span> Desempenho
+                        </a>
+<a class="text-graphite-muted font-label-md flex items-center gap-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">person</span> Perfil
+                        </a>
+</div>
+<span class="bg-primary text-white text-[10px] md:text-xs px-2 md:px-3 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[12px] md:text-[14px]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                        PRO
+                    </span>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="w-full h-1.5 bg-surface-container rounded-full mt-2 overflow-hidden">
+<div class="h-full bg-primary-container w-[65%] transition-all duration-700"></div>
+</div>
+</div>
+</header>
+<!-- Main Question Feed -->
+<main class="flex-1 w-full max-w-7xl px-margin-mobile md:px-margin-desktop pt-6 md:pt-12 pb-32 flex flex-col items-center">
+<!-- Question Content Container -->
+<div class="w-full max-w-3xl space-y-6" id="question-screen">
+<div class="question-card bg-surface-paper rounded-3xl p-6 md:p-12 flex flex-col gap-8">
+<!-- Question Header -->
+<div class="flex items-center justify-between">
+<span class="text-graphite-muted font-label-sm md:text-label-md uppercase tracking-wider">Questão 42 • Enfermagem Geral</span>
+<button class="text-primary hover:opacity-80 transition-opacity p-2 hover:bg-surface-container rounded-full">
+<span class="material-symbols-outlined md:text-[28px]">bookmark</span>
+</button>
+</div>
+<!-- Question Body -->
+<p class="font-headline-sm text-headline-sm md:text-headline-md text-on-surface leading-tight">
+                    Durante o atendimento a um paciente com suspeita de Infarto Agudo do Miocárdio (IAM), qual das seguintes intervenções de enfermagem é prioritária na fase inicial de cuidados?
+                </p>
+<!-- Options -->
+<div class="flex flex-col gap-4">
+<button class="group w-full text-left p-5 md:p-6 rounded-2xl md:rounded-3xl bg-white border border-on-surface-variant/10 hover:border-primary/30 transition-all duration-200 active:scale-[0.98] shadow-sm" onclick="handleSelect(this, false)">
+<div class="flex items-start gap-5">
+<span class="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full border border-on-surface-variant/20 flex items-center justify-center font-bold text-graphite-muted group-hover:bg-primary-fixed/20 group-hover:text-primary transition-colors text-lg">A</span>
+<span class="font-body-md md:text-body-lg text-on-surface-variant leading-relaxed">Administração imediata de insulina regular por via subcutânea.</span>
+</div>
+</button>
+<button class="group w-full text-left p-5 md:p-6 rounded-2xl md:rounded-3xl bg-white border border-on-surface-variant/10 hover:border-primary/30 transition-all duration-200 active:scale-[0.98] shadow-sm" onclick="handleSelect(this, true)">
+<div class="flex items-start gap-5">
+<span class="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full border border-on-surface-variant/20 flex items-center justify-center font-bold text-graphite-muted group-hover:bg-primary-fixed/20 group-hover:text-primary transition-colors text-lg">B</span>
+<span class="font-body-md md:text-body-lg text-on-surface-variant leading-relaxed">Monitoramento contínuo do ECG e oxigenoterapia se saturação &lt; 94%.</span>
+</div>
+</button>
+<button class="group w-full text-left p-5 md:p-6 rounded-2xl md:rounded-3xl bg-white border border-on-surface-variant/10 hover:border-primary/30 transition-all duration-200 active:scale-[0.98] shadow-sm" onclick="handleSelect(this, false)">
+<div class="flex items-start gap-5">
+<span class="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full border border-on-surface-variant/20 flex items-center justify-center font-bold text-graphite-muted group-hover:bg-primary-fixed/20 group-hover:text-primary transition-colors text-lg">C</span>
+<span class="font-body-md md:text-body-lg text-on-surface-variant leading-relaxed">Realização de massagem cardíaca externa preventiva.</span>
+</div>
+</button>
+<button class="group w-full text-left p-5 md:p-6 rounded-2xl md:rounded-3xl bg-white border border-on-surface-variant/10 hover:border-primary/30 transition-all duration-200 active:scale-[0.98] shadow-sm" onclick="handleSelect(this, false)">
+<div class="flex items-start gap-5">
+<span class="flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full border border-on-surface-variant/20 flex items-center justify-center font-bold text-graphite-muted group-hover:bg-primary-fixed/20 group-hover:text-primary transition-colors text-lg">D</span>
+<span class="font-body-md md:text-body-lg text-on-surface-variant leading-relaxed">Aplicação de compressas quentes na região precordial para alívio da dor.</span>
+</div>
+</button>
+</div>
+</div>
+<!-- Feedback Section -->
+<div class="author-expansion" id="feedback-section">
+<div class="flex flex-col gap-6 mt-6">
+<div class="question-card bg-surface-dim/40 rounded-3xl p-6 md:p-10 flex flex-col gap-4">
+<div class="flex items-center gap-3 text-primary">
+<span class="material-symbols-outlined md:text-3xl">psychology</span>
+<h3 class="font-headline-sm text-headline-sm md:text-headline-md">Comentário do Autor</h3>
+</div>
+<p class="font-body-md md:text-body-lg text-on-surface-variant leading-relaxed">
+                            No manejo inicial do IAM, o protocolo preconiza a monitorização eletrocardiográfica contínua para identificação de arritmias malignas e a suplementação de oxigênio apenas em casos de hipoxemia (SatO2 &lt; 94%). A alternativa A está incorreta pois a insulina não é prioridade no IAM. A alternativa C é contraindicada em pacientes conscientes. A alternativa D não possui base científica para o tratamento da isquemia miocárdica.
+                        </p>
+<div class="mt-4 pt-4 border-t border-on-surface-variant/10 flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">thumb_up</span>
+<span class="text-label-md font-label-md text-graphite-muted">98% acharam útil</span>
+</div>
+<span class="text-label-md font-label-md text-primary bg-primary-fixed/30 px-3 py-1 rounded-full">Referência: Protocolo AHA 2023</span>
+</div>
+</div>
+<!-- Next Button -->
+<button class="w-full bg-primary text-white py-6 md:py-8 rounded-3xl font-headline-sm md:text-headline-md flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-transform hover:bg-primary-container" onclick="window.location.reload()">
+                        Próxima Questão
+                        <span class="material-symbols-outlined md:text-3xl">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Navigation Capsule (Mobile Only) -->
+<nav class="md:hidden fixed bottom-6 left-0 right-0 mx-auto z-50 flex justify-around items-center p-2 max-w-md bg-surface-container-lowest/80 backdrop-blur-md border border-on-surface-variant/5 rounded-full shadow-[0px_10px_30px_rgba(15,110,86,0.15)] w-[90%]">
+<a class="flex flex-col items-center justify-center text-primary bg-primary-fixed/30 rounded-full px-5 py-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-[10px]">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-graphite-muted hover:bg-surface-variant/50 rounded-full px-5 py-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">quiz</span>
+<span class="font-label-sm text-[10px]">Estudo</span>
+</a>
+<a class="flex flex-col items-center justify-center text-graphite-muted hover:bg-surface-variant/50 rounded-full px-5 py-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-label-sm text-[10px]">Desempenho</span>
+</a>
+<a class="flex flex-col items-center justify-center text-graphite-muted hover:bg-surface-variant/50 rounded-full px-5 py-2 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-sm text-[10px]">Perfil</span>
+</a>
+</nav>
+<script>
+        function handleSelect(element, isCorrect) {
+            const allOptions = element.parentNode.querySelectorAll('button');
+            allOptions.forEach(opt => {
+                opt.disabled = true;
+                opt.classList.remove('hover:border-primary/30', 'shadow-sm');
+                opt.classList.add('opacity-60');
+            });
+
+            element.classList.remove('opacity-60');
+            element.classList.add('opacity-100');
+
+            if (isCorrect) {
+                element.classList.add('bg-success-soft', 'border-success-text', 'text-success-text');
+                element.querySelector('span:first-child').classList.add('bg-success-text', 'text-white', 'border-transparent');
+                showFeedback();
+            } else {
+                element.classList.add('bg-error-soft', 'border-error-text', 'text-error-text');
+                element.querySelector('span:first-child').classList.add('bg-error-text', 'text-white', 'border-transparent');
+                
+                // Show the correct one
+                allOptions.forEach(opt => {
+                    if(opt.innerText.includes('B')) {
+                        opt.classList.add('bg-success-soft', 'border-success-text', 'text-success-text', 'opacity-100');
+                        opt.classList.remove('opacity-60');
+                    }
+                });
+                showFeedback();
+            }
+        }
+
+        function showFeedback() {
+            const feedback = document.getElementById('feedback-section');
+            feedback.classList.add('open');
+            setTimeout(() => {
+                feedback.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+        }
+    </script>
+</body></html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Planos e Assinaturas - aprovaenf</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&amp;family=Hanken+Grotesk:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .paper-texture {
+            background-color: #eafef6;
+            background-image: radial-gradient(circle at 0% 0%, rgba(132, 214, 185, 0.15) 0%, transparent 50%),
+                              radial-gradient(circle at 100% 100%, rgba(0, 84, 64, 0.05) 0%, transparent 50%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(20, 43, 38, 0.12);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#0e1f1a",
+                        "inverse-primary": "#84d6b9",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#cbded7",
+                        "surface-container-low": "#e4f8f0",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#00543c",
+                        "secondary-container": "#e6e2da",
+                        "on-tertiary-container": "#80f2c3",
+                        "surface-variant": "#d3e7df",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#cac6bf",
+                        "on-tertiary-fixed-variant": "#00513a",
+                        "primary-fixed-dim": "#84d6b9",
+                        "inverse-surface": "#23342f",
+                        "on-primary-fixed": "#002117",
+                        "tertiary-fixed": "#86f8c9",
+                        "on-secondary-fixed-variant": "#484741",
+                        "surface-container-highest": "#d3e7df",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#def2ea",
+                        "outline": "#6f7a74",
+                        "on-error-container": "#93000a",
+                        "secondary": "#605e58",
+                        "surface": "#eafef6",
+                        "on-secondary-fixed": "#1c1c17",
+                        "surface-bright": "#eafef6",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#00513e",
+                        "background": "#eafef6",
+                        "on-background": "#0e1f1a",
+                        "on-primary-container": "#9aedcf",
+                        "secondary-fixed": "#e6e2da",
+                        "primary": "#005440",
+                        "surface-container-high": "#d9ede5",
+                        "inverse-on-surface": "#e1f5ed",
+                        "tertiary-container": "#006f50",
+                        "on-secondary-container": "#66645e",
+                        "primary-fixed": "#a0f3d4",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#3f4944",
+                        "primary-container": "#0f6e56",
+                        "surface-tint": "#086b53",
+                        "outline-variant": "#bec9c3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "12px",
+                        "xxl": "24px",
+                        "gutter": "16px",
+                        "sm": "8px",
+                        "margin-desktop": "32px",
+                        "unit": "4px",
+                        "max-width-reading": "576px",
+                        "margin-mobile": "16px",
+                        "xl": "22px",
+                        "xs": "4px",
+                        "max-width-mobile-ui": "430px",
+                        "lg": "16px",
+                        "max-width-admin": "980px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Bricolage Grotesque"],
+                        "display-md": ["Bricolage Grotesque"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "body-base": ["Hanken Grotesk"],
+                        "body-bold": ["Hanken Grotesk"],
+                        "label-sm": ["Hanken Grotesk"],
+                        "display-lg-mobile": ["Bricolage Grotesque"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["30px", {"lineHeight": "1.05", "fontWeight": "600"}],
+                        "display-md": ["21px", {"lineHeight": "1.15", "fontWeight": "600"}],
+                        "body-lg": ["16.5px", {"lineHeight": "1.55", "fontWeight": "400"}],
+                        "body-base": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                        "body-bold": ["15px", {"lineHeight": "1.5", "fontWeight": "600"}],
+                        "label-sm": ["11px", {"lineHeight": "1.0", "letterSpacing": "0.04em", "fontWeight": "500"}],
+                        "display-lg-mobile": ["26px", {"lineHeight": "1.1", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="paper-texture min-h-screen text-on-surface font-body-base selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
+<!-- Top AppBar -->
+<header class="w-full top-0 sticky z-50 bg-background/80 backdrop-blur-md">
+<div class="flex justify-between items-center px-margin-mobile h-16 max-w-max-width-admin mx-auto">
+<img alt="aprovaenf" class="w-auto object-contain h-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyj9N6BaB4MYOWrFGOMtQT686_cbyWlfG4CWs_VLLNrOpbks_KicCMckbI42TX6zempZaH6mZ2fT-yZHsVAMJroAOOM46_vTu4_fHy0c4SwhELrtTherg0QAY3WwT5l7BLq5Y6B1dbONWcRln87-8jRQEChGSC1fsXG2U2SKFI9gePA_UqMyH9YuKQqUX6ZJWIAI4Ige3ywhJZnQtcMPdb2gb4lGUJtRC2Jb-HT17PueYFkz0RFbz9mQ1ilreytU8Je5GSc0pvCG8"/>
+<div class="flex items-center gap-md">
+<span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-label-sm text-label-sm">PRO</span>
+</div>
+</div>
+</header>
+<main class="max-w-max-width-admin mx-auto px-margin-mobile pt-lg pb-32">
+<!-- Hero Section -->
+<section class="mb-xxl text-center max-w-2xl mx-auto">
+<h2 class="font-display-lg-mobile md:text-display-lg text-primary mb-sm">Escolha seu caminho</h2>
+<p class="text-on-surface-variant font-body-lg text-body-lg">Eleve sua preparação para o próximo nível com ferramentas exclusivas.</p>
+</section>
+<!-- Pricing Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg lg:gap-xxl max-w-4xl mx-auto items-stretch">
+<!-- Free Plan -->
+<div class="glass-card rounded-[22px] p-xl relative overflow-hidden transition-all duration-300 hover:shadow-md flex flex-col">
+<div class="flex justify-between items-start mb-md">
+<div>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Básico</span>
+<h3 class="font-display-md text-display-md text-on-surface">Plano Free</h3>
+</div>
+<div class="text-right">
+<span class="font-display-md text-display-md text-on-surface">R$ 0</span>
+<p class="text-label-sm font-label-sm text-on-surface-variant">para sempre</p>
+</div>
+</div>
+<ul class="space-y-sm mb-lg flex-grow">
+<li class="flex items-center gap-sm text-body-base font-body-base">
+<span class="material-symbols-outlined text-primary scale-90">check_circle</span>
+                        Questões limitadas por dia
+                    </li>
+<li class="flex items-center gap-sm text-body-base font-body-base">
+<span class="material-symbols-outlined text-primary scale-90">check_circle</span>
+                        Simulados básicos
+                    </li>
+<li class="flex items-center gap-sm text-outline font-body-base opacity-60">
+<span class="material-symbols-outlined scale-90">lock</span>
+                        Comentários de especialistas
+                    </li>
+</ul>
+<div class="mt-auto">
+<button class="w-full border-2 border-outline-variant text-on-surface-variant font-body-bold text-body-lg py-md rounded-xl hover:bg-surface-container-low transition-all">Manter Plano Atual</button>
+</div>
+</div>
+<!-- PRO Plan - Featured -->
+<div class="bg-primary text-white rounded-[22px] p-xl relative overflow-hidden shadow-[0_20px_50px_rgba(20,43,38,0.2)] transform hover:scale-[1.02] transition-all duration-300 flex flex-col" style="opacity: 1; transform: translateY(0px); transition: 0.6s cubic-bezier(0.22, 1, 0.36, 1);">
+<!-- Decorative element -->
+<div class="absolute -top-12 -right-12 w-32 h-32 bg-primary-fixed-dim/20 rounded-full blur-3xl"></div>
+<div class="flex justify-between items-start mb-xl relative z-10">
+<div>
+<span class="bg-primary-container text-on-primary-container px-3 py-1 rounded-full font-label-sm text-label-sm uppercase tracking-wider font-bold mb-sm inline-block">Recomendado</span>
+<h3 class="font-display-md text-display-md text-primary-fixed">Plano PRO</h3>
+</div>
+<div class="text-right">
+<span class="font-display-md text-display-md text-white">R$ 29,90</span>
+<p class="text-label-sm font-label-sm text-primary-fixed-dim opacity-80">por mês</p>
+</div>
+</div>
+<div class="space-y-md mb-xl relative z-10 flex-grow">
+<div class="flex items-start gap-md group">
+<div class="mt-1 bg-primary-container/30 p-1.5 rounded-lg group-hover:bg-primary-container/50 transition-colors shrink-0">
+<span class="material-symbols-outlined text-primary-fixed text-[20px]" data-weight="fill">chat_bubble</span>
+</div>
+<div>
+<p class="font-body-bold text-body-bold text-white">20,000+ questões comentadas</p>
+<p class="text-label-sm text-primary-fixed-dim leading-relaxed">Aprenda com a explicação detalhada de cada alternativa.</p>
+</div>
+</div>
+<div class="flex items-start gap-md group">
+<div class="mt-1 bg-primary-container/30 p-1.5 rounded-lg group-hover:bg-primary-container/50 transition-colors shrink-0">
+<span class="material-symbols-outlined text-primary-fixed text-[20px]" data-weight="fill">cloud_download</span>
+</div>
+<div>
+<p class="font-body-bold text-body-bold text-white">Modo Offline</p>
+<p class="text-label-sm text-primary-fixed-dim leading-relaxed">Estude onde estiver, sem depender de conexão com internet.</p>
+</div>
+</div>
+<div class="flex items-start gap-md group">
+<div class="mt-1 bg-primary-container/30 p-1.5 rounded-lg group-hover:bg-primary-container/50 transition-colors shrink-0">
+<span class="material-symbols-outlined text-primary-fixed text-[20px]" data-weight="fill">analytics</span>
+</div>
+<div>
+<p class="font-body-bold text-body-bold text-white">Análise de Desempenho</p>
+<p class="text-label-sm text-primary-fixed-dim leading-relaxed">Gráficos detalhados e pontos de melhoria personalizados.</p>
+</div>
+</div>
+</div>
+<button class="w-full bg-primary-fixed text-on-primary-fixed font-body-bold text-body-lg py-md rounded-xl shadow-lg hover:brightness-105 active:scale-95 transition-all relative z-10 flex items-center justify-center gap-sm mt-auto" onclick="this.classList.add('scale-95')">
+                    Upgrade para PRO
+                    <span class="material-symbols-outlined">rocket_launch</span>
+</button>
+</div>
+</div>
+<!-- Comparison Mini-Table (Clean UI) -->
+<section class="mt-xxl max-w-4xl mx-auto">
+<h4 class="font-label-sm text-label-sm text-secondary uppercase tracking-widest text-center mb-lg">Comparativo Detalhado</h4>
+<div class="space-y-unit overflow-x-auto">
+<div class="min-w-[320px]">
+<div class="grid grid-cols-[1fr_100px_100px] md:grid-cols-[1fr_150px_150px] gap-sm px-md py-sm items-center border-b border-outline-variant/20">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase">Recurso</span>
+<span class="text-center font-label-sm text-label-sm text-secondary">Free</span>
+<span class="text-center font-label-sm text-label-sm text-primary font-bold">PRO</span>
+</div>
+<!-- Feature Rows -->
+<div class="grid grid-cols-[1fr_100px_100px] md:grid-cols-[1fr_150px_150px] gap-sm px-md py-md items-center bg-white/40 rounded-lg">
+<span class="text-body-base font-body-base">Questões Diárias</span>
+<span class="text-center text-body-base text-on-surface-variant">10</span>
+<span class="text-center text-body-base text-primary font-bold">∞</span>
+</div>
+<div class="grid grid-cols-[1fr_100px_100px] md:grid-cols-[1fr_150px_150px] gap-sm px-md py-md items-center">
+<span class="text-body-base font-body-base">Comentários</span>
+<div class="flex justify-center"><span class="material-symbols-outlined text-outline scale-75">close</span></div>
+<div class="flex justify-center"><span class="material-symbols-outlined text-primary scale-90" style="font-variation-settings: 'FILL' 1;">check_circle</span></div>
+</div>
+<div class="grid grid-cols-[1fr_100px_100px] md:grid-cols-[1fr_150px_150px] gap-sm px-md py-md items-center bg-white/40 rounded-lg">
+<span class="text-body-base font-body-base">Simulados Personalizados</span>
+<div class="flex justify-center"><span class="material-symbols-outlined text-outline scale-75">close</span></div>
+<div class="flex justify-center"><span class="material-symbols-outlined text-primary scale-90" style="font-variation-settings: 'FILL' 1;">check_circle</span></div>
+</div>
+<div class="grid grid-cols-[1fr_100px_100px] md:grid-cols-[1fr_150px_150px] gap-sm px-md py-md items-center">
+<span class="text-body-base font-body-base">Filtros Avançados</span>
+<div class="flex justify-center"><span class="material-symbols-outlined text-outline scale-75">close</span></div>
+<div class="flex justify-center"><span class="material-symbols-outlined text-primary scale-90" style="font-variation-settings: 'FILL' 1;">check_circle</span></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Testimonial/Trust Badge -->
+<div class="mt-xxl max-w-4xl mx-auto bg-surface-container-high/50 p-lg rounded-xl border border-outline-variant/30 flex flex-col md:flex-row items-center gap-lg text-center md:text-left">
+<div class="flex -space-x-2 shrink-0">
+<img class="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-white object-cover" data-alt="Close up portrait of a smiling female healthcare student" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDgpyXxzvc1zU6myosSDHgykDNtqB5cgh5n0N-7hT2FW9pjyry06QBqx06SZ75XZuDjT0_ehvflcQ4cc0AAd_G345Ue1sMbVoBbC3w0q0qQNNmxMF-hb2URS8fKd-hGdrLCnFZxZcF15qOxItzgFUdPyZssD4qRtiKj0Vjq2Gl6-1xEEi1pI9IFzHkuN89cXK4HB2utuXjFXnkVnfMDKzAZStBCTH1jp3bbSSgfLRlmkpJYG8-4_oBZl3RtSMrcAVeMor7otP49vh8"/>
+<img class="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-white object-cover" data-alt="Portrait of a young male nursing professional" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGcgdDgjZ7xPoN4Ph68ySWfaRKipi8o9aJAu3n3z6WDIz0VgLVtnUZQOzDVnSWV_BxERObaML6WhMhgUW1iiPQtm4XW6rmZ7S4R7_LXwkkGNl2QizTMAJ7HCqRtGL4iE_NTn7asU4VPp9O5C94qGuhHlk6-AmPRamsSDu3uDsP49Dsqn85UjEJXjF13z8v_N6Av1W3MZnKjfGw7iLLcOIocolL4_z4wPYtPdHYZXXtDZNS_m62HAtEG1CC-BI5PJJ7W7C-RHPjGC0"/>
+<div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-primary-fixed text-on-primary-fixed flex items-center justify-center font-label-sm text-[12px] border-2 border-white">+4k</div>
+</div>
+<p class="text-body-base md:text-body-lg font-body-base text-on-surface-variant max-w-lg">Junte-se a milhares de enfermeiros aprovados com o Plano PRO e tenha acesso a materiais exclusivos preparados por especialistas.</p>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 flex justify-around items-center p-2 bg-surface-container-lowest/90 backdrop-blur-md rounded-full w-[90%] max-w-max-width-mobile-ui shadow-lg border border-outline-variant/20 z-50">
+<a class="flex flex-col items-center justify-center text-secondary px-4 py-2 hover:bg-surface-container-low transition-colors active:scale-90 duration-150 rounded-full" href="#">
+<span class="material-symbols-outlined">style</span>
+<span class="font-label-sm text-label-sm">Estudar</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-4 py-2 hover:bg-surface-container-low transition-colors active:scale-90 duration-150 rounded-full" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-sm text-label-sm">Desempenho</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-4 py-2 hover:bg-surface-container-low transition-colors active:scale-90 duration-150 rounded-full" href="#">
+<span class="material-symbols-outlined">assignment_turned_in</span>
+<span class="font-label-sm text-label-sm">Simulados</span>
+</a>
+<!-- Perfil Active -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-2 active:scale-90 transition-all duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-label-sm text-label-sm">Perfil</span>
+</a>
+</nav>
+<script>
+        // Micro-interactions
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('touchstart', function() {
+                this.classList.add('scale-95');
+            });
+            button.addEventListener('touchend', function() {
+                this.classList.remove('scale-95');
+            });
+        });
+
+        // Add visual interest to the active card
+        window.addEventListener('DOMContentLoaded', () => {
+            const proCard = document.querySelector('.bg-primary');
+            proCard.style.opacity = '0';
+            proCard.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                proCard.style.transition = 'all 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
+                proCard.style.opacity = '1';
+                proCard.style.transform = 'translateY(0)';
+            }, 100);
+        });
+    </script>
+</body></html>

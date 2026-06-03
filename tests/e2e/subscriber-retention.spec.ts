@@ -43,18 +43,25 @@ test('subscriber favorites a question and finds it in favorites', async ({ page 
   await expect(page.getByTestId('favorites-list')).toBeVisible({ timeout: 15_000 })
 })
 
-test('non-subscriber is prompted to subscribe when favoriting', async ({ page }) => {
+test('non-subscriber is prompted to subscribe when accessing features', async ({ page }) => {
   test.setTimeout(120_000)
-  await login(page, 'aluno@aprovaenf.local', '/feed?career=enfermeiro-a')
+  
+  // Try to log in with a non-subscriber account, expecting redirect to paywall (/assinar).
+  await page.goto(`/login?next=${encodeURIComponent('/feed?career=enfermeiro-a')}`)
+  await page.getByTestId('email').fill('aluno@aprovaenf.local')
+  await page.getByTestId('password').fill('aprovaenf123')
+  await page.getByTestId('submit').click()
+  await expect(page).toHaveURL(/\/assinar/, { timeout: 30_000 })
 
-  await answerCurrentQuestion(page)
-  await page.getByTestId('favorite-button').click()
+  // Trying to visit feed directly redirects to paywall too.
+  await page.goto('/feed?career=enfermeiro-a')
+  await expect(page).toHaveURL(/\/assinar/, { timeout: 15_000 })
 
-  await expect(page.getByTestId('favorite-message')).toContainText('Assine', {
-    timeout: 15_000,
-  })
-
-  // Favorites stay locked for non-subscribers.
+  // Favorites page renders the locked state.
   await page.goto('/favorites')
   await expect(page.getByTestId('favorites-locked')).toBeVisible({ timeout: 15_000 })
+
+  // Errors page redirects directly to paywall.
+  await page.goto('/errors')
+  await expect(page).toHaveURL(/\/assinar/, { timeout: 15_000 })
 })

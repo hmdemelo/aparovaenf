@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
 import { AccountDialog } from '@/features/account/account-dialog'
+import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { loadAccountProfile } from '@/features/account/account-service'
 import { resolveAuthorContext } from '@/features/authors/author-context'
 import { getAuthorQuestion } from '@/features/authors/author-question-service'
@@ -46,19 +47,28 @@ export default async function EditQuestionPage({
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl px-4 py-8">
-      <div className="flex items-center justify-between">
-        <Link href="/author/questions" className="text-sm text-emerald-700 underline">
-          ← Voltar
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <Link href="/author/questions" aria-label="Voltar para questões">
+          <AprovaenfLogo className="text-[var(--teal)]" />
         </Link>
         <AccountDialog initialProfile={account} />
       </div>
-      <h1 className="mb-6 mt-2 text-2xl font-bold text-slate-900">Editar questão</h1>
-      <QuestionEditor
-        careers={careers}
-        subjects={subjects}
-        boards={boards}
-        initial={initial}
-      />
+      <div className="mb-5">
+        <Link href="/author/questions" className="text-sm font-semibold text-[var(--teal)] underline">
+          ← Voltar
+        </Link>
+        <h1 className="font-display mt-2 text-[28px] font-semibold text-[var(--ink)]">
+          Editar questão
+        </h1>
+      </div>
+      <section className="aprova-paper-card p-5 sm:p-6">
+        <QuestionEditor
+          careers={careers}
+          subjects={subjects}
+          boards={boards}
+          initial={initial}
+        />
+      </section>
     </main>
   )
 }

@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/db/server'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
+import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { listFavorites } from '@/features/student-feed/favorites-service'
 
 export const dynamic = 'force-dynamic'
@@ -16,20 +17,25 @@ export default async function FavoritesPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-bold text-slate-900">Favoritos</h1>
+      <Link href="/" aria-label="aprovaenf início">
+        <AprovaenfLogo className="mb-8 text-[var(--teal)]" />
+      </Link>
+      <h1 className="font-display mb-6 text-[28px] font-semibold text-[var(--ink)]">
+        Favoritos
+      </h1>
 
       {!subscriber ? (
         <div
-          className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center"
+          className="aprova-paper-card p-6 text-center"
           data-testid="favorites-locked"
         >
-          <p className="text-sm text-emerald-800">
+          <p className="text-sm leading-relaxed text-[var(--muted)]">
             Favoritos são um recurso para assinantes. Assine para salvar e
             revisar suas questões.
           </p>
         </div>
       ) : favorites.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-slate-500">
+        <p className="rounded-[18px] border border-dashed border-[color:var(--line-2)] p-8 text-center text-[var(--muted)]">
           Você ainda não favoritou nenhuma questão.
         </p>
       ) : (
@@ -37,12 +43,14 @@ export default async function FavoritesPage() {
           {favorites.map((f) => (
             <li
               key={f.questionId}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-3"
+              className="rounded-[18px] border border-[color:var(--line)] bg-white/82 px-4 py-3"
             >
               {f.subject && (
-                <span className="text-xs text-slate-600">{f.subject}</span>
+                <span className="text-xs font-semibold text-[var(--muted)]">
+                  {f.subject}
+                </span>
               )}
-              <p className="line-clamp-2 text-sm text-slate-700">{f.statement}</p>
+              <p className="line-clamp-2 text-sm text-[var(--ink)]">{f.statement}</p>
             </li>
           ))}
         </ul>
@@ -50,7 +58,7 @@ export default async function FavoritesPage() {
 
       <Link
         href="/"
-        className="mt-6 inline-block text-sm text-emerald-700 underline"
+        className="mt-6 inline-block text-sm font-semibold text-[var(--teal)] underline"
       >
         ← Voltar ao início
       </Link>

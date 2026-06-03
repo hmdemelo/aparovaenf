@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html lang="pt-br" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600&amp;family=Hanken+Grotesk:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@100..900&amp;family=Hanken+Grotesk:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface": "#0e1f1a",
+                    "inverse-primary": "#84d6b9",
+                    "on-tertiary": "#ffffff",
+                    "surface-dim": "#cbded7",
+                    "surface-container-low": "#e4f8f0",
+                    "on-primary": "#ffffff",
+                    "tertiary": "#00543c",
+                    "secondary-container": "#e6e2da",
+                    "on-tertiary-container": "#80f2c3",
+                    "surface-variant": "#d3e7df",
+                    "on-error": "#ffffff",
+                    "secondary-fixed-dim": "#cac6bf",
+                    "on-tertiary-fixed-variant": "#00513a",
+                    "primary-fixed-dim": "#84d6b9",
+                    "inverse-surface": "#23342f",
+                    "on-primary-fixed": "#002117",
+                    "tertiary-fixed": "#86f8c9",
+                    "on-secondary-fixed-variant": "#484741",
+                    "surface-container-highest": "#d3e7df",
+                    "error-container": "#ffdad6",
+                    "surface-container": "#def2ea",
+                    "outline": "#6f7a74",
+                    "on-error-container": "#93000a",
+                    "secondary": "#605e58",
+                    "surface": "#eafef6",
+                    "on-secondary-fixed": "#1c1c17",
+                    "surface-bright": "#eafef6",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed-variant": "#00513e",
+                    "background": "#eafef6",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed": "#002115",
+                    "tertiary-fixed-dim": "#68dbae",
+                    "on-background": "#0e1f1a",
+                    "on-primary-container": "#9aedcf",
+                    "secondary-fixed": "#e6e2da",
+                    "primary": "#005440",
+                    "surface-container-high": "#d9ede5",
+                    "inverse-on-surface": "#e1f5ed",
+                    "tertiary-container": "#006f50",
+                    "on-secondary-container": "#66645e",
+                    "primary-fixed": "#a0f3d4",
+                    "error": "#ba1a1a",
+                    "on-surface-variant": "#3f4944",
+                    "primary-container": "#0f6e56",
+                    "surface-tint": "#086b53",
+                    "outline-variant": "#bec9c3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "12px",
+                    "xxl": "24px",
+                    "gutter": "16px",
+                    "sm": "8px",
+                    "margin-desktop": "32px",
+                    "unit": "4px",
+                    "max-width-reading": "576px",
+                    "margin-mobile": "16px",
+                    "xl": "22px",
+                    "xs": "4px",
+                    "max-width-mobile-ui": "430px",
+                    "lg": "16px",
+                    "max-width-admin": "980px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Bricolage Grotesque"],
+                    "display-md": ["Bricolage Grotesque"],
+                    "body-lg": ["Hanken Grotesk"],
+                    "body-base": ["Hanken Grotesk"],
+                    "body-bold": ["Hanken Grotesk"],
+                    "label-sm": ["Hanken Grotesk"],
+                    "display-lg-mobile": ["Bricolage Grotesque"]
+            },
+            "fontSize": {
+                    "display-lg": ["30px", {"lineHeight": "1.05", "fontWeight": "600"}],
+                    "display-md": ["21px", {"lineHeight": "1.15", "fontWeight": "600"}],
+                    "body-lg": ["16.5px", {"lineHeight": "1.55", "fontWeight": "400"}],
+                    "body-base": ["15px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "body-bold": ["15px", {"lineHeight": "1.5", "fontWeight": "600"}],
+                    "label-sm": ["11px", {"lineHeight": "1.0", "letterSpacing": "0.04em", "fontWeight": "500"}],
+                    "display-lg-mobile": ["26px", {"lineHeight": "1.1", "fontWeight": "600"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #eafef6;
+            background-image: radial-gradient(at 0% 0%, rgba(132, 214, 185, 0.15) 0px, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(132, 214, 185, 0.1) 0px, transparent 50%);
+            min-height: 100vh;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .soft-elevation {
+            box-shadow: 0 8px 30px rgba(20, 43, 38, 0.08);
+        }
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.8s ease-in-out;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body class="font-body-base text-on-surface">
+<!-- TopAppBar -->
+<header class="w-full top-0 sticky z-40 bg-background/80 backdrop-blur-md">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop h-16 max-w-6xl mx-auto">
+<div class="flex items-center gap-3">
+<img alt="aprovaenf" class="w-auto object-contain h-8 md:h-10" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgUlr6x4CM0a3cYiTskZbwrnJ22QMXshGI5mkqZSpqNuxwvHttXrcq4IlNpUgOdyl-W5wIotGg5q8hyZ5WvRhuGr83JpAd73dW-pL-G5g8ZWmN303ZRQ_E5jbKAGBBaK3Fd-k0Ee0qXaUGpS6VC6n0PPRwYsnXZeZqz_FQ2LsbvJeHmNsREiZWTm8e8vJtXE0tR1QYDC4lEgW1Heqsje3_5PBbWWcUD6wXWQBv6AaICfh9BEEmBlMr-GoYPSoyfc0SbXAzqdQ8DsA"/>
+</div>
+<button class="bg-primary text-on-primary font-body-bold px-6 py-2 rounded-full text-label-sm hover:opacity-80 transition-transform active:scale-95">
+                PRO
+            </button>
+</div>
+</header>
+<main class="max-w-6xl mx-auto px-margin-mobile md:px-margin-desktop pt-4 pb-32 space-y-xl md:space-y-xxl">
+<!-- Personalized Greeting -->
+<section class="space-y-xs">
+<h2 class="font-display-lg-mobile text-display-lg-mobile md:text-display-lg text-primary">Olá, Mariana</h2>
+<p class="text-on-surface-variant font-body-base">Pronta para conquistar sua vaga hoje?</p>
+</section>
+<!-- Top Grid: Goal and Continue CTA -->
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-gutter">
+<!-- Daily Goal Progress Card -->
+<section class="lg:col-span-2 bg-surface-container-lowest rounded-[22px] p-lg soft-elevation border border-outline-variant/20 flex items-center justify-between">
+<div class="space-y-1">
+<span class="text-label-sm font-label-sm text-tertiary uppercase tracking-wider">Meta Diária</span>
+<h3 class="font-display-md text-display-md text-on-surface">12 de 20 questões</h3>
+<p class="text-on-surface-variant font-body-base text-sm">Você está quase lá! Falta pouco.</p>
+</div>
+<div class="relative w-20 h-20 flex-shrink-0">
+<svg class="w-full h-full">
+<circle class="text-surface-container-high" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-width="6"></circle>
+<circle class="progress-ring__circle text-primary" cx="40" cy="40" fill="transparent" r="34" stroke="currentColor" stroke-dasharray="213.6" stroke-dashoffset="85.4" stroke-linecap="round" stroke-width="6"></circle>
+</svg>
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="font-body-bold text-primary text-sm">60%</span>
+</div>
+</div>
+</section>
+<!-- Resume Study CTA -->
+<button class="lg:col-span-3 w-full bg-primary-container text-on-primary-container p-xl rounded-[22px] flex items-center justify-between group transition-all duration-300 hover:shadow-lg active:scale-98">
+<div class="text-left space-y-1">
+<p class="font-label-sm text-label-sm text-on-primary-container/80 uppercase">Continuar de onde parou</p>
+<h4 class="font-display-md text-display-md text-white">Fundamentos de Enfermagem</h4>
+<div class="flex items-center gap-2 mt-2">
+<span class="material-symbols-outlined text-sm">play_circle</span>
+<span class="text-sm font-body-base text-white/90">Aula 04: Biossegurança</span>
+</div>
+</div>
+<div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors flex-shrink-0 ml-4">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">arrow_forward</span>
+</div>
+</button>
+</div>
+<!-- Bottom Layout: Activity and Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Last Activity Section -->
+<section class="space-y-lg md:col-span-7 lg:col-span-8">
+<div class="flex justify-between items-end">
+<h3 class="font-display-md text-display-md text-on-surface">Últimas Atividades</h3>
+<a class="text-primary font-body-bold text-sm hover:underline" href="#">Ver tudo</a>
+</div>
+<div class="space-y-md">
+<!-- Activity Item 1 -->
+<div class="bg-surface-container-low/50 p-md rounded-xl border border-outline-variant/10 flex items-center gap-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined">assignment_turned_in</span>
+</div>
+<div class="flex-1">
+<p class="font-body-bold text-on-surface">Simulado: SUS e Saúde Pública</p>
+<p class="text-xs text-on-surface-variant">Ontem • 85% de acerto</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+<!-- Activity Item 2 -->
+<div class="bg-surface-container-low/50 p-md rounded-xl border border-outline-variant/10 flex items-center gap-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined">menu_book</span>
+</div>
+<div class="flex-1">
+<p class="font-body-bold text-on-surface">Leitura: Ética Profissional</p>
+<p class="text-xs text-on-surface-variant">2 dias atrás • Concluído</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+<!-- Activity Item 3 (Added for Desktop Balance) -->
+<div class="hidden md:flex bg-surface-container-low/50 p-md rounded-xl border border-outline-variant/10 items-center gap-md hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined">clinical_notes</span>
+</div>
+<div class="flex-1">
+<p class="font-body-bold text-on-surface">Flashcards: Farmacologia</p>
+<p class="text-xs text-on-surface-variant">Hoje • 15 cartões revisados</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- Quick Stats Bento -->
+<div class="grid grid-cols-2 md:grid-cols-1 md:col-span-5 lg:col-span-4 gap-md">
+<div class="bg-surface-container p-lg rounded-2xl flex flex-col justify-between aspect-square md:aspect-auto md:min-h-[140px]">
+<span class="material-symbols-outlined text-primary text-3xl">bolt</span>
+<div>
+<p class="text-2xl font-display-md text-on-surface">15 dias</p>
+<p class="text-xs text-on-surface-variant font-body-base">Ofensiva atual</p>
+</div>
+</div>
+<div class="bg-secondary-container p-lg rounded-2xl flex flex-col justify-between aspect-square md:aspect-auto md:min-h-[140px]">
+<span class="material-symbols-outlined text-secondary text-3xl">emoji_events</span>
+<div>
+<p class="text-2xl font-display-md text-on-surface">Top 5%</p>
+<p class="text-xs text-on-surface-variant font-body-base">No ranking semanal</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 flex justify-around items-center p-2 bg-surface-container-lowest/90 backdrop-blur-md rounded-full w-[90%] max-w-md shadow-[0_8px_30px_rgb(20,43,38,0.15)] border border-outline-variant/20 z-50">
+<!-- active item: Estudar (Home/Dashboard context) -->
+<a class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full px-4 py-2 transition-all duration-150 active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="style" style="font-variation-settings: 'FILL' 1;">style</span>
+<span class="font-label-sm text-label-sm">Estudar</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-4 py-2 hover:bg-surface-container-low transition-colors rounded-full active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-label-sm text-label-sm">Desempenho</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-4 py-2 hover:bg-surface-container-low transition-colors rounded-full active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="assignment_turned_in">assignment_turned_in</span>
+<span class="font-label-sm text-label-sm">Simulados</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary px-4 py-2 hover:bg-surface-container-low transition-colors rounded-full active:scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm">Perfil</span>
+</a>
+</nav>
+<script>
+        // Subtle interaction for activity items
+        document.querySelectorAll('.activity-item').forEach(item => {
+            item.addEventListener('touchstart', () => {
+                item.style.transform = 'scale(0.98)';
+            });
+            item.addEventListener('touchend', () => {
+                item.style.transform = 'scale(1)';
+            });
+        });
+
+        // Simple animation trigger for the progress ring on load
+        window.addEventListener('load', () => {
+            const circle = document.querySelector('.progress-ring__circle');
+            if (circle) {
+                // Already set by CSS initially, but could be dynamic
+            }
+        });
+    </script>
+</body></html>
