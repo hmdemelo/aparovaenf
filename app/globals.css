@@ -141,7 +141,7 @@ h3,
 }
 
 .aprova-admin-shell {
-  background: #ffffff;
+  background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 22px;
   box-shadow: 0 30px 60px -32px rgba(20, 43, 38, 0.4);
@@ -368,4 +368,30 @@ h3,
   background:
     radial-gradient(circle at 22% 15%, rgba(160, 243, 212, 0.35), transparent 34%),
     linear-gradient(135deg, rgba(247, 245, 240, 0.94), rgba(255, 255, 255, 0.76));
+}
+
+@media (min-width: 768px) {
+  .aprova-frame-main {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .aprova-admin-shell {
+    height: calc(100dvh - 70px);
+    max-height: calc(100dvh - 70px);
+    max-width: calc(100vw - 70px);
+    width: calc(100vw - 70px);
+  }
+
+  .aprova-sidebar {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .aprova-content-panel {
+    height: 100%;
+    overflow-y: auto;
+  }
 }

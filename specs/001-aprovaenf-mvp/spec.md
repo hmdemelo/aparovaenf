@@ -127,14 +127,14 @@ problematic content, verify subscription status, and see core funnel metrics.
 
 ### User Story 6 - Public landing converts visitors (Priority: P3)
 
-As a visitor, I want a clear landing page that explains the offer and authors so
-that I trust the product enough to start the free trial.
+As a visitor, I want a clear landing page that explains the offer, trial, and
+pricing so that I trust the product enough to start the free trial.
 
 **Why this priority**: Landing improves acquisition but the feed experience is
 the primary proof of value.
 
-**Independent Test**: A visitor sees the aprovaenf offer, author trust signals,
-pricing, trial rules, and starts the feed.
+**Independent Test**: A visitor sees the aprovaenf offer, pricing, trial rules,
+and starts the feed.
 
 **Acceptance Scenarios**:
 
@@ -200,6 +200,13 @@ pricing, trial rules, and starts the feed.
 - **FR-026**: Desktop navigation MUST provide a clear next button.
 - **FR-027**: The landing page MUST avoid promising IA, ranking, simulados,
   mapas mentais, or personalized plans in the MVP.
+- **FR-028**: Admins MUST be able to provision new authors from `/admin/authors`
+  through a dialog/modal instead of a fixed top form.
+- **FR-029**: Admins MUST be able to edit author profile fields from
+  `/admin/authors`: display name, short bio, Instagram, and public visibility.
+- **FR-030**: Desktop and tablet admin/author panels MUST use a centered
+  35px-margin frame, fixed left sidebar, logout at the sidebar footer, and a
+  white right content panel with independent vertical scrolling.
 
 ### Key Entities
 

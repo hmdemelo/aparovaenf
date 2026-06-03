@@ -8,6 +8,11 @@ import {
   updateQuestion,
 } from '@/features/authors/author-question-service'
 import { getAuthorProfileId } from '@/features/authors/author-permissions'
+import {
+  importBulkQuestionsForAuthor,
+  type BulkQuestionImportDb,
+} from '@/features/admin/bulk-question-import-service'
+import type { ParsedQuestionRow } from '@/features/admin/bulk-question-import-parser'
 
 const hasLocal = loadLocalEnv()
 // Demo password for the seeded users lives only in .env.local (gitignored).
@@ -82,6 +87,28 @@ d('author question pipeline (local Supabase)', () => {
     }
   }
 
+  function importedIncompleteRow(): ParsedQuestionRow {
+    return {
+      line: 2,
+      careerName: 'Enfermeiro(a)',
+      subjectName: 'Fundamentos de Enfermagem',
+      boardName: null,
+      difficulty: 'facil',
+      sourceType: 'autoral',
+      sourceOrgao: null,
+      sourceCargo: null,
+      sourceYear: null,
+      sourceReference: null,
+      statement: 'Questão importada incompleta para publicação?',
+      generalComment: null,
+      correctLabel: null,
+      alternatives: [
+        { label: 'A', text: 'Alternativa A', alternativeComment: null },
+        { label: 'B', text: 'Alternativa B', alternativeComment: null },
+      ],
+    }
+  }
+
   it('creates a draft owned by the author', async () => {
     const result = await createDraftQuestion(author1, authorId1, draftInput())
     expect(result.ok).toBe(true)
@@ -142,5 +169,36 @@ d('author question pipeline (local Supabase)', () => {
     const forbidden = await publishQuestion(author2, authorId2, created.data.id)
     expect(forbidden.ok).toBe(false)
     if (!forbidden.ok) expect(forbidden.code).toBe('forbidden')
+  })
+
+  it('keeps incomplete imported drafts blocked by publish validation', async () => {
+    const imported = await importBulkQuestionsForAuthor(
+      service as BulkQuestionImportDb,
+      {
+        authorId: authorId1,
+        adminUserId: '00000000-0000-0000-0000-0000000000a1',
+        fileName: 'questoes.csv',
+        fileSize: 256,
+        totalRows: 1,
+        rows: [importedIncompleteRow()],
+        parseErrors: [],
+      },
+    )
+
+    expect(imported.ok).toBe(true)
+    if (!imported.ok) return
+    createdIds.push(...imported.created_question_ids)
+
+    const blocked = await publishQuestion(
+      author1,
+      authorId1,
+      imported.created_question_ids[0],
+    )
+    expect(blocked.ok).toBe(false)
+    if (!blocked.ok) {
+      expect(blocked.code).toBe('validation')
+      expect(blocked.errors).toContain('general comment is required to publish')
+      expect(blocked.errors).toContain('exactly one correct alternative is required')
+    }
   })
 })

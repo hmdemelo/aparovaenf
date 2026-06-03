@@ -12,6 +12,17 @@ A full-stack, responsive web application for practicing healthcare contest (*con
 
 ---
 
+## Current Application Surface
+
+- **Public landing**: career selection, trial explanation, pricing, and direct entry into the question feed. The current landing does not show an author/testimonial section.
+- **Student feed**: mobile-first question flow with answer feedback, required general comment, optional selected-alternative comment, favorites for subscribers, and paywall after trial exhaustion.
+- **Author panel**: question list, author metrics, question creation/editing, account popup, password change, and logout.
+- **Admin panel**: dashboard metrics, users/questions overview, subject management, author provisioning, author profile editing, question unpublishing, bulk question import (scoped to authors via CSV upload with row-level validation), template downloading, and logout.
+- **Desktop/tablet shell**: admin and author panels use a centered beige frame with a 35px browser margin, fixed 200px left sidebar, logout at the sidebar footer, and a white right content panel with independent vertical scrolling.
+- **Admin author management**: `/admin/authors` uses dialogs for both creating new authors and editing author profile fields. The page intentionally has no fixed top form.
+
+---
+
 ## Local Development Setup
 
 ### 1. Prerequisites

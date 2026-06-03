@@ -29,4 +29,5 @@ export default async function globalSetup() {
     .from('questions')
     .update({ status: 'published' })
     .in('id', SEED_QUESTION_IDS)
+  await db.from('questions').delete().eq('statement', 'Questao E2E importada')
 }

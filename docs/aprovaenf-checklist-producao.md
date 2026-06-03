@@ -91,7 +91,7 @@ Colocar no ar uma versao web responsiva do aprovaenf em que:
 - [x] Definir regra do trial: comentarios aparecem durante as 5 questoes gratuitas.
 - [x] Definir regra de autoria: autor decide se comentara todas as alternativas, algumas ou nenhuma individualmente.
 - [x] Decidir se a sugestao da Raimunda altera a regra do MVP: comentario por alternativa permanece opcional.
-- [ ] Definir se os comentarios por alternativa aparecerao apenas da alternativa escolhida ou de todas apos a resposta.
+- [x] Definir se os comentarios por alternativa aparecerao apenas da alternativa escolhida ou de todas apos a resposta: apenas da alternativa escolhida.
 - [x] Definir premissa juridica para questoes de provas oficiais: tratadas como material sem protecao autoral exclusiva.
 - [x] Definir regra editorial minima para questoes de provas anteriores: registrar fonte, banca, cargo, ano e orgao quando disponiveis.
 - [x] Definir headline recomendada da landing: "Sua aprovacao em concursos da saude na palma da mao."
@@ -226,24 +226,25 @@ Colocar no ar uma versao web responsiva do aprovaenf em que:
 
 ## 4. Design system e UI base
 
-- [ ] Transformar o prototipo HTML em base visual reaproveitavel.
-- [ ] Definir tokens visuais:
-  - [ ] Cores
-  - [ ] Tipografia
-  - [ ] Espacamentos
-  - [ ] Raios de borda
-  - [ ] Estados de erro/sucesso/alerta
-- [ ] Criar componentes base:
-  - [ ] Botao
-  - [ ] Campo de texto
-  - [ ] Select
-  - [ ] Modal
-  - [ ] Card
-  - [ ] Tabs ou navegacao
-  - [ ] Badge/chip
+- [x] Transformar o prototipo HTML em base visual reaproveitavel.
+- [x] Definir tokens visuais:
+  - [x] Cores
+  - [x] Tipografia
+  - [x] Espacamentos
+  - [x] Raios de borda
+  - [x] Estados de erro/sucesso/alerta
+- [x] Criar componentes base:
+  - [x] Botao
+  - [x] Campo de texto
+  - [x] Select
+  - [x] Modal
+  - [x] Card
+  - [x] Tabs ou navegacao
+  - [x] Badge/chip
   - [ ] Toast/alerta
-- [ ] Criar layout responsivo para aluno.
-- [ ] Criar layout responsivo para paineis administrativos.
+- [x] Criar layout responsivo para aluno.
+- [x] Criar layout responsivo para paineis administrativos.
+- [x] Implementar moldura desktop/tablet com 35px de margem, sidebar fixa e painel branco com rolagem interna.
 - [ ] Validar prototipo em mobile, tablet e desktop.
 - [ ] Garantir contraste e legibilidade.
 - [ ] Garantir que textos nao estourem containers.
@@ -287,7 +288,7 @@ Colocar no ar uma versao web responsiva do aprovaenf em que:
 - [ ] Implementar login por email e senha.
 - [ ] Implementar login com Google, se permanecer no MVP.
 - [ ] Implementar recuperacao de senha.
-- [ ] Implementar logout.
+- [x] Implementar logout.
 - [ ] Implementar sessao persistente.
 - [ ] Implementar papeis de usuario.
 - [ ] Proteger rotas de autor.
@@ -295,12 +296,12 @@ Colocar no ar uma versao web responsiva do aprovaenf em que:
 - [ ] Garantir que aluno nao acesse painel de autor/admin.
 - [ ] Garantir que autor veja apenas suas proprias questoes, exceto permissoes futuras.
 - [ ] Garantir que admin veja tudo.
-- [ ] Criar fluxo para convidar autores.
+- [x] Criar fluxo para provisionar autores pelo admin.
 - [ ] Criar fluxo para suspender usuario, se entrar no MVP.
 
 ## 7. Landing page e funil publico
 
-- [ ] Implementar landing page.
+- [x] Implementar landing page.
 - [ ] Exibir escolha obrigatoria de carreira.
 - [ ] Exibir escolha opcional de banca.
 - [ ] Permitir iniciar feed sem cadastro.
@@ -453,24 +454,26 @@ O arquivo `docs/bulk-question-import.md` descreve uma importacao com roles `ADMI
 
 ## 14. Painel administrativo
 
-- [ ] Implementar dashboard geral.
+- [x] Implementar dashboard geral.
 - [ ] Listar alunos.
 - [ ] Buscar alunos.
 - [ ] Ver status de trial/assinatura do aluno.
 - [ ] Suspender aluno, se entrar no MVP.
-- [ ] Listar autores.
-- [ ] Convidar autor.
+- [x] Listar autores.
+- [x] Cadastrar novo autor via pop-up.
+- [x] Editar perfil de autor via pop-up.
+- [x] Controlar visibilidade publica do perfil do autor.
 - [ ] Desativar autor.
-- [ ] Listar todas as questoes.
+- [x] Listar todas as questoes.
 - [ ] Filtrar questoes por carreira.
 - [ ] Filtrar questoes por banca.
 - [ ] Filtrar questoes por autor.
 - [ ] Filtrar questoes por status.
-- [ ] Despublicar questao problematica.
+- [x] Despublicar questao problematica.
 - [ ] Listar assinaturas.
 - [ ] Ver status do pagamento.
 - [ ] Ver ID externo do Abacate Pay.
-- [ ] Acompanhar funil do trial.
+- [x] Acompanhar funil do trial.
 - [ ] Acompanhar metricas gerais:
   - [ ] Alunos totais
   - [ ] Assinantes ativos

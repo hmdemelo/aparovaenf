@@ -199,6 +199,9 @@ Funcionalidades iniciais:
 - Arquivar ou despublicar questoes proprias, se permitido
 - Listar questoes cadastradas
 - Visualizar estatisticas das proprias questoes
+- Abrir a area "Minha conta" em pop-up
+- Alterar dados do proprio perfil
+- Alterar a propria senha apos login
 
 ### 8.1 Publicacao
 
@@ -298,10 +301,15 @@ Estrutura sugerida:
 - Opcao discreta para escolher banca
 - Botao para comecar a responder
 - Explicacao curta do formato
-- Apresentacao dos autores/especialistas
 - Beneficios da plataforma
 - Planos mensal e anual
 - Chamada para iniciar o teste
+
+Decisao atual de implementacao:
+
+- A landing nao exibira mais a secao "Comentarios de quem ja passou".
+- A apresentacao dos autores/especialistas fica fora da landing atual para reduzir ruido antes do trial.
+- Os perfis dos autores continuam existindo no painel administrativo e podem voltar a ser exibidos em uma versao futura, se fizer sentido para conversao.
 
 Principio importante:
 
@@ -318,6 +326,37 @@ O administrador devera conseguir:
 - Acompanhar assinaturas
 - Acompanhar uso do trial
 - Acompanhar metricas gerais da plataforma
+
+### 13.1 Gerenciamento de autores
+
+O gerenciamento de autores no painel admin deve ocorrer em pop-ups/modais.
+
+Regras atuais:
+
+- A tela `/admin/authors` lista os autores cadastrados.
+- A criacao de autor acontece pelo botao "Novo autor", abrindo um pop-up.
+- A tela nao deve manter formulario fixo no topo da pagina.
+- A edicao de perfil de autor acontece pelo botao "Editar" em cada autor, tambem em pop-up.
+- O admin pode editar:
+  - Nome de exibicao
+  - Bio curta
+  - Instagram
+  - Visibilidade publica do perfil
+- O admin nao edita e-mail ou senha do autor nesse fluxo; criacao de acesso inicial e troca de senha pelo proprio autor permanecem separadas.
+
+### 13.2 Layout de paineis em desktop e tablet
+
+Para acessos por computador ou tablet, os paineis com sidebar devem seguir o padrao de moldura:
+
+- A aplicacao fica centralizada na tela.
+- A moldura principal usa fundo bege `--paper` / `#efebe3`.
+- A moldura tem margem visual de 35px em relacao a janela do navegador.
+- A sidebar esquerda ocupa 100% da altura da moldura.
+- A sidebar nao tem rolagem interna.
+- O botao "Sair da conta" fica fixado no rodape da sidebar.
+- A area de conteudo direita usa fundo branco `#ffffff`.
+- A area de conteudo direita tem rolagem interna independente (`overflow-y-auto`).
+- A rolagem de conteudo nao deve mover a sidebar nem a moldura.
 
 ## 14. Historico e favoritos
 
@@ -495,16 +534,21 @@ Campos iniciais:
 - Publicacao direta
 - Edicao de questoes
 - Estatisticas de acerto e erro
+- Minha conta em pop-up
+- Alteracao de dados e senha apos login
 
 ### 17.3 Administrador
 
 - Gerenciamento de usuarios
 - Gerenciamento de autores
+- Cadastro de novos autores via pop-up
+- Edicao de perfil dos autores via pop-up
 - Visualizacao de todas as questoes
 - Despublicacao de conteudo
 - Acompanhamento de assinaturas
 - Acompanhamento do trial
 - Metricas gerais
+- Layout de painel com moldura bege, sidebar fixa e conteudo branco com rolagem interna em desktop/tablet
 
 ## 18. Decisoes confirmadas
 
@@ -535,15 +579,17 @@ Campos iniciais:
 - Favoritos persistentes apenas para assinantes
 - Historico de erros para pagantes
 - IA prevista para o futuro, fora do MVP inicial
+- Landing atual sem secao de comentarios/apresentacao de autores
 
 ## 19. Decisões do MVP Resolvidas e Implementadas
 
 As decisões que estavam pendentes foram resolvidas e incorporadas ao código final do MVP:
 
 - **Filtro por Assunto**: Não incluído no feed do aluno para o MVP. O feed é filtrado por Carreira (obrigatório) e Banca (opcional). A classificação por assunto existe na base de dados e no editor para estruturação futura.
-- **Limite de Autores**: Não há limite rígido. O sistema suporta múltiplos autores provisionados de forma segura pelo painel administrativo (`/admin/authors`), que se conecta ao Supabase Auth Admin API.
-- **Apresentação dos Especialistas**: Integrada na landing page pública como uma seção de depoimentos e confiança, exibindo foto, mini-bio profissional e link para rede social.
+- **Limite de Autores**: Não há limite rígido. O sistema suporta múltiplos autores provisionados de forma segura pelo painel administrativo (`/admin/authors`), que se conecta ao Supabase Auth Admin API no fluxo de criação.
+- **Cadastro e Edição de Autores**: O formulário fixo superior foi removido. Criação e edição de autores acontecem em pop-ups. A edição atual altera nome de exibição, bio, Instagram e visibilidade pública.
+- **Apresentação dos Especialistas**: Removida da landing atual. Os autores continuam gerenciáveis no painel admin, mas a landing prioriza carreira, trial e planos.
 - **Metadados de Provas Anteriores**: Exibidos de forma concisa no topo do card da questão no formato `Órgão · Cargo · Ano`, posicionado logo abaixo das tags de assunto e dificuldade.
 - **Comentários por Alternativa**: O comentário específico da alternativa é revelado **apenas** para a alternativa que o aluno de fato escolheu e respondeu, evitando poluição visual e mantendo o foco no aprendizado do erro ou acerto.
 - **Métricas do Painel Admin**: O painel inicial do administrador (`/admin`) exibe indicadores em tempo real de alunos cadastrados, assinantes ativos, trials em andamento, questões publicadas e taxa de conversão (trial para pago).
-
+- **Layout de Painéis**: Em desktop/tablet, os painéis com sidebar usam uma moldura bege centralizada com margem de 35px, sidebar fixa na esquerda e área branca com rolagem interna independente.

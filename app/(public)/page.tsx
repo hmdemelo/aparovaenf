@@ -7,7 +7,6 @@ import { resolvePostLoginPath } from '@/lib/auth/post-login'
 import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { track } from '@/features/analytics/product-events-server'
 import { ProductEventNames } from '@/features/analytics/product-events'
-import { PublicAuthors } from '@/features/authors/public-authors'
 import { PricingSection } from '@/features/billing/pricing-section'
 
 export const dynamic = 'force-dynamic'
@@ -20,18 +19,11 @@ const STEPS = [
 
 export default async function LandingPage() {
   const supabase = createSupabaseServiceClient()
-  const [{ data: careers }, { data: authors }] = await Promise.all([
-    supabase
-      .from('careers')
-      .select('id, name, slug')
-      .eq('is_launch_career', true)
-      .order('name'),
-    supabase
-      .from('author_profiles')
-      .select('id, display_name, short_bio')
-      .eq('is_public', true)
-      .order('display_name'),
-  ])
+  const { data: careers } = await supabase
+    .from('careers')
+    .select('id, name, slug')
+    .eq('is_launch_career', true)
+    .order('name')
 
   await track({ event_name: ProductEventNames.LANDING_VIEWED })
 
@@ -147,11 +139,6 @@ export default async function LandingPage() {
             ))}
           </ol>
         </div>
-      </section>
-
-      {/* Authors */}
-      <section className="bg-[rgba(247,245,240,0.72)] px-4 py-12">
-        <PublicAuthors authors={authors ?? []} />
       </section>
 
       {/* Pricing */}

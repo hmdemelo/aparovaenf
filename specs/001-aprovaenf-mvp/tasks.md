@@ -178,7 +178,7 @@ unlocks feed.
 
 ## Phase 8: User Story 6 - Public landing converts visitors (Priority: P3)
 
-**Goal**: Landing explains the offer, authors, pricing, and starts trial.
+**Goal**: Landing explains the offer, trial, pricing, and starts trial.
 
 **Independent Test**: Visitor understands the product and starts the feed.
 
@@ -191,7 +191,7 @@ unlocks feed.
 
 - [x] T081 [P] [US6] Convert prototype visual tokens into `app/globals.css`
 - [x] T082 [US6] Build public landing page in `app/(public)/page.tsx`
-- [x] T083 [US6] Build author trust section in `features/authors/public-authors.tsx`
+- [x] T083 [US6] Remove author trust section from the current landing scope
 - [x] T084 [US6] Build pricing section with R$ 29,90 and R$ 287,00 in `features/billing/pricing-section.tsx`
 - [x] T085 [US6] Create terms page in `app/(public)/termos/page.tsx`
 - [x] T086 [US6] Create privacy page in `app/(public)/privacidade/page.tsx`
@@ -205,6 +205,8 @@ unlocks feed.
 - [x] T089 [P] Add README setup and verification guide in `README.md`
 - [x] T090 Run full verification: typecheck, lint, unit, integration, E2E, build
 - [x] T091 Run security review for auth, RLS, Abacate Pay secrets, webhook, and admin routes
+- [x] T091a Implement desktop/tablet framed shell for admin and author panels
+- [x] T091b Add admin author creation/editing dialogs and `PATCH /api/admin/authors/[id]`
 - [ ] T092 Configure Vercel production environment variables
 - [ ] T093 Configure Supabase Pro production project and backup settings
 - [ ] T094 Configure Abacate Pay production plans and webhook URL

@@ -284,10 +284,42 @@ No inicio, o funil do aprovaenf e mais importante do que analise comportamental 
 - Usuario sem assinatura nao salva favorito persistente.
 - Autor cria questao com comentario geral obrigatorio.
 - Autor pode deixar comentario por alternativa vazio.
+- Admin cadastra autor via modal.
+- Admin edita perfil de autor via modal.
 - Admin consegue despublicar uma questao.
 - Webhook do Abacate Pay ativa assinatura.
 
-## 13. Performance inicial
+## 13. Layout responsivo e UI operacional
+
+### Estudante
+
+- A experiencia do aluno continua mobile-first.
+- Smartphone e tablet usam navegacao por swipe apos resposta/comentario.
+- Desktop usa botao de proxima questao.
+- O feed deve manter leitura focada, card central e conteudo textual sem prometer recursos fora do MVP.
+
+### Paineis admin/autor
+
+Para desktop e tablet, os paineis operacionais usam um layout de moldura:
+
+- `main` com classe `aprova-frame-main`.
+- Shell central com fundo bege `--paper` / `#efebe3`.
+- Margem visual de 35px em relacao ao navegador por `width: calc(100vw - 70px)` e `height: calc(100dvh - 70px)`.
+- Sidebar esquerda com largura de 200px, altura total da moldura e sem rolagem interna.
+- Botao de logout no rodape da sidebar.
+- Conteudo direito branco com `overflow-y: auto`.
+- A rolagem longa acontece apenas no painel branco, preservando sidebar e moldura.
+
+### Admin de autores
+
+- `/admin/authors` nao usa formulario fixo no topo.
+- Criacao de autor ocorre em modal com `CreateAuthorForm`.
+- Edicao de perfil ocorre em modal por `AdminAuthorsManager`.
+- Rota de atualizacao: `PATCH /api/admin/authors/[id]`.
+- Campos editaveis pelo admin: `display_name`, `short_bio`, `instagram`, `is_public`.
+- E-mail e senha nao sao alterados nesse fluxo.
+
+## 14. Performance inicial
 
 ### Decisoes
 
@@ -302,7 +334,7 @@ No inicio, o funil do aprovaenf e mais importante do que analise comportamental 
 
 Evitar selecao aleatoria pesada no banco quando a base crescer. Para o MVP, pode ser simples, mas a evolucao deve considerar fila de questoes candidatas, cursor ou randomizacao por seed.
 
-## 14. Nao objetivos tecnicos do MVP
+## 15. Nao objetivos tecnicos do MVP
 
 - Aplicativo nativo iOS ou Android.
 - Microsservicos.
@@ -314,13 +346,12 @@ Evitar selecao aleatoria pesada no banco quando a base crescer. Para o MVP, pode
 - Multi-tenant complexo.
 - CMS externo.
 
-## 15. Pontos ainda abertos
+## 16. Pontos ainda abertos
 
-- Escolher se o comentario por alternativa sera exibido apenas para a alternativa escolhida ou para todas apos a resposta.
 - Confirmar ferramenta final para emails de produto se os emails do Supabase Auth forem insuficientes.
 - Confirmar formato visual da fonte das questoes de provas anteriores.
 
-## 16. Spec Kit
+## 17. Spec Kit
 
 ### Decisao
 
@@ -364,7 +395,7 @@ Se o CLI ainda nao estiver instalado, usar a instalacao oficial a partir do repo
 MVP do aprovaenf: plataforma web responsiva de questoes comentadas para concursos da saude, com landing, trial de 5 questoes, assinatura via Abacate Pay, feed mobile-first, painel de autores e painel administrativo.
 ```
 
-## 17. Handoff ECC
+## 18. Handoff ECC
 
 Status: pronto para transformar em especificacao funcional e depois em implementacao TDD.
 

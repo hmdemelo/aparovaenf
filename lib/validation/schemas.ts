@@ -150,6 +150,42 @@ export const createAuthorInputSchema = z.object({
 })
 export type CreateAuthorInput = z.infer<typeof createAuthorInputSchema>
 
+export const updateAuthorProfileInputSchema = z.object({
+  display_name: z
+    .string()
+    .trim()
+    .min(1, 'nome de exibição é obrigatório')
+    .max(120),
+  short_bio: z.string().trim().max(280, 'bio muito longa').optional().nullable(),
+  instagram: z.string().trim().max(60).optional().nullable(),
+  is_public: z.boolean(),
+})
+export type UpdateAuthorProfileInput = z.infer<
+  typeof updateAuthorProfileInputSchema
+>
+
+// --- Admin: bulk question import -----------------------------------------
+
+export const bulkImportRowErrorSchema = z.object({
+  line: z.number().int().positive(),
+  field: z.string().min(1),
+  message: z.string().min(1),
+})
+export type BulkImportRowErrorInput = z.infer<typeof bulkImportRowErrorSchema>
+
+export const bulkQuestionImportResultSchema = z.object({
+  author_id: uuidSchema,
+  file_name: z.string().min(1),
+  total_rows: z.number().int().nonnegative(),
+  imported: z.number().int().nonnegative(),
+  failed: z.number().int().nonnegative(),
+  created_question_ids: z.array(uuidSchema.or(z.string().min(1))),
+  errors: z.array(bulkImportRowErrorSchema),
+})
+export type BulkQuestionImportResultInput = z.infer<
+  typeof bulkQuestionImportResultSchema
+>
+
 // --- Admin: subject creation ---------------------------------------------
 
 /**

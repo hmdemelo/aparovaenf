@@ -11,7 +11,7 @@ const FIELD_CLASS = 'aprova-field'
  * Admin form to provision a new author. Posts to /api/admin/authors and refreshes
  * the server-rendered list on success so the new author appears immediately.
  */
-export function CreateAuthorForm() {
+export function CreateAuthorForm({ onDone }: { onDone?: () => void }) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -62,6 +62,7 @@ export function CreateAuthorForm() {
     reset()
     setLoading(false)
     router.refresh()
+    onDone?.()
   }
 
   return (

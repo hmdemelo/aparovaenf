@@ -56,7 +56,7 @@ export default async function AuthorQuestionsPage() {
   )
 
   return (
-    <main className="min-h-screen px-4 py-6 sm:py-8">
+    <main className="aprova-frame-main min-h-screen px-4 py-6 sm:py-8">
       <div className="aprova-admin-shell mx-auto flex w-full max-w-[980px] max-md:flex-col">
         <aside className="aprova-sidebar flex w-[200px] shrink-0 flex-col border-r px-[14px] py-5 max-md:w-full max-md:border-r-0 max-md:border-b">
           <AprovaenfLogo
@@ -92,7 +92,7 @@ export default async function AuthorQuestionsPage() {
           </div>
         </aside>
 
-        <section className="min-w-0 flex-1 bg-white px-5 py-6 sm:px-[30px]">
+        <section className="aprova-content-panel min-w-0 flex-1 bg-white px-5 py-6 sm:px-[30px]">
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.04em] text-[var(--muted)]">

@@ -69,11 +69,11 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## Project Status
 
-The application has not been initialized yet. The repository currently holds prototypes (`index.html`, `aprovaenf-prototipo.html`), brand assets, and Spec Kit planning artifacts (`specs/001-aprovaenf-mvp/`). The Next.js application will be created at the repository root as part of task T001.
+The Next.js application is initialized at the repository root and fully developed. All core MVP features (student feed, paywall, billing webhooks, author management, layout specifications) and Phase 2 (bulk question import) are implemented, passing all unit, integration, and E2E tests.
 
 ## Commands
 
-Once the Next.js app is initialized, the standard commands will be:
+The standard commands are:
 
 ```bash
 npm run dev          # Start local dev server
@@ -101,6 +101,7 @@ app/
   (admin)/        # Admin dashboard
   api/            # Route handlers (server-side only)
 features/
+  admin/          # Bulk import parser, services, dialogs, provisioning
   questions/      # Question repository and validation
   trial/          # Trial counting rules and signup gate
   billing/        # Plans, subscription service, paywall, Abacate Pay checkout

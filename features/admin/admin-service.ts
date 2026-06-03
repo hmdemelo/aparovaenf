@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/db/database.types'
-import type { CreateAuthorInput } from '@/lib/validation/schemas'
+import type {
+  CreateAuthorInput,
+  UpdateAuthorProfileInput,
+} from '@/lib/validation/schemas'
 
 type Db = SupabaseClient<Database>
 
@@ -157,6 +160,10 @@ export type CreateAuthorResult =
   | { ok: true; authorId: string; userId: string }
   | { ok: false; code: 'conflict' | 'error'; message: string }
 
+export type UpdateAuthorProfileResult =
+  | { ok: true; author: AdminAuthorRow }
+  | { ok: false; code: 'not_found' | 'error'; message: string }
+
 /**
  * Provision a new author end-to-end. Requires the SERVICE-ROLE client: it calls
  * the Auth Admin API and writes profile rows that bypass RLS.
@@ -216,4 +223,47 @@ export async function createAuthor(
   }
 
   return { ok: true, authorId: author.id, userId }
+}
+
+/** Update editable author profile fields. E-mail/password stay outside this flow. */
+export async function updateAuthorProfile(
+  db: Db,
+  authorId: string,
+  input: UpdateAuthorProfileInput,
+): Promise<UpdateAuthorProfileResult> {
+  const { data, error } = await db
+    .from('author_profiles')
+    .update({
+      display_name: input.display_name,
+      short_bio: input.short_bio ?? null,
+      instagram: input.instagram ?? null,
+      is_public: input.is_public,
+    })
+    .eq('id', authorId)
+    .select(
+      `id, user_id, display_name, short_bio, instagram, is_public, created_at,
+       user:user_profiles(email)`,
+    )
+    .maybeSingle()
+
+  if (error) return { ok: false, code: 'error', message: error.message }
+  if (!data) {
+    return { ok: false, code: 'not_found', message: 'author not found' }
+  }
+
+  const user = Array.isArray(data.user) ? data.user[0] : data.user
+  return {
+    ok: true,
+    author: {
+      id: data.id,
+      userId: data.user_id,
+      displayName: data.display_name,
+      email: user?.email ?? null,
+      shortBio: data.short_bio,
+      instagram: data.instagram,
+      isPublic: data.is_public,
+      questionCount: 0,
+      createdAt: data.created_at,
+    },
+  }
 }
