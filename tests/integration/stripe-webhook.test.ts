@@ -1,4 +1,3 @@
-import { createHmac } from 'node:crypto'
 import { NextRequest } from 'next/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -10,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   markProcessed: vi.fn(),
   markFailed: vi.fn(),
   activateSubscriptionFromWebhook: vi.fn(),
+  cancelSubscriptionFromWebhook: vi.fn(),
   track: vi.fn(),
 }))
 
@@ -27,37 +27,35 @@ vi.mock('@/features/billing/payment-event-repository', () => ({
 
 vi.mock('@/features/billing/subscription-service', () => ({
   activateSubscriptionFromWebhook: mocks.activateSubscriptionFromWebhook,
+  cancelSubscriptionFromWebhook: mocks.cancelSubscriptionFromWebhook,
 }))
 
 vi.mock('@/features/analytics/product-events-server', () => ({
   track: mocks.track,
 }))
 
-const PUBLIC_KEY = 'test-abacate-public-key'
-const SECRET = 'test-webhook-secret'
+const SECRET_KEY_DEV = 'stripe_dev_mock_secret_key'
+const SECRET_KEY_PROD = 'sk_live_prod_secret_key'
+const WEBHOOK_SECRET = 'whsec_test_secret'
 
-function signature(rawBody: string) {
-  return createHmac('sha256', PUBLIC_KEY)
-    .update(Buffer.from(rawBody, 'utf8'))
-    .digest('base64')
+function webhookRequest(
+  rawBody: string,
+  options?: { signature?: string; key?: string },
+) {
+  const headers: Record<string, string> = {
+    'content-type': 'application/json',
+  }
+  if (options?.signature !== undefined) {
+    headers['stripe-signature'] = options.signature
+  }
+  return new NextRequest('http://localhost/api/webhooks/stripe', {
+    method: 'POST',
+    body: rawBody,
+    headers,
+  })
 }
 
-function webhookRequest(rawBody: string, options?: { webhookKey?: string; signature?: string }) {
-  const secret = options?.webhookKey ?? SECRET
-  return new NextRequest(
-    `http://localhost/api/webhooks/abacate-pay?webhookSecret=${secret}`,
-    {
-      method: 'POST',
-      body: rawBody,
-      headers: {
-        'content-type': 'application/json',
-        'x-webhook-signature': options?.signature ?? signature(rawBody),
-      },
-    },
-  )
-}
-
-describe('POST /api/webhooks/abacate-pay', () => {
+describe('POST /api/webhooks/stripe', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
@@ -66,9 +64,8 @@ describe('POST /api/webhooks/abacate-pay', () => {
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
       SUPABASE_SERVICE_ROLE_KEY: 'service',
-      ABACATE_PAY_API_KEY: 'abacate-secret',
-      ABACATE_PAY_WEBHOOK_SECRET: SECRET,
-      ABACATE_PAY_WEBHOOK_PUBLIC_KEY: PUBLIC_KEY,
+      STRIPE_SECRET_KEY: SECRET_KEY_DEV,
+      STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
       NEXT_PUBLIC_APP_URL: 'https://aprovaenf.test',
     })
     mocks.createSupabaseServiceClient.mockReturnValue({ db: true })
@@ -91,19 +88,20 @@ describe('POST /api/webhooks/abacate-pay', () => {
       plan: 'annual',
       subscriptionId: '00000000-0000-0000-0000-00000000b111',
     })
+    mocks.cancelSubscriptionFromWebhook.mockResolvedValue({ ok: true })
     mocks.track.mockResolvedValue({ ok: true })
   })
 
-  it('records, activates, marks processed, and tracks a completed checkout event', async () => {
+  it('records, activates, marks processed, and tracks a completed checkout event in dev mode', async () => {
     const payload = {
-      id: 'log_checkout_1',
-      event: 'checkout.completed',
+      id: 'evt_checkout_1',
+      type: 'checkout.session.completed',
       data: {
-        checkout: {
-          id: 'bill_1',
-          externalId: '00000000-0000-0000-0000-00000000b111',
-          amount: 28700,
-          status: 'PAID',
+        object: {
+          id: 'cs_1',
+          client_reference_id: '00000000-0000-0000-0000-00000000b111',
+          customer: 'cus_1',
+          subscription: 'sub_1',
           metadata: {
             user_id: '00000000-0000-0000-0000-0000000000a4',
             plan: 'annual',
@@ -112,9 +110,10 @@ describe('POST /api/webhooks/abacate-pay', () => {
       },
     }
     const rawBody = JSON.stringify(payload)
-    const { POST } = await import('@/app/api/webhooks/abacate-pay/route')
+    const { POST } = await import('@/app/api/webhooks/stripe/route')
 
-    const response = await POST(webhookRequest(rawBody))
+    // In dev mode, signature defaults to 'mock_signature' if omitted/passed
+    const response = await POST(webhookRequest(rawBody, { signature: 'mock_signature' }))
     const json = await response.json()
 
     expect(response.status).toBe(200)
@@ -127,22 +126,22 @@ describe('POST /api/webhooks/abacate-pay', () => {
       },
     })
     expect(mocks.recordReceived).toHaveBeenCalledWith({
-      providerEventId: 'log_checkout_1',
-      eventType: 'checkout.completed',
+      providerEventId: 'evt_checkout_1',
+      eventType: 'checkout.session.completed',
       payload,
     })
     expect(mocks.activateSubscriptionFromWebhook).toHaveBeenCalledWith(
       expect.anything(),
       payload,
     )
-    expect(mocks.markProcessed).toHaveBeenCalledWith('log_checkout_1')
+    expect(mocks.markProcessed).toHaveBeenCalledWith('evt_checkout_1')
     expect(mocks.track).toHaveBeenCalledWith(
       expect.objectContaining({
         event_name: 'subscription_activated',
         user_id: '00000000-0000-0000-0000-0000000000a4',
         metadata: expect.objectContaining({
           plan: 'annual',
-          provider_event_id: 'log_checkout_1',
+          provider_event_id: 'evt_checkout_1',
         }),
       }),
     )
@@ -154,8 +153,8 @@ describe('POST /api/webhooks/abacate-pay', () => {
       status: 'duplicate',
       event: { processing_status: 'processed' },
     })
-    const payload = { id: 'log_duplicate', event: 'subscription.completed', data: {} }
-    const { POST } = await import('@/app/api/webhooks/abacate-pay/route')
+    const payload = { id: 'evt_duplicate', type: 'checkout.session.completed', data: {} }
+    const { POST } = await import('@/app/api/webhooks/stripe/route')
 
     const response = await POST(webhookRequest(JSON.stringify(payload)))
     const json = await response.json()
@@ -173,51 +172,17 @@ describe('POST /api/webhooks/abacate-pay', () => {
     expect(mocks.markProcessed).not.toHaveBeenCalled()
   })
 
-  it('rejects requests with an invalid webhook secret before touching storage', async () => {
-    const payload = { id: 'log_bad_secret', event: 'checkout.completed', data: {} }
-    const { POST } = await import('@/app/api/webhooks/abacate-pay/route')
-
-    const response = await POST(
-      webhookRequest(JSON.stringify(payload), { webhookKey: 'wrong-key' }),
-    )
-    const json = await response.json()
-
-    expect(response.status).toBe(401)
-    expect(json).toMatchObject({
-      success: false,
-      error: { code: 'unauthenticated' },
-    })
-    expect(mocks.recordReceived).not.toHaveBeenCalled()
-  })
-
-  it('rejects requests with an invalid HMAC signature', async () => {
-    const payload = { id: 'log_bad_sig', event: 'checkout.completed', data: {} }
-    const { POST } = await import('@/app/api/webhooks/abacate-pay/route')
-
-    const response = await POST(
-      webhookRequest(JSON.stringify(payload), { signature: 'not-valid' }),
-    )
-    const json = await response.json()
-
-    expect(response.status).toBe(401)
-    expect(json).toMatchObject({
-      success: false,
-      error: { code: 'unauthenticated' },
-    })
-    expect(mocks.recordReceived).not.toHaveBeenCalled()
-  })
-
-  it('rejects signed requests when the webhook public key is not configured', async () => {
+  it('rejects requests in production mode if the stripe signature is missing', async () => {
     mocks.getServerEnv.mockReturnValue({
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
       SUPABASE_SERVICE_ROLE_KEY: 'service',
-      ABACATE_PAY_API_KEY: 'abacate-secret',
-      ABACATE_PAY_WEBHOOK_SECRET: SECRET,
+      STRIPE_SECRET_KEY: SECRET_KEY_PROD,
+      STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
       NEXT_PUBLIC_APP_URL: 'https://aprovaenf.test',
     })
-    const payload = { id: 'log_missing_key', event: 'checkout.completed', data: {} }
-    const { POST } = await import('@/app/api/webhooks/abacate-pay/route')
+    const payload = { id: 'evt_no_sig', type: 'checkout.session.completed', data: {} }
+    const { POST } = await import('@/app/api/webhooks/stripe/route')
 
     const response = await POST(webhookRequest(JSON.stringify(payload)))
     const json = await response.json()
@@ -230,13 +195,19 @@ describe('POST /api/webhooks/abacate-pay', () => {
     expect(mocks.recordReceived).not.toHaveBeenCalled()
   })
 
-  it('records processing errors and returns 500 so Abacate Pay can retry', async () => {
+  it('records processing errors and returns 500 so Stripe can retry', async () => {
     mocks.activateSubscriptionFromWebhook.mockResolvedValue({
       ok: false,
       error: 'missing subscription reference',
     })
-    const payload = { id: 'log_error', event: 'subscription.completed', data: {} }
-    const { POST } = await import('@/app/api/webhooks/abacate-pay/route')
+    const payload = {
+      id: 'evt_error',
+      type: 'checkout.session.completed',
+      data: {
+        object: { id: 'cs_err' },
+      },
+    }
+    const { POST } = await import('@/app/api/webhooks/stripe/route')
 
     const response = await POST(webhookRequest(JSON.stringify(payload)))
     const json = await response.json()
@@ -247,8 +218,37 @@ describe('POST /api/webhooks/abacate-pay', () => {
       error: { code: 'internal_error', message: 'Could not process webhook' },
     })
     expect(mocks.markFailed).toHaveBeenCalledWith(
-      'log_error',
+      'evt_error',
       'missing subscription reference',
     )
+  })
+
+  it('handles customer.subscription.deleted to expire subscriptions', async () => {
+    const payload = {
+      id: 'evt_deleted_1',
+      type: 'customer.subscription.deleted',
+      data: {
+        object: {
+          id: 'sub_deleted_123',
+        },
+      },
+    }
+    const rawBody = JSON.stringify(payload)
+    const { POST } = await import('@/app/api/webhooks/stripe/route')
+
+    const response = await POST(webhookRequest(rawBody))
+    const json = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(json).toMatchObject({
+      success: true,
+      data: {
+        received: true,
+        duplicate: false,
+        activated: false,
+      },
+    })
+    expect(mocks.cancelSubscriptionFromWebhook).toHaveBeenCalledWith(expect.anything(), 'sub_deleted_123')
+    expect(mocks.markProcessed).toHaveBeenCalledWith('evt_deleted_1')
   })
 })

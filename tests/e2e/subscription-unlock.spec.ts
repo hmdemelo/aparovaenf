@@ -4,12 +4,12 @@ import type { Database } from '@/lib/db/database.types'
 import { loadLocalEnv } from '../integration/helpers/local-env'
 
 const hasLocalEnv = loadLocalEnv()
-const webhookSecret = process.env.ABACATE_PAY_WEBHOOK_SECRET
+const stripeSecret = process.env.STRIPE_SECRET_KEY
 const testUserPwd = 'aprovaenf123'
 
 test.skip(
-  !hasLocalEnv || !webhookSecret,
-  'Requires local Supabase env and ABACATE_PAY_WEBHOOK_SECRET.',
+  !hasLocalEnv || !stripeSecret,
+  'Requires local Supabase env and STRIPE_SECRET_KEY.',
 )
 
 async function login(page: Page, email: string, next: string) {
@@ -95,19 +95,24 @@ test('paywall starts checkout and simulated webhook unlocks the feed', async ({
     await expect(page).toHaveURL(/checkout=mock/, { timeout: 30_000 })
 
     const webhookResponse = await page.request.post(
-      `/api/webhooks/abacate-pay?webhookSecret=${encodeURIComponent(webhookSecret!)}`,
+      `/api/webhooks/stripe`,
       {
+        headers: {
+          'stripe-signature': 'mock_signature',
+        },
         data: {
-          id: `e2e_checkout_${student.userId}_${Date.now()}`,
-          event: 'checkout.completed',
+          id: `evt_mock_${Date.now()}`,
+          type: 'checkout.session.completed',
           data: {
-            checkout: {
-              id: 'checkout_e2e',
-              amount: 28700,
-              status: 'PAID',
+            object: {
+              id: 'cs_mock_12345',
+              customer: 'cus_mock_' + student.userId,
+              subscription: 'sub_mock_12345',
+              client_reference_id: '00000000-0000-0000-0000-00000000c001',
               metadata: {
                 user_id: student.userId,
                 plan: 'annual',
+                subscription_id: '00000000-0000-0000-0000-00000000c001',
               },
             },
           },

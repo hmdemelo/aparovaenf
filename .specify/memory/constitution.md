@@ -26,10 +26,9 @@ saude, so implementation decisions that slow the student loop must be justified.
 ### II. Secure Data Boundaries
 
 Authentication, authorization, payment state, trial limits, favorites, history,
-author ownership, and admin actions MUST be enforced server-side. Row Level
-Security MUST protect sensitive Supabase tables. Secrets MUST live only in
+author ownership, and admin actions MUST be enforced server-side.- Row Level Security MUST protect sensitive Supabase tables. Secrets MUST live only in
 environment variables or provider secret stores. The Supabase service role and
-Abacate Pay secrets MUST never reach browser code.
+Stripe secrets MUST never reach browser code.
 
 Rationale: the MVP handles accounts, subscriptions, learning history, and author
 content; a small user base does not reduce the need for secure boundaries.
@@ -76,9 +75,9 @@ cannot know where students drop, why payments fail, or which content performs.
 - Favorites persist only for subscribers.
 - General question comment is required.
 - Alternative-level comment is optional.
-- Payment provider: Abacate Pay.
+- Payment provider: Stripe.
 - Monthly plan: R$ 29,90.
-- Annual plan: R$ 287,00 with parceling allowed by Abacate Pay.
+- Annual plan: R$ 287,00 with parceling/installments supported by Stripe Checkout.
 - Architecture: Next.js, TypeScript, React, Tailwind CSS, Supabase Postgres,
   Supabase Auth, Vercel, Supabase Pro.
 - No separate Supabase staging project for the first deploy.
@@ -110,4 +109,4 @@ artifacts. Versioning follows semantic versioning:
 Every implementation plan MUST include a Constitution Check. Any violation must
 state why the simpler or safer option is insufficient.
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-01 | **Last Amended**: 2026-06-01
+**Version**: 1.1.0 | **Ratified**: 2026-06-01 | **Last Amended**: 2026-06-03

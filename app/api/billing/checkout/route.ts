@@ -3,8 +3,8 @@ import type { NextRequest } from 'next/server'
 import { ProductEventNames } from '@/features/analytics/product-events'
 import { track } from '@/features/analytics/product-events-server'
 import {
-  createAbacateCheckout,
   createPendingSubscription,
+  createStripeCheckout,
 } from '@/features/billing/subscription-service'
 import { getCurrentUser } from '@/lib/auth/roles'
 import { ok, fail, ErrorCodes } from '@/lib/api/response'
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
 
   let checkout
   try {
-    checkout = await createAbacateCheckout({
+    checkout = await createStripeCheckout({
       env,
       planId: parsed.data.plan,
       subscriptionId,

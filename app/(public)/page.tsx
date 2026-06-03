@@ -46,13 +46,14 @@ export default async function LandingPage({
     if (!subscriptionId || !plan || !userId) return
 
     const payload = {
-      id: `mock_evt_${Date.now()}`,
-      event: 'checkout.completed',
+      id: `evt_mock_${Date.now()}`,
+      type: 'checkout.session.completed',
       data: {
-        checkout: {
-          id: 'checkout_mock_' + subscriptionId,
-          amount: plan === 'annual' ? 28700 : 2990,
-          status: 'PAID',
+        object: {
+          id: 'cs_mock_' + subscriptionId,
+          customer: 'cus_mock_' + userId,
+          subscription: 'sub_mock_' + subscriptionId,
+          client_reference_id: subscriptionId,
           metadata: {
             user_id: userId,
             plan: plan,
@@ -120,7 +121,7 @@ export default async function LandingPage({
               <div className="text-center md:text-left">
                 <p className="font-display font-semibold text-lg">Ambiente de Desenvolvimento (Mock Checkout)</p>
                 <p className="text-xs text-[var(--mint-dim)] mt-1">
-                  O checkout real do Abacate Pay falhou ou está usando uma chave de teste. 
+                  O checkout real do Stripe falhou ou está usando uma chave de teste. 
                   Você pode simular o pagamento para liberar seu acesso às questões.
                 </p>
               </div>

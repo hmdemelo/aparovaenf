@@ -2,15 +2,14 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/db/database.types'
 import type { ServerEnv } from '@/lib/env/server'
 import { PLANS, type PlanId } from './plans'
+import Stripe from 'stripe'
 
 type Db = SupabaseClient<Database>
-const ABACATE_PAY_API_BASE_URL = 'https://api.abacatepay.com/v2'
-const PROVIDER = 'abacate_pay'
+const PROVIDER = 'stripe'
 
 const ACTIVATION_EVENTS = new Set([
-  'checkout.completed',
-  'subscription.completed',
-  'subscription.renewed',
+  'checkout.session.completed',
+  'invoice.paid',
 ])
 
 type CheckoutUser = {
@@ -21,15 +20,14 @@ type CheckoutUser = {
 type CreateCheckoutInput = {
   env: Pick<
     ServerEnv,
-    | 'ABACATE_PAY_API_KEY'
+    | 'STRIPE_SECRET_KEY'
     | 'NEXT_PUBLIC_APP_URL'
-    | 'ABACATE_PAY_MONTHLY_PRODUCT_ID'
-    | 'ABACATE_PAY_ANNUAL_PRODUCT_ID'
+    | 'STRIPE_MONTHLY_PRICE_ID'
+    | 'STRIPE_ANNUAL_PRICE_ID'
   >
   planId: PlanId
   subscriptionId: string
   user: CheckoutUser
-  fetcher?: typeof fetch
 }
 
 export type ProviderCheckout = {
@@ -37,17 +35,6 @@ export type ProviderCheckout = {
   checkoutUrl: string
   amountCents: number
   status: string | null
-}
-
-type ProviderResponse = {
-  success?: boolean
-  error?: unknown
-  data?: {
-    id?: string
-    url?: string
-    amount?: number
-    status?: string
-  } | null
 }
 
 export type PendingSubscriptionInput = {
@@ -83,112 +70,87 @@ export async function createPendingSubscription(
   return { ok: true }
 }
 
-export async function createAbacateCheckout(
+export async function createStripeCheckout(
   input: CreateCheckoutInput,
 ): Promise<ProviderCheckout> {
-  const isDummyKey = input.env.ABACATE_PAY_API_KEY?.startsWith('abc_dev_')
-  const mockUrl = `${withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)}/?checkout=mock&subscription_id=${input.subscriptionId}&plan=${input.planId}&user_id=${input.user.id}`
+  const isDummyKey = input.env.STRIPE_SECRET_KEY?.startsWith('stripe_dev_')
+  const mockUrl = `${withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)}/?checkout=mock&provider=stripe&subscription_id=${input.subscriptionId}&plan=${input.planId}&user_id=${input.user.id}`
 
   if (isDummyKey) {
-    console.warn('[billing.checkout] Using fallback local mock checkout (detected abc_dev_* API key)')
+    console.warn('[billing.checkout] Using fallback local mock checkout (detected stripe_dev_* API key)')
     return {
       checkoutId: 'checkout_mock_' + input.subscriptionId,
       checkoutUrl: mockUrl,
       amountCents: PLANS[input.planId].amountCents,
-      status: 'PENDING',
+      status: 'pending',
     }
   }
 
-  const { endpoint, body } = buildAbacateCheckoutRequest(input)
-  const fetcher = input.fetcher ?? fetch
+  const appUrl = withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)
+  const priceId = getStripePriceId(input.planId, input.env)
 
-  let response: Response
   try {
-    response = await fetcher(endpoint, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${input.env.ABACATE_PAY_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
+    const stripe = new Stripe(input.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2024-06-20' as any,
     })
-  } catch (error) {
-    console.error('[billing.checkout] Network error calling Abacate Pay, falling back to mock checkout:', error)
-    return {
-      checkoutId: 'checkout_mock_' + input.subscriptionId,
-      checkoutUrl: mockUrl,
-      amountCents: PLANS[input.planId].amountCents,
-      status: 'PENDING',
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card', 'pix'],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      customer_email: input.user.email ?? undefined,
+      client_reference_id: input.subscriptionId,
+      metadata: {
+        user_id: input.user.id,
+        subscription_id: input.subscriptionId,
+        plan: input.planId,
+      },
+      success_url: `${appUrl}/feed?subscription=success`,
+      cancel_url: `${appUrl}/assinar`,
+    })
+
+    if (!session.url) {
+      throw new Error('Stripe Checkout Session URL was not generated')
     }
-  }
 
-  let payload: ProviderResponse
-  try {
-    payload = (await response.json()) as ProviderResponse
-  } catch {
-    throw new Error('Invalid Abacate Pay response')
-  }
-
-  if (!response.ok || payload.success !== true || !payload.data?.url) {
-    console.error('[billing.checkout] Abacate Pay error payload:', JSON.stringify(payload, null, 2), 'HTTP status:', response.status)
-    
-    // In local development, fall back to mock checkout instead of blocking the developer
-    const isLocalDev = withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL).includes('localhost')
+    return {
+      checkoutId: session.id,
+      checkoutUrl: session.url,
+      amountCents: PLANS[input.planId].amountCents,
+      status: session.status,
+    }
+  } catch (error) {
+    console.error('[billing.checkout] Stripe API error, falling back to mock checkout:', error)
+    const isLocalDev = appUrl.includes('localhost')
     if (isLocalDev) {
-      console.warn('[billing.checkout] Abacate Pay API failed in local dev, falling back to mock checkout')
       return {
         checkoutId: 'checkout_mock_' + input.subscriptionId,
         checkoutUrl: mockUrl,
         amountCents: PLANS[input.planId].amountCents,
-        status: 'PENDING',
+        status: 'pending',
       }
     }
-    throw new Error('Abacate Pay checkout creation failed')
-  }
-
-  return {
-    checkoutId: payload.data.id ?? input.subscriptionId,
-    checkoutUrl: payload.data.url,
-    amountCents: payload.data.amount ?? PLANS[input.planId].amountCents,
-    status: payload.data.status ?? null,
+    throw error
   }
 }
 
-export function buildAbacateCheckoutRequest(input: CreateCheckoutInput) {
-  const plan = PLANS[input.planId]
-  const productId = getAbacateProductId(input.planId, input.env)
-  const appUrl = withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)
-  const baseBody = {
-    items: [{ id: productId, quantity: 1 }],
-    externalId: input.subscriptionId,
-    returnUrl: `${appUrl}/feed`,
-    completionUrl: `${appUrl}/feed?subscription=success`,
-    metadata: {
-      user_id: input.user.id,
-      ...(input.user.email ? { user_email: input.user.email } : {}),
-      plan: plan.id,
-      subscription_id: input.subscriptionId,
-    },
-  }
+export async function cancelSubscriptionFromWebhook(
+  db: Db,
+  providerSubscriptionId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { error } = await db
+    .from('subscriptions')
+    .update({ status: 'expired' })
+    .eq('provider_subscription_id', providerSubscriptionId)
+    .eq('status', 'active')
 
-  if (plan.id === 'annual') {
-    return {
-      endpoint: `${ABACATE_PAY_API_BASE_URL}/checkouts/create`,
-      body: {
-        ...baseBody,
-        methods: ['PIX', 'CARD'],
-        card: { maxInstallments: 12 },
-      },
-    }
-  }
-
-  return {
-    endpoint: `${ABACATE_PAY_API_BASE_URL}/subscriptions/create`,
-    body: {
-      ...baseBody,
-      methods: ['CARD'],
-    },
-  }
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
 }
 
 export async function activateSubscriptionFromWebhook(
@@ -252,18 +214,18 @@ export async function activateSubscriptionFromWebhook(
   }
 }
 
-function getAbacateProductId(
+function getStripePriceId(
   planId: PlanId,
   env: Pick<
     ServerEnv,
-    'ABACATE_PAY_MONTHLY_PRODUCT_ID' | 'ABACATE_PAY_ANNUAL_PRODUCT_ID'
+    'STRIPE_MONTHLY_PRICE_ID' | 'STRIPE_ANNUAL_PRICE_ID'
   >,
 ): string {
   const value =
     planId === 'monthly'
-      ? env.ABACATE_PAY_MONTHLY_PRODUCT_ID
-      : env.ABACATE_PAY_ANNUAL_PRODUCT_ID
-  return value?.trim() || `aprovaenf-${planId}`
+      ? env.STRIPE_MONTHLY_PRICE_ID
+      : env.STRIPE_ANNUAL_PRICE_ID
+  return value?.trim() || `stripe-price-${planId}`
 }
 
 function withoutTrailingSlash(value: string): string {
@@ -294,25 +256,11 @@ function firstString(...values: unknown[]): string | null {
   return null
 }
 
-function firstNumber(...values: unknown[]): number | null {
-  for (const value of values) {
-    const numberValue = asNumber(value)
-    if (numberValue !== null) return numberValue
-  }
-  return null
-}
-
 function planFromValue(value: unknown): PlanId | null {
   if (value === 'monthly' || value === 'MONTHLY') return 'monthly'
   if (value === 'annual' || value === 'ANNUAL' || value === 'ANNUALLY') {
     return 'annual'
   }
-  return null
-}
-
-function planFromAmount(amount: number | null): PlanId | null {
-  if (amount === PLANS.monthly.amountCents) return 'monthly'
-  if (amount === PLANS.annual.amountCents) return 'annual'
   return null
 }
 
@@ -337,12 +285,6 @@ function periodForPlan(plan: PlanId, paidAt: Date) {
   }
 }
 
-function safeDate(value: string | null): Date {
-  if (!value) return new Date()
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? new Date() : date
-}
-
 function extractSubscriptionActivation(payload: unknown):
   | {
       ok: true
@@ -358,56 +300,46 @@ function extractSubscriptionActivation(payload: unknown):
   | { ok: true; activated: false }
   | { ok: false; error: string } {
   const root = asRecord(payload)
-  const eventType = asString(root.event) ?? asString(root.type)
+  const eventType = asString(root.type)
   if (!eventType || !ACTIVATION_EVENTS.has(eventType)) {
     return { ok: true, activated: false }
   }
 
   const data = asRecord(root.data)
-  const checkout = asRecord(data.checkout)
-  const subscription = asRecord(data.subscription)
-  const payment = asRecord(data.payment)
-  const customer = asRecord(data.customer)
-  const metadata = {
-    ...asRecord(data.metadata),
-    ...asRecord(subscription.metadata),
-    ...asRecord(payment.metadata),
-    ...asRecord(checkout.metadata),
-  }
+  const obj = asRecord(data.object)
+  const metadata = asRecord(obj.metadata)
 
   const localSubscriptionId = firstString(
     metadata.subscription_id,
     metadata.subscriptionId,
-    checkout.externalId,
-    payment.externalId,
-    subscription.externalId,
-    data.externalId,
-    root.externalId,
+    obj.client_reference_id,
   )
   const userId = firstString(
     metadata.user_id,
     metadata.userId,
-    data.user_id,
-    data.userId,
   )
-  const amount = firstNumber(
-    subscription.amount,
-    checkout.amount,
-    payment.amount,
-    payment.paidAmount,
-    data.amount,
-  )
-  const plan =
-    planFromValue(metadata.plan) ??
-    planFromValue(subscription.frequency) ??
-    planFromAmount(amount)
 
-  if (!plan) return { ok: false, error: 'missing subscription plan' }
+  const plan = planFromValue(metadata.plan)
+  if (!plan) return { ok: false, error: 'missing subscription plan in metadata' }
 
-  const paidAt = safeDate(
-    firstString(payment.updatedAt, checkout.updatedAt, subscription.updatedAt),
-  )
-  const period = periodForPlan(plan, paidAt)
+  // Handle current period timestamps if present (Stripe provides seconds)
+  const periodStartSec = asNumber(obj.current_period_start)
+  const periodEndSec = asNumber(obj.current_period_end)
+
+  let periodStart: string
+  let periodEnd: string
+
+  if (periodStartSec) {
+    const start = new Date(periodStartSec * 1000)
+    periodStart = start.toISOString()
+    periodEnd = periodEndSec
+      ? new Date(periodEndSec * 1000).toISOString()
+      : periodForPlan(plan, start).end
+  } else {
+    const now = new Date()
+    periodStart = now.toISOString()
+    periodEnd = periodForPlan(plan, now).end
+  }
 
   return {
     ok: true,
@@ -415,10 +347,10 @@ function extractSubscriptionActivation(payload: unknown):
     localSubscriptionId,
     userId,
     plan,
-    providerCustomerId: firstString(customer.id, checkout.customerId),
-    providerSubscriptionId: firstString(subscription.id, checkout.id, payment.id),
-    periodStart: period.start,
-    periodEnd: period.end,
+    providerCustomerId: firstString(obj.customer),
+    providerSubscriptionId: firstString(obj.subscription, obj.id),
+    periodStart,
+    periodEnd,
   }
 }
 

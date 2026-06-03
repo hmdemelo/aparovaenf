@@ -5,8 +5,8 @@ const validEnv = {
   NEXT_PUBLIC_SUPABASE_URL: 'https://abc.supabase.co',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon-key-value',
   SUPABASE_SERVICE_ROLE_KEY: 'service-role-key-value',
-  ABACATE_PAY_API_KEY: 'abacate-key',
-  ABACATE_PAY_WEBHOOK_SECRET: 'webhook-secret',
+  STRIPE_SECRET_KEY: 'stripe-key',
+  STRIPE_WEBHOOK_SECRET: 'webhook-secret',
   NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
 }
 
@@ -18,17 +18,15 @@ describe('parseServerEnv', () => {
     expect(env.NEXT_PUBLIC_APP_URL).toBe('http://localhost:3000')
   })
 
-  it('accepts optional Abacate Pay product and webhook signature settings', () => {
+  it('accepts optional Stripe price settings', () => {
     const env = parseServerEnv({
       ...validEnv,
-      ABACATE_PAY_WEBHOOK_PUBLIC_KEY: 'abacate-public-key',
-      ABACATE_PAY_MONTHLY_PRODUCT_ID: 'prod_monthly',
-      ABACATE_PAY_ANNUAL_PRODUCT_ID: 'prod_annual',
+      STRIPE_MONTHLY_PRICE_ID: 'price_monthly',
+      STRIPE_ANNUAL_PRICE_ID: 'price_annual',
     })
 
-    expect(env.ABACATE_PAY_WEBHOOK_PUBLIC_KEY).toBe('abacate-public-key')
-    expect(env.ABACATE_PAY_MONTHLY_PRODUCT_ID).toBe('prod_monthly')
-    expect(env.ABACATE_PAY_ANNUAL_PRODUCT_ID).toBe('prod_annual')
+    expect(env.STRIPE_MONTHLY_PRICE_ID).toBe('price_monthly')
+    expect(env.STRIPE_ANNUAL_PRICE_ID).toBe('price_annual')
   })
 
   it('throws when a required variable is missing', () => {
@@ -51,12 +49,12 @@ describe('parseServerEnv', () => {
 
   it('rejects empty strings for required secrets', () => {
     expect(() =>
-      parseServerEnv({ ...validEnv, ABACATE_PAY_API_KEY: '' }),
-    ).toThrow(/ABACATE_PAY_API_KEY/)
+      parseServerEnv({ ...validEnv, STRIPE_SECRET_KEY: '' }),
+    ).toThrow(/STRIPE_SECRET_KEY/)
   })
 
   it('aggregates multiple missing variables in a single error message', () => {
     expect(() => parseServerEnv({})).toThrow(/NEXT_PUBLIC_SUPABASE_URL/)
-    expect(() => parseServerEnv({})).toThrow(/ABACATE_PAY_WEBHOOK_SECRET/)
+    expect(() => parseServerEnv({})).toThrow(/STRIPE_WEBHOOK_SECRET/)
   })
 })

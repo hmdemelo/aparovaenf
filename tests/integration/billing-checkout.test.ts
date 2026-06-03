@@ -13,6 +13,21 @@ const mocks = vi.hoisted(() => {
   }
 })
 
+const mockStripeCreate = vi.fn()
+vi.mock('stripe', () => {
+  return {
+    default: function () {
+      return {
+        checkout: {
+          sessions: {
+            create: mockStripeCreate,
+          },
+        },
+      }
+    },
+  }
+})
+
 vi.mock('@/lib/auth/roles', () => ({
   getCurrentUser: mocks.getCurrentUser,
 }))
@@ -46,10 +61,10 @@ describe('POST /api/billing/checkout', () => {
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
       SUPABASE_SERVICE_ROLE_KEY: 'service',
-      ABACATE_PAY_API_KEY: 'abacate-secret',
-      ABACATE_PAY_WEBHOOK_SECRET: 'webhook-secret',
-      ABACATE_PAY_MONTHLY_PRODUCT_ID: 'prod_monthly',
-      ABACATE_PAY_ANNUAL_PRODUCT_ID: 'prod_annual',
+      STRIPE_SECRET_KEY: 'sk_live_test_stripe_secret',
+      STRIPE_WEBHOOK_SECRET: 'whsec_test',
+      STRIPE_MONTHLY_PRICE_ID: 'price_monthly',
+      STRIPE_ANNUAL_PRICE_ID: 'price_annual',
       NEXT_PUBLIC_APP_URL: 'https://aprovaenf.test',
     })
     mocks.getCurrentUser.mockResolvedValue({
@@ -60,24 +75,14 @@ describe('POST /api/billing/checkout', () => {
     mocks.createSupabaseServiceClient.mockReturnValue({ from: mocks.from })
     mocks.insert.mockResolvedValue({ error: null })
     mocks.track.mockResolvedValue({ ok: true })
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        Response.json({
-          success: true,
-          error: null,
-          data: {
-            id: 'bill_annual',
-            url: 'https://app.abacatepay.com/pay/bill_annual',
-            amount: 28700,
-            status: 'PENDING',
-          },
-        }),
-      ),
-    )
+    mockStripeCreate.mockResolvedValue({
+      id: 'cs_test_annual',
+      url: 'https://checkout.stripe.com/pay/cs_test_annual',
+      status: 'open',
+    })
   })
 
-  it('creates an annual checkout server-side and records checkout_started', async () => {
+  it('creates an annual Stripe checkout session and records checkout_started', async () => {
     const { POST } = await import('@/app/api/billing/checkout/route')
 
     const response = await POST(request({ plan: 'annual' }))
@@ -86,8 +91,8 @@ describe('POST /api/billing/checkout', () => {
     expect(response.status).toBe(201)
     expect(json.success).toBe(true)
     expect(json.data).toMatchObject({
-      checkout_id: 'bill_annual',
-      checkout_url: 'https://app.abacatepay.com/pay/bill_annual',
+      checkout_id: 'cs_test_annual',
+      checkout_url: 'https://checkout.stripe.com/pay/cs_test_annual',
       plan: 'annual',
       amount_cents: 28700,
     })
@@ -95,27 +100,21 @@ describe('POST /api/billing/checkout', () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
     )
 
-    expect(fetch).toHaveBeenCalledTimes(1)
-    const [url, init] = vi.mocked(fetch).mock.calls[0]
-    expect(url).toBe('https://api.abacatepay.com/v2/checkouts/create')
-    expect(init?.headers).toMatchObject({
-      Authorization: 'Bearer abacate-secret',
-      'Content-Type': 'application/json',
-    })
-    const providerBody = JSON.parse(String(init?.body))
-    expect(providerBody).toMatchObject({
-      items: [{ id: 'prod_annual', quantity: 1 }],
-      methods: ['PIX', 'CARD'],
-      card: { maxInstallments: 12 },
-      returnUrl: 'https://aprovaenf.test/feed',
-      completionUrl: 'https://aprovaenf.test/feed?subscription=success',
-      metadata: {
-        user_id: '00000000-0000-0000-0000-0000000000a4',
-        plan: 'annual',
-      },
-    })
-    expect(providerBody.externalId).toBe(json.data.subscription_id)
-    expect(providerBody.metadata.subscription_id).toBe(json.data.subscription_id)
+    expect(mockStripeCreate).toHaveBeenCalledTimes(1)
+    expect(mockStripeCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payment_method_types: ['card', 'pix'],
+        line_items: [{ price: 'price_annual', quantity: 1 }],
+        mode: 'subscription',
+        customer_email: 'aluno@aprovaenf.local',
+        client_reference_id: json.data.subscription_id,
+        metadata: {
+          user_id: '00000000-0000-0000-0000-0000000000a4',
+          subscription_id: json.data.subscription_id,
+          plan: 'annual',
+        },
+      }),
+    )
 
     expect(mocks.from).toHaveBeenCalledWith('subscriptions')
     expect(mocks.insert).toHaveBeenCalledWith(
@@ -124,7 +123,7 @@ describe('POST /api/billing/checkout', () => {
         user_id: '00000000-0000-0000-0000-0000000000a4',
         plan: 'annual',
         status: 'pending',
-        provider: 'abacate_pay',
+        provider: 'stripe',
       }),
     )
     expect(mocks.track).toHaveBeenCalledWith(
@@ -133,13 +132,18 @@ describe('POST /api/billing/checkout', () => {
         user_id: '00000000-0000-0000-0000-0000000000a4',
         metadata: expect.objectContaining({
           plan: 'annual',
-          checkout_id: 'bill_annual',
+          checkout_id: 'cs_test_annual',
         }),
       }),
     )
   })
 
-  it('uses the Abacate subscription checkout endpoint for monthly plans', async () => {
+  it('creates a monthly Stripe checkout session', async () => {
+    mockStripeCreate.mockResolvedValue({
+      id: 'cs_test_monthly',
+      url: 'https://checkout.stripe.com/pay/cs_test_monthly',
+      status: 'open',
+    })
     const { POST } = await import('@/app/api/billing/checkout/route')
 
     const response = await POST(request({ plan: 'monthly' }))
@@ -147,11 +151,33 @@ describe('POST /api/billing/checkout', () => {
 
     expect(response.status).toBe(201)
     expect(json.data.plan).toBe('monthly')
-    const [url, init] = vi.mocked(fetch).mock.calls[0]
-    expect(url).toBe('https://api.abacatepay.com/v2/subscriptions/create')
-    const providerBody = JSON.parse(String(init?.body))
-    expect(providerBody.items).toEqual([{ id: 'prod_monthly', quantity: 1 }])
-    expect(providerBody.methods).toEqual(['CARD'])
+    expect(json.data.checkout_id).toBe('cs_test_monthly')
+    expect(mockStripeCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [{ price: 'price_monthly', quantity: 1 }],
+      }),
+    )
+  })
+
+  it('bypasses real Stripe integration and returns a mock checkout in development mode', async () => {
+    mocks.getServerEnv.mockReturnValue({
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: 'service',
+      STRIPE_SECRET_KEY: 'stripe_dev_mock_secret_key',
+      STRIPE_WEBHOOK_SECRET: 'whsec_test',
+      NEXT_PUBLIC_APP_URL: 'https://aprovaenf.test',
+    })
+
+    const { POST } = await import('@/app/api/billing/checkout/route')
+    const response = await POST(request({ plan: 'monthly' }))
+    const json = await response.json()
+
+    expect(response.status).toBe(201)
+    expect(mockStripeCreate).not.toHaveBeenCalled()
+    expect(json.data.checkout_id).toContain('checkout_mock_')
+    expect(json.data.checkout_url).toContain('checkout=mock')
+    expect(json.data.checkout_url).toContain('provider=stripe')
   })
 
   it('rejects unauthenticated users before creating a provider checkout', async () => {
@@ -166,7 +192,7 @@ describe('POST /api/billing/checkout', () => {
       success: false,
       error: { code: 'unauthenticated' },
     })
-    expect(fetch).not.toHaveBeenCalled()
+    expect(mockStripeCreate).not.toHaveBeenCalled()
     expect(mocks.insert).not.toHaveBeenCalled()
   })
 
@@ -181,19 +207,11 @@ describe('POST /api/billing/checkout', () => {
       success: false,
       error: { code: 'validation_error' },
     })
-    expect(fetch).not.toHaveBeenCalled()
+    expect(mockStripeCreate).not.toHaveBeenCalled()
   })
 
-  it('returns a provider error without leaking the Abacate secret', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        Response.json(
-          { success: false, error: { message: 'invalid api key' }, data: null },
-          { status: 401 },
-        ),
-      ),
-    )
+  it('returns a provider error status when Stripe creation throws an error in production', async () => {
+    mockStripeCreate.mockRejectedValue(new Error('Stripe API is down'))
     const { POST } = await import('@/app/api/billing/checkout/route')
 
     const response = await POST(request({ plan: 'monthly' }))
@@ -207,6 +225,5 @@ describe('POST /api/billing/checkout', () => {
         message: 'Could not create checkout',
       },
     })
-    expect(JSON.stringify(json)).not.toContain('abacate-secret')
   })
 })

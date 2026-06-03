@@ -2,6 +2,9 @@
 For additional context about technologies, project structure, scope, and
 implementation order, read:
 
+- `specs/006-stripe-migration/spec.md`
+- `specs/006-stripe-migration/plan.md`
+- `specs/006-stripe-migration/tasks.md`
 - `specs/005-pix-checkout-ui/spec.md`
 - `specs/005-pix-checkout-ui/plan.md`
 - `specs/005-pix-checkout-ui/tasks.md`

@@ -113,7 +113,7 @@ export function Paywall({
                       : 'bg-[var(--line)] text-[var(--muted)]'
                   }`}
                 >
-                  {plan.id === 'annual' ? 'PIX ou Cartão (até 12x)' : 'Apenas Cartão'}
+                  {plan.id === 'annual' ? 'PIX ou Cartão (até 12x)' : 'PIX ou Cartão'}
                 </span>
               </div>
             </div>
@@ -143,15 +143,9 @@ export function Paywall({
                   : 'bg-[var(--teal)] text-white hover:bg-[var(--teal-mid)]'
               }`}
             >
-              {plan.id === 'annual' ? (
-                <>
-                  <QrCode size={16} />
-                  <span className="opacity-60 text-xs">/</span>
-                  <CreditCard size={16} />
-                </>
-              ) : (
-                <CreditCard size={17} />
-              )}
+              <QrCode size={16} />
+              <span className="opacity-60 text-xs">/</span>
+              <CreditCard size={16} />
               {loadingPlan === plan.id
                 ? 'Abrindo checkout...'
                 : `Assinar ${plan.label.toLowerCase()}`}

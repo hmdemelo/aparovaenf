@@ -21,21 +21,17 @@ const serverEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z
     .string()
     .min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
-  ABACATE_PAY_API_KEY: z.string().min(1, 'ABACATE_PAY_API_KEY is required'),
-  ABACATE_PAY_WEBHOOK_SECRET: z
+  STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required'),
+  STRIPE_WEBHOOK_SECRET: z
     .string()
-    .min(1, 'ABACATE_PAY_WEBHOOK_SECRET is required'),
-  ABACATE_PAY_WEBHOOK_PUBLIC_KEY: z
+    .min(1, 'STRIPE_WEBHOOK_SECRET is required'),
+  STRIPE_MONTHLY_PRICE_ID: z
     .string()
-    .min(1, 'ABACATE_PAY_WEBHOOK_PUBLIC_KEY cannot be empty')
+    .min(1, 'STRIPE_MONTHLY_PRICE_ID cannot be empty')
     .optional(),
-  ABACATE_PAY_MONTHLY_PRODUCT_ID: z
+  STRIPE_ANNUAL_PRICE_ID: z
     .string()
-    .min(1, 'ABACATE_PAY_MONTHLY_PRODUCT_ID cannot be empty')
-    .optional(),
-  ABACATE_PAY_ANNUAL_PRODUCT_ID: z
-    .string()
-    .min(1, 'ABACATE_PAY_ANNUAL_PRODUCT_ID cannot be empty')
+    .min(1, 'STRIPE_ANNUAL_PRICE_ID cannot be empty')
     .optional(),
   NEXT_PUBLIC_APP_URL: z
     .string()
