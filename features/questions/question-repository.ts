@@ -66,13 +66,72 @@ async function resolveBoardId(db: Db, slug: string): Promise<string | null> {
   return data?.id ?? null
 }
 
+/** Random published question id for a career (optionally a board), via the DB. */
+async function pickRandomQuestionId(
+  db: Db,
+  params: { careerId: string; boardId: string | null; excludeIds: string[] },
+): Promise<string | null> {
+  const { data, error } = await db.rpc('next_feed_question', {
+    p_career_id: params.careerId,
+    p_board_id: params.boardId ?? undefined,
+    p_exclude: params.excludeIds,
+  })
+  if (error || !data) return null
+  return data as string
+}
+
+/**
+ * Random published question id matching dynamic filters (subject and/or tags).
+ * Selection happens in the app layer over an id-only candidate set so we don't
+ * depend on a filtered RPC; the set is bounded by career + board + subject.
+ */
+async function pickFilteredQuestionId(
+  db: Db,
+  params: {
+    careerId: string
+    boardId: string | null
+    subjectId: string | null
+    tagIds: string[]
+    excludeIds: string[]
+  },
+): Promise<string | null> {
+  const hasTags = params.tagIds.length > 0
+  let query = db
+    .from('questions')
+    .select(hasTags ? 'id, question_tags!inner(tag_id)' : 'id')
+    .eq('status', 'published')
+    .eq('career_id', params.careerId)
+  if (params.boardId) query = query.eq('board_id', params.boardId)
+  if (params.subjectId) query = query.eq('subject_id', params.subjectId)
+  if (hasTags) query = query.in('question_tags.tag_id', params.tagIds)
+
+  const { data, error } = await query.limit(500)
+  if (error || !data) return null
+
+  // The select string is built conditionally, so narrow the row shape here.
+  const rows = data as unknown as Array<{ id: string }>
+  const exclude = new Set(params.excludeIds)
+  // Tag joins can repeat a question id (one row per matching tag) — dedupe.
+  const ids = Array.from(new Set(rows.map((r) => r.id))).filter(
+    (id) => !exclude.has(id),
+  )
+  if (ids.length === 0) return null
+  return ids[Math.floor(Math.random() * ids.length)]
+}
+
 /**
  * Return the next eligible question for the feed, or null when no published
  * question matches the filters / all have been answered.
  */
 export async function getNextQuestion(
   db: Db,
-  params: { careerSlug: string; boardSlug?: string; excludeIds?: string[] },
+  params: {
+    careerSlug: string
+    boardSlug?: string
+    subjectId?: string
+    tagIds?: string[]
+    excludeIds?: string[]
+  },
 ): Promise<FeedQuestion | null> {
   const careerId = await resolveCareerId(db, params.careerSlug)
   if (!careerId) return null
@@ -81,12 +140,24 @@ export async function getNextQuestion(
     ? await resolveBoardId(db, params.boardSlug)
     : null
 
-  const { data: pickedId, error: rpcError } = await db.rpc('next_feed_question', {
-    p_career_id: careerId,
-    p_board_id: boardId ?? undefined,
-    p_exclude: params.excludeIds ?? [],
-  })
-  if (rpcError || !pickedId) return null
+  const subjectId = params.subjectId ?? null
+  const tagIds = params.tagIds ?? []
+  const excludeIds = params.excludeIds ?? []
+  const hasDynamicFilter = Boolean(subjectId) || tagIds.length > 0
+
+  // Unfiltered feed uses the DB random-pick RPC; dynamic filters (subject/tags)
+  // select in the app layer over an id-only candidate set.
+  const pickedId = hasDynamicFilter
+    ? await pickFilteredQuestionId(db, {
+        careerId,
+        boardId,
+        subjectId,
+        tagIds,
+        excludeIds,
+      })
+    : await pickRandomQuestionId(db, { careerId, boardId, excludeIds })
+
+  if (!pickedId) return null
 
   const { data, error } = await db
     .from('questions')
@@ -98,7 +169,7 @@ export async function getNextQuestion(
        board:boards(name),
        alternatives(id, label, text, position)`,
     )
-    .eq('id', pickedId as string)
+    .eq('id', pickedId)
     .single()
 
   if (error || !data) return null

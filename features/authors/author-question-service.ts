@@ -6,6 +6,7 @@ import {
   type QuestionValidationInput,
 } from '@/features/questions/question-validation'
 import { authorOwnsQuestion } from './author-permissions'
+import { slugify } from '@/lib/text/slugify'
 
 type Db = SupabaseClient<Database>
 
@@ -35,6 +36,7 @@ export type QuestionDraftInput = {
   statement: string
   general_comment?: string | null
   alternatives?: AlternativeDraft[]
+  tags?: string[]
 }
 
 export type ServiceResult<T> =
@@ -64,6 +66,46 @@ async function replaceAlternatives(
   }))
   const { error: insError } = await db.from('alternatives').insert(rows)
   return insError?.message ?? null
+}
+
+async function syncQuestionTags(
+  db: Db,
+  questionId: string,
+  tagNames: string[],
+): Promise<string | null> {
+  const { error: delError } = await db
+    .from('question_tags')
+    .delete()
+    .eq('question_id', questionId)
+  if (delError) return delError.message
+
+  if (!tagNames || tagNames.length === 0) return null
+
+  const cleanedTags = Array.from(
+    new Set(tagNames.map((t) => t.trim()).filter(Boolean)),
+  )
+  if (cleanedTags.length === 0) return null
+
+  const tagRecords = cleanedTags.map((name) => ({
+    name,
+    slug: slugify(name),
+  }))
+
+  const { data: upsertedTags, error: tagError } = await db
+    .from('tags')
+    .upsert(tagRecords, { onConflict: 'slug' })
+    .select('id')
+
+  if (tagError) return tagError.message
+  if (!upsertedTags) return 'Failed to upsert tags'
+
+  const tagJoins = upsertedTags.map((tag) => ({
+    question_id: questionId,
+    tag_id: tag.id,
+  }))
+
+  const { error: joinError } = await db.from('question_tags').insert(tagJoins)
+  return joinError?.message ?? null
 }
 
 function questionRow(authorId: string, input: QuestionDraftInput) {
@@ -102,6 +144,11 @@ export async function createDraftQuestion(
     if (altError) return { ok: false, code: 'error', errors: [altError] }
   }
 
+  if (input.tags) {
+    const tagError = await syncQuestionTags(db, data.id, input.tags)
+    if (tagError) return { ok: false, code: 'error', errors: [tagError] }
+  }
+
   return { ok: true, data: { id: data.id } }
 }
 
@@ -126,7 +173,41 @@ export async function updateQuestion(
     if (altError) return { ok: false, code: 'error', errors: [altError] }
   }
 
+  if (input.tags) {
+    const tagError = await syncQuestionTags(db, questionId, input.tags)
+    if (tagError) return { ok: false, code: 'error', errors: [tagError] }
+  }
+
   return { ok: true, data: { id: questionId } }
+}
+
+export type BoardRecord = { id: string; name: string; slug: string }
+
+/**
+ * Create a board inline from the question editor "+" quick-add. Runs under the
+ * author-scoped client; the RLS insert policy (migration 006) restricts this to
+ * authors and admins. Upserts on `slug` so re-adding an existing board name
+ * returns the existing row instead of failing on the unique constraint.
+ */
+export async function createBoardInline(
+  db: Db,
+  name: string,
+): Promise<ServiceResult<BoardRecord>> {
+  const trimmed = name.trim()
+  if (!trimmed) {
+    return { ok: false, code: 'validation', errors: ['board name is required'] }
+  }
+
+  const { data, error } = await db
+    .from('boards')
+    .upsert({ name: trimmed, slug: slugify(trimmed) }, { onConflict: 'slug' })
+    .select('id, name, slug')
+    .single()
+
+  if (error || !data) {
+    return { ok: false, code: 'error', errors: [error?.message ?? 'insert failed'] }
+  }
+  return { ok: true, data }
 }
 
 export async function publishQuestion(
@@ -197,12 +278,24 @@ export async function getAuthorQuestion(
     .select(
       `id, statement, general_comment, career_id, subject_id, board_id, difficulty,
        source_type, source_orgao, source_cargo, source_year, source_reference, status,
-       alternatives(id, label, text, is_correct, alternative_comment, position)`,
+       alternatives(id, label, text, is_correct, alternative_comment, position),
+       tags:question_tags(tag:tags(id, name, slug))`,
     )
     .eq('id', questionId)
     .eq('author_id', authorId)
     .maybeSingle()
-  return data
+
+  if (!data) return null
+
+  type QuestionTagRow = { tag: { id: string; name: string; slug: string } | null }
+  const formattedTags = ((data.tags ?? []) as QuestionTagRow[])
+    .map((qt) => qt.tag)
+    .filter((tag): tag is NonNullable<typeof tag> => Boolean(tag))
+
+  return {
+    ...data,
+    tags: formattedTags,
+  }
 }
 
 export type AuthorMetrics = {

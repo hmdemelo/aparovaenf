@@ -6,6 +6,7 @@ import {
   createDraftQuestion,
   publishQuestion,
   updateQuestion,
+  getAuthorQuestion,
 } from '@/features/authors/author-question-service'
 import { getAuthorProfileId } from '@/features/authors/author-permissions'
 import {
@@ -200,5 +201,48 @@ d('author question pipeline (local Supabase)', () => {
       expect(blocked.errors).toContain('general comment is required to publish')
       expect(blocked.errors).toContain('exactly one correct alternative is required')
     }
+  })
+
+  it('creates, updates and retrieves question tags correctly', async () => {
+    const result = await createDraftQuestion(author1, authorId1, {
+      ...draftInput(),
+      tags: ['biosseguranca', 'pni-2026'],
+    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    createdIds.push(result.data.id)
+
+    // Assert tags were linked
+    const { data: qTags } = await service
+      .from('question_tags')
+      .select('tag:tags(name)')
+      .eq('question_id', result.data.id)
+    const tagNames = (qTags ?? []).map((t) => (t.tag as { name: string }).name)
+    expect(tagNames).toContain('biosseguranca')
+    expect(tagNames).toContain('pni-2026')
+
+    // Update tags (one removed, one added)
+    const updated = await updateQuestion(author1, authorId1, result.data.id, {
+      ...draftInput(),
+      tags: ['pni-2026', 'vacina-covid'],
+    })
+    expect(updated.ok).toBe(true)
+
+    // Assert updated tags
+    const { data: qTags2 } = await service
+      .from('question_tags')
+      .select('tag:tags(name)')
+      .eq('question_id', result.data.id)
+    const tagNames2 = (qTags2 ?? []).map((t) => (t.tag as { name: string }).name)
+    expect(tagNames2).not.toContain('biosseguranca')
+    expect(tagNames2).toContain('pni-2026')
+    expect(tagNames2).toContain('vacina-covid')
+
+    // Retrieve via service
+    const question = await getAuthorQuestion(author1, authorId1, result.data.id)
+    expect(question).not.toBeNull()
+    const retrievedTags = (question?.tags ?? []).map((t) => (t as { name: string }).name)
+    expect(retrievedTags).toContain('pni-2026')
+    expect(retrievedTags).toContain('vacina-covid')
   })
 })

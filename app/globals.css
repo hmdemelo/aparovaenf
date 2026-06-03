@@ -186,6 +186,7 @@ h3,
 .aprova-sidebar {
   background: rgba(247, 245, 240, 0.88);
   border-color: var(--line);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s ease;
 }
 
 .aprova-nav-item {
@@ -196,7 +197,7 @@ h3,
   font-size: 14px;
   gap: 10px;
   padding: 10px 12px;
-  transition: background 0.18s ease, color 0.18s ease;
+  transition: background 0.18s ease, color 0.18s ease, justify-content 0.3s ease;
 }
 
 .aprova-nav-item:hover {

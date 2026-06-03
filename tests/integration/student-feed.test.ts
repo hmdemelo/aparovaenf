@@ -15,6 +15,10 @@ const d = hasLocal ? describe : describe.skip
 
 // A throwaway anonymous session id, cleaned up afterwards.
 const SESSION_ID = '00000000-0000-0000-0000-00000000e2e1'
+// Seed question used by the grading tests; lives in career "enfermeiro-a".
+const Q_F1 = '00000000-0000-0000-0000-0000000000f1'
+// Throwaway tag for the feed-filtering tests, cleaned up afterwards.
+const FILTER_TAG_SLUG = 'feed-filter-tag-e2e'
 
 let db: SupabaseClient<Database>
 
@@ -30,7 +34,55 @@ d('student feed integration (local Supabase)', () => {
   afterAll(async () => {
     if (db) {
       await db.from('answer_attempts').delete().eq('anonymous_session_id', SESSION_ID)
+      await db.from('tags').delete().eq('slug', FILTER_TAG_SLUG)
     }
+  })
+
+  it('filters the feed by a dynamic tag', async () => {
+    // Create a tag and link it only to f1.
+    const { data: tag } = await db
+      .from('tags')
+      .upsert({ name: 'Filtro Feed E2E', slug: FILTER_TAG_SLUG }, { onConflict: 'slug' })
+      .select('id')
+      .single()
+    await db
+      .from('question_tags')
+      .upsert({ question_id: Q_F1, tag_id: tag!.id })
+
+    // Filtering by the tag returns f1 (the only tagged question).
+    const tagged = await getNextQuestion(db, {
+      careerSlug: 'enfermeiro-a',
+      tagIds: [tag!.id],
+    })
+    expect(tagged!.id).toBe(Q_F1)
+
+    // Excluding f1 leaves no question carrying the tag.
+    const none = await getNextQuestion(db, {
+      careerSlug: 'enfermeiro-a',
+      tagIds: [tag!.id],
+      excludeIds: [Q_F1],
+    })
+    expect(none).toBeNull()
+  })
+
+  it('filters the feed by subject and returns null for an unrelated subject', async () => {
+    const { data: row } = await db
+      .from('questions')
+      .select('subject_id')
+      .eq('id', Q_F1)
+      .single()
+
+    const match = await getNextQuestion(db, {
+      careerSlug: 'enfermeiro-a',
+      subjectId: row!.subject_id!,
+    })
+    expect(match).not.toBeNull()
+
+    const unrelated = await getNextQuestion(db, {
+      careerSlug: 'enfermeiro-a',
+      subjectId: '00000000-0000-0000-0000-0000000000ff',
+    })
+    expect(unrelated).toBeNull()
   })
 
   it('returns a published question with alternatives and no correctness flag', async () => {

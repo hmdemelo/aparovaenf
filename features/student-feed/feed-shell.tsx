@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { BookOpen, Heart, History, UserCircle } from 'lucide-react'
+import { BookOpen, Heart, History, SlidersHorizontal, UserCircle, X } from 'lucide-react'
 import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { QuestionCard } from './question-card'
 import { AnswerFeedback } from './answer-feedback'
 import { SignupGate } from '@/features/trial/signup-gate'
 import { Paywall } from '@/features/billing/paywall'
+import type { FeedFilterOptions } from './feed-filter-options'
 import type { AnswerResponse, FeedNextResponse, FeedQuestionDto } from './types'
 
 type ApiEnvelope<T> =
@@ -26,9 +27,11 @@ type Gate = 'none' | 'signup' | 'paywall'
 export function FeedShell({
   careerSlug,
   boardSlug,
+  filterOptions,
 }: {
   careerSlug: string
   boardSlug?: string
+  filterOptions?: FeedFilterOptions
 }) {
   const [question, setQuestion] = useState<FeedQuestionDto | null>(null)
   const [feedback, setFeedback] = useState<AnswerResponse | null>(null)
@@ -40,6 +43,13 @@ export function FeedShell({
   const [favoriteMsg, setFavoriteMsg] = useState<string | null>(null)
   const [subscriptionActive, setSubscriptionActive] = useState(false)
 
+  // Feed filters (Subject + Board + Tags). Board is sent as a slug, subject and
+  // tags as ids; an empty value means "no filter on that dimension".
+  const [showFilters, setShowFilters] = useState(false)
+  const [subjectId, setSubjectId] = useState('')
+  const [boardFilterSlug, setBoardFilterSlug] = useState(boardSlug ?? '')
+  const [tagIds, setTagIds] = useState<string[]>([])
+
   const loadNext = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -48,7 +58,9 @@ export function FeedShell({
     setFavoriteMsg(null)
     try {
       const params = new URLSearchParams({ career: careerSlug })
-      if (boardSlug) params.set('board', boardSlug)
+      if (boardFilterSlug) params.set('board', boardFilterSlug)
+      if (subjectId) params.set('subject', subjectId)
+      if (tagIds.length > 0) params.set('tags', tagIds.join(','))
       const res = await fetch(`/api/feed/next?${params.toString()}`)
       const json: ApiEnvelope<FeedNextResponse> = await res.json()
       if (!json.success) {
@@ -66,7 +78,7 @@ export function FeedShell({
     } finally {
       setLoading(false)
     }
-  }, [careerSlug, boardSlug])
+  }, [careerSlug, boardFilterSlug, subjectId, tagIds])
 
   useEffect(() => {
     // On-mount data fetch (no client cache library in the MVP); loadNext owns
@@ -153,8 +165,22 @@ export function FeedShell({
   }
 
   const feedParams = new URLSearchParams({ career: careerSlug })
-  if (boardSlug) feedParams.set('board', boardSlug)
+  if (boardFilterSlug) feedParams.set('board', boardFilterSlug)
   const feedHref = `/feed?${feedParams.toString()}`
+
+  function toggleTag(id: string) {
+    setTagIds((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
+    )
+  }
+
+  const activeFilterCount =
+    (subjectId ? 1 : 0) + (boardFilterSlug ? 1 : 0) + tagIds.length
+  const hasFilterOptions =
+    !!filterOptions &&
+    (filterOptions.subjects.length > 0 ||
+      filterOptions.boards.length > 0 ||
+      filterOptions.tags.length > 0)
 
   return (
     <div
@@ -197,6 +223,116 @@ export function FeedShell({
       </header>
 
       <main className="mx-auto flex w-full max-w-[430px] flex-col gap-4 px-4 py-6 sm:py-8">
+        {hasFilterOptions && filterOptions && (
+          <section data-testid="feed-filters">
+            <button
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+              aria-expanded={showFilters}
+              data-testid="feed-filters-toggle"
+              className="flex w-full items-center justify-between rounded-[var(--radius-sm)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-hover,var(--surface))]"
+            >
+              <span className="flex items-center gap-2">
+                <SlidersHorizontal size={16} />
+                Filtros
+                {activeFilterCount > 0 && (
+                  <span className="aprova-pill aprova-pill-pro text-[11px]">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </span>
+              <span className="text-xs text-[var(--muted)]">
+                {showFilters ? 'Fechar' : 'Abrir'}
+              </span>
+            </button>
+
+            {showFilters && (
+              <div className="mt-3 flex flex-col gap-4 rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--paper)] p-4">
+                {filterOptions.subjects.length > 0 && (
+                  <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                    Assunto
+                    <select
+                      value={subjectId}
+                      onChange={(e) => setSubjectId(e.target.value)}
+                      data-testid="filter-subject"
+                      className="aprova-field text-sm font-normal text-[var(--ink)]"
+                    >
+                      <option value="">Todos</option>
+                      {filterOptions.subjects.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {filterOptions.boards.length > 0 && (
+                  <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                    Banca
+                    <select
+                      value={boardFilterSlug}
+                      onChange={(e) => setBoardFilterSlug(e.target.value)}
+                      data-testid="filter-board"
+                      className="aprova-field text-sm font-normal text-[var(--ink)]"
+                    >
+                      <option value="">Todas</option>
+                      {filterOptions.boards.map((b) => (
+                        <option key={b.id} value={b.slug}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
+                {filterOptions.tags.length > 0 && (
+                  <div className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                    Tags
+                    <ul className="flex flex-wrap gap-2" data-testid="filter-tags">
+                      {filterOptions.tags.map((t) => {
+                        const active = tagIds.includes(t.id)
+                        return (
+                          <li key={t.id}>
+                            <button
+                              type="button"
+                              onClick={() => toggleTag(t.id)}
+                              aria-pressed={active}
+                              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                                active
+                                  ? 'bg-[var(--teal)] text-white'
+                                  : 'bg-[var(--surface)] text-[var(--ink)] hover:bg-[var(--surface-hover,var(--surface))]'
+                              }`}
+                            >
+                              {t.name}
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                )}
+
+                {activeFilterCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubjectId('')
+                      setBoardFilterSlug('')
+                      setTagIds([])
+                    }}
+                    data-testid="filter-clear"
+                    className="flex items-center gap-1 self-start text-xs font-semibold text-[var(--muted)] transition hover:text-[var(--danger)]"
+                  >
+                    <X size={14} />
+                    Limpar filtros
+                  </button>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
         {error && (
           <p className="rounded-[var(--radius-sm)] bg-[var(--danger-bg)] px-4 py-2 text-sm text-[var(--danger)]">
             {error}

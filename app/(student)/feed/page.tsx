@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
 import { FeedShell } from '@/features/student-feed/feed-shell'
+import { loadFeedFilterOptions } from '@/features/student-feed/feed-filter-options'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,5 +23,13 @@ export default async function FeedPage({
   if (user.role === 'author') redirect('/author/questions')
   if (!(await isSubscriber())) redirect('/assinar')
 
-  return <FeedShell careerSlug={career} boardSlug={board} />
+  const filterOptions = await loadFeedFilterOptions(career)
+
+  return (
+    <FeedShell
+      careerSlug={career}
+      boardSlug={board}
+      filterOptions={filterOptions}
+    />
+  )
 }

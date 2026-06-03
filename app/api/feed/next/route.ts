@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
   const parsed = feedQuerySchema.safeParse({
     career: request.nextUrl.searchParams.get('career') ?? undefined,
     board: request.nextUrl.searchParams.get('board') ?? undefined,
+    subject: request.nextUrl.searchParams.get('subject') ?? undefined,
+    tags: request.nextUrl.searchParams.get('tags') ?? undefined,
   })
   if (!parsed.success) {
     return fail(ErrorCodes.VALIDATION, 'career is required')
@@ -43,6 +45,8 @@ export async function GET(request: NextRequest) {
   const question = await getNextQuestion(svc, {
     careerSlug: parsed.data.career,
     boardSlug: parsed.data.board,
+    subjectId: parsed.data.subject,
+    tagIds: parsed.data.tags,
     excludeIds,
   })
 

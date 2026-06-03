@@ -1,131 +1,104 @@
-# Implementation Plan: Bulk Question Import
+# Implementation Plan: [FEATURE]
 
-**Branch**: `002-bulk-question-import` | **Date**: 2026-06-03 | **Spec**: [spec.md](./spec.md)  
-**Input**: Feature specification from `/specs/002-bulk-question-import/spec.md`
+**Branch**: `[###-feature-name]` | **Date**: [DATE] | **Spec**: [link]
+**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+
+**Note**: This template is filled in by the `/speckit-plan` command. See `.specify/templates/plan-template.md` for the execution workflow.
 
 ## Summary
 
-Add an admin-only, author-scoped CSV import flow from `/admin/authors`. Each
-author row gets an `Importar` action next to `Editar`; the action opens a modal
-that accepts a CSV, validates rows, and creates draft questions assigned to that
-author. Imported questions stay out of the student feed until the author reviews
-and publishes them through the existing author flow.
-
-The existing `docs/bulk-question-import.md` is a partial reference. Its CSV
-limits, alias normalization, partial-success behavior, and modal result UX are
-useful. Its global route, JSON support, Prisma model, `PENDING/APPROVED/REJECTED`
-status flow, optional subject/content behavior, and `ADMIN`/`MENTOR` role model
-do not match the current application and must be adapted.
+[Extract from feature spec: primary requirement + technical approach from research]
 
 ## Technical Context
 
-**Language/Version**: TypeScript on current LTS Node runtime  
-**Primary Dependencies**: Next.js App Router, React, Tailwind CSS, lucide-react,
-Supabase JS client, Zod, Vitest, Playwright, PapaParse for CSV parsing  
-**Storage**: Supabase Postgres with existing `questions`, `alternatives`,
-`author_profiles`, `careers`, `subjects`, and `boards` tables  
-**Testing**: Vitest for parser/service/component tests, integration tests for
-admin route behavior, Playwright for the admin upload smoke  
-**Target Platform**: Vercel web deployment and modern mobile/desktop browsers  
-**Project Type**: Full-stack web application  
-**Performance Goals**: Import 100 valid rows in under 30 seconds locally; reject
-files over 5 MB or 500 data rows before persistence  
-**Constraints**: CSV only for this feature; no automatic duplicate detection; no
-new global approval queue; no published questions created by import  
-**Scale/Scope**: Admin operational tool for early content seeding, up to 500
-questions per upload
+<!--
+  ACTION REQUIRED: Replace the content in this section with the technical details
+  for the project. The structure here is presented in advisory capacity to guide
+  the iteration process.
+-->
+
+**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
+**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
+**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
+**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
+**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
+**Project Type**: [e.g., library/cli/web-service/mobile-app/compiler/desktop-app or NEEDS CLARIFICATION]  
+**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
+**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
+**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- Mobile-first learning value: PASS. The feature improves student content supply
-  but keeps student-facing feed rules unchanged.
-- Secure data boundaries: PASS. Admin authorization is enforced server-side, and
-  import persistence happens only after validating the selected author.
-- Test-first delivery: PASS. Tasks require parser, service, route, component,
-  integration, and E2E coverage before implementation slices.
-- Simple modular architecture: PASS. The feature stays inside the existing
-  Next.js monolith and reuses current admin and author domains.
-- Observable operations: PASS. Import result summaries include enough context for
-  audit logs and operational debugging.
+[Gates determined based on constitution file]
 
 ## Project Structure
 
 ### Documentation (this feature)
 
 ```text
-specs/002-bulk-question-import/
-├── spec.md
-├── plan.md
-├── research.md
-├── data-model.md
-├── quickstart.md
-├── contracts/
-│   └── api.md
-├── checklists/
-│   └── requirements.md
-└── tasks.md
+specs/[###-feature]/
+├── plan.md              # This file (/speckit-plan command output)
+├── research.md          # Phase 0 output (/speckit-plan command)
+├── data-model.md        # Phase 1 output (/speckit-plan command)
+├── quickstart.md        # Phase 1 output (/speckit-plan command)
+├── contracts/           # Phase 1 output (/speckit-plan command)
+└── tasks.md             # Phase 2 output (/speckit-tasks command - NOT created by /speckit-plan)
 ```
 
 ### Source Code (repository root)
+<!--
+  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
+  for this feature. Delete unused options and expand the chosen structure with
+  real paths (e.g., apps/admin, packages/something). The delivered plan must
+  not include Option labels.
+-->
 
 ```text
-app/
-├── (admin)/
-│   └── admin/authors/page.tsx
-└── api/
-    └── admin/
-        ├── authors/[id]/questions/bulk-import/route.ts
-        └── questions/bulk-template/route.ts
-
-features/
-├── admin/
-│   ├── admin-authors-manager.tsx
-│   ├── bulk-question-import-dialog.tsx
-│   ├── bulk-question-import-parser.ts
-│   └── bulk-question-import-service.ts
-└── authors/
-    └── author-question-service.ts
-
-lib/
-├── api/
-├── db/
-└── validation/
+# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
+src/
+├── models/
+├── services/
+├── cli/
+└── lib/
 
 tests/
-├── e2e/
+├── contract/
 ├── integration/
 └── unit/
+
+# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
+backend/
+├── src/
+│   ├── models/
+│   ├── services/
+│   └── api/
+└── tests/
+
+frontend/
+├── src/
+│   ├── components/
+│   ├── pages/
+│   └── services/
+└── tests/
+
+# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
+api/
+└── [same as backend above]
+
+ios/ or android/
+└── [platform-specific structure: feature modules, UI flows, platform tests]
 ```
 
-**Structure Decision**: Keep UI and admin import orchestration in
-`features/admin`, because the entry point and authorization are admin-owned.
-Imported questions still use the existing author question data model and author
-editing pages after persistence.
-
-## Phase 0: Research
-
-Research is captured in [research.md](./research.md). All technical choices from
-the planning stage are resolved.
-
-## Phase 1: Design & Contracts
-
-- Data model: [data-model.md](./data-model.md)
-- API/UI contracts: [contracts/api.md](./contracts/api.md)
-- Quickstart validation: [quickstart.md](./quickstart.md)
-
-## Phase 2: Execution Strategy
-
-1. Build and test the CSV parser independently.
-2. Build the author-scoped import service with service-role persistence guarded
-   by admin authorization at the route boundary.
-3. Add the admin route contract and integration tests.
-4. Add the modal and wire the `Importar` button beside `Editar`.
-5. Verify imported drafts appear in the existing author question list and remain
-   unpublished until the author publishes them.
-6. Add template download, E2E smoke, docs update, and full quality gates.
+**Structure Decision**: [Document the selected structure and reference the real
+directories captured above]
 
 ## Complexity Tracking
 
-No constitution violations identified.
+> **Fill ONLY if Constitution Check has violations that must be justified**
+
+| Violation | Why Needed | Simpler Alternative Rejected Because |
+|-----------|------------|-------------------------------------|
+| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
+| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |

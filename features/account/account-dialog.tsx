@@ -13,9 +13,10 @@ type ApiEnvelope<T> =
 
 type AccountDialogProps = {
   initialProfile: AccountProfile
+  compact?: boolean
 }
 
-export function AccountDialog({ initialProfile }: AccountDialogProps) {
+export function AccountDialog({ initialProfile, compact = false }: AccountDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [profile, setProfile] = useState(initialProfile)
@@ -124,11 +125,14 @@ export function AccountDialog({ initialProfile }: AccountDialogProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-[var(--radius-sm)] border border-[color:var(--line-2)] bg-white px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:border-[color:var(--teal)] hover:text-[var(--teal)]"
+        className={`inline-flex items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--line-2)] bg-white text-[var(--ink)] transition hover:border-[color:var(--teal)] hover:text-[var(--teal)] ${
+          compact ? 'h-10 w-10 p-0' : 'gap-2 px-4 py-2 text-sm font-semibold'
+        }`}
+        title={compact ? 'Minha conta' : undefined}
         data-testid="account-open"
       >
         <UserCircle size={18} />
-        Minha conta
+        {!compact && 'Minha conta'}
       </button>
 
       {open && (

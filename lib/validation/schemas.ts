@@ -60,6 +60,20 @@ export const uuidSchema = z
 export const feedQuerySchema = z.object({
   career: z.string().min(1, 'career is required'),
   board: z.string().min(1).optional(),
+  subject: uuidSchema.optional(),
+  // Comma-separated tag ids, parsed into a list of uuids.
+  tags: z
+    .string()
+    .optional()
+    .transform((value) =>
+      value
+        ? value
+            .split(',')
+            .map((id) => id.trim())
+            .filter(Boolean)
+        : [],
+    )
+    .pipe(z.array(uuidSchema).max(20)),
 })
 export type FeedQuery = z.infer<typeof feedQuerySchema>
 
@@ -130,8 +144,15 @@ export const authorQuestionInputSchema = z.object({
   statement: z.string().min(1, 'statement is required'),
   general_comment: z.string().optional().nullable(),
   alternatives: z.array(authorAlternativeSchema).optional(),
+  tags: z.array(z.string().trim().min(1).max(60)).max(20).optional(),
 })
 export type AuthorQuestionInput = z.infer<typeof authorQuestionInputSchema>
+
+/** Inline board creation payload (author "+" quick-add). */
+export const createBoardInputSchema = z.object({
+  name: z.string().trim().min(1, 'nome da banca é obrigatório').max(120),
+})
+export type CreateBoardInput = z.infer<typeof createBoardInputSchema>
 
 // --- Admin: author creation ----------------------------------------------
 

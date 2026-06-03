@@ -1,8 +1,5 @@
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
-import { AccountDialog } from '@/features/account/account-dialog'
-import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
-import { loadAccountProfile } from '@/features/account/account-service'
 import { resolveAuthorContext } from '@/features/authors/author-context'
 import { getAuthorQuestion } from '@/features/authors/author-question-service'
 import { loadClassificationOptions } from '@/features/authors/classification-options'
@@ -24,7 +21,6 @@ export default async function EditQuestionPage({
   if (!question) notFound()
 
   const { careers, subjects, boards } = await loadClassificationOptions()
-  const account = await loadAccountProfile(ctx.db, ctx.userId)
 
   const alternatives = [...(question.alternatives ?? [])]
     .sort((a, b) => a.position - b.position)
@@ -43,16 +39,11 @@ export default async function EditQuestionPage({
     statement: question.statement,
     general_comment: question.general_comment,
     alternatives,
+    tags: (question.tags ?? []).map((t) => t.name),
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-3xl px-4 py-8">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <Link href="/author/questions" aria-label="Voltar para questões">
-          <AprovaenfLogo className="text-[var(--teal)]" />
-        </Link>
-        <AccountDialog initialProfile={account} />
-      </div>
+    <>
       <div className="mb-5">
         <Link href="/author/questions" className="text-sm font-semibold text-[var(--teal)] underline">
           ← Voltar
@@ -61,14 +52,12 @@ export default async function EditQuestionPage({
           Editar questão
         </h1>
       </div>
-      <section className="aprova-paper-card p-5 sm:p-6">
-        <QuestionEditor
-          careers={careers}
-          subjects={subjects}
-          boards={boards}
-          initial={initial}
-        />
-      </section>
-    </main>
+      <QuestionEditor
+        careers={careers}
+        subjects={subjects}
+        boards={boards}
+        initial={initial}
+      />
+    </>
   )
 }
