@@ -17,9 +17,9 @@ async function login(page: Page, email: string, next: string) {
   })
 }
 
-test('admin unpublishes a published question from the dashboard', async ({ page }) => {
+test('admin unpublishes a published question from the moderation page', async ({ page }) => {
   test.setTimeout(120_000)
-  await login(page, 'admin@aprovaenf.local', '/admin')
+  await login(page, 'admin@aprovaenf.local', '/admin/questions')
 
   await expect(page.getByTestId('admin-questions')).toBeVisible({ timeout: 30_000 })
 

@@ -10,6 +10,12 @@ describe('resolvePostLoginPath', () => {
     ).toBe('/admin')
   })
 
+  it('sends admins to subpages of the admin panel if next points to one', () => {
+    expect(
+      resolvePostLoginPath({ ...base, role: 'admin', next: '/admin/questions' }),
+    ).toBe('/admin/questions')
+  })
+
   it('sends authors to the author questions panel', () => {
     expect(
       resolvePostLoginPath({ ...base, role: 'author', next: '/feed?career=enfermagem' }),

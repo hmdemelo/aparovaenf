@@ -42,7 +42,9 @@ function launchFeed(slug: string | null): string {
 }
 
 export function resolvePostLoginPath(ctx: PostLoginContext): string {
-  if (ctx.role === 'admin') return '/admin'
+  if (ctx.role === 'admin') {
+    return isSafeNext(ctx.next) && ctx.next.startsWith('/admin') ? ctx.next : '/admin'
+  }
   if (ctx.role === 'author') return '/author/questions'
 
   // student

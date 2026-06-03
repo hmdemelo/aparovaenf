@@ -2,6 +2,9 @@
 For additional context about technologies, project structure, scope, and
 implementation order, read:
 
+- `specs/004-admin-panel-refactor/spec.md`
+- `specs/004-admin-panel-refactor/plan.md`
+- `specs/004-admin-panel-refactor/tasks.md`
 - `specs/003-question-filtering-tags/spec.md`
 - `specs/003-question-filtering-tags/plan.md`
 - `specs/003-question-filtering-tags/tasks.md`
