@@ -20,18 +20,6 @@ async function login(page: Page, email: string, next: string) {
   await expect(page).toHaveURL(/\/assinar/, { timeout: 30_000 })
 }
 
-async function answerCurrentQuestion(page: Page) {
-  const firstAlternative = page.getByTestId('alternative').first()
-  await firstAlternative.waitFor({ state: 'visible', timeout: 30_000 })
-  await firstAlternative.click()
-  await page.getByRole('button', { name: 'Responder' }).click()
-  await expect(page.getByTestId('answer-feedback')).toBeVisible({ timeout: 30_000 })
-}
-
-async function answerAndAdvance(page: Page) {
-  await answerCurrentQuestion(page)
-  await page.getByTestId('next-question').click()
-}
 
 function serviceClient(): SupabaseClient<Database> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
