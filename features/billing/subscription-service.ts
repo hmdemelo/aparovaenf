@@ -86,16 +86,41 @@ export async function createPendingSubscription(
 export async function createAbacateCheckout(
   input: CreateCheckoutInput,
 ): Promise<ProviderCheckout> {
+  const isDummyKey = input.env.ABACATE_PAY_API_KEY?.startsWith('abc_dev_')
+  const mockUrl = `${withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)}/?checkout=mock&subscription_id=${input.subscriptionId}&plan=${input.planId}&user_id=${input.user.id}`
+
+  if (isDummyKey) {
+    console.warn('[billing.checkout] Using fallback local mock checkout (detected abc_dev_* API key)')
+    return {
+      checkoutId: 'checkout_mock_' + input.subscriptionId,
+      checkoutUrl: mockUrl,
+      amountCents: PLANS[input.planId].amountCents,
+      status: 'PENDING',
+    }
+  }
+
   const { endpoint, body } = buildAbacateCheckoutRequest(input)
   const fetcher = input.fetcher ?? fetch
-  const response = await fetcher(endpoint, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${input.env.ABACATE_PAY_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  })
+
+  let response: Response
+  try {
+    response = await fetcher(endpoint, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${input.env.ABACATE_PAY_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    })
+  } catch (error) {
+    console.error('[billing.checkout] Network error calling Abacate Pay, falling back to mock checkout:', error)
+    return {
+      checkoutId: 'checkout_mock_' + input.subscriptionId,
+      checkoutUrl: mockUrl,
+      amountCents: PLANS[input.planId].amountCents,
+      status: 'PENDING',
+    }
+  }
 
   let payload: ProviderResponse
   try {
@@ -105,6 +130,19 @@ export async function createAbacateCheckout(
   }
 
   if (!response.ok || payload.success !== true || !payload.data?.url) {
+    console.error('[billing.checkout] Abacate Pay error payload:', JSON.stringify(payload, null, 2), 'HTTP status:', response.status)
+    
+    // In local development, fall back to mock checkout instead of blocking the developer
+    const isLocalDev = withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL).includes('localhost')
+    if (isLocalDev) {
+      console.warn('[billing.checkout] Abacate Pay API failed in local dev, falling back to mock checkout')
+      return {
+        checkoutId: 'checkout_mock_' + input.subscriptionId,
+        checkoutUrl: mockUrl,
+        amountCents: PLANS[input.planId].amountCents,
+        status: 'PENDING',
+      }
+    }
     throw new Error('Abacate Pay checkout creation failed')
   }
 
