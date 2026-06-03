@@ -2,6 +2,9 @@
 For additional context about technologies, project structure, scope, and
 implementation order, read:
 
+- `specs/005-pix-checkout-ui/spec.md`
+- `specs/005-pix-checkout-ui/plan.md`
+- `specs/005-pix-checkout-ui/tasks.md`
 - `specs/004-admin-panel-refactor/spec.md`
 - `specs/004-admin-panel-refactor/plan.md`
 - `specs/004-admin-panel-refactor/tasks.md`

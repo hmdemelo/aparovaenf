@@ -86,6 +86,17 @@ export function PricingSection() {
               >
                 {plan.cadenceLabel}
               </p>
+              <div className="mt-2.5">
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] ${
+                    plan.id === 'annual'
+                      ? 'bg-[rgba(160,243,212,0.18)] text-[var(--mint-strong)]'
+                      : 'bg-[var(--line)] text-[var(--muted)]'
+                  }`}
+                >
+                  {plan.id === 'annual' ? 'PIX ou Cartão (até 12x)' : 'Apenas Cartão'}
+                </span>
+              </div>
             </div>
 
             <ul
@@ -107,7 +118,7 @@ export function PricingSection() {
         ))}
       </div>
       <p className="mt-4 text-center text-xs text-[var(--muted)]">
-        Plano anual com parcelamento disponível no checkout.
+        Plano anual suporta PIX ou Cartão (parcelamento em até 12x).
       </p>
     </section>
   )

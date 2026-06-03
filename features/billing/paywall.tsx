@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, CreditCard, Sparkles } from 'lucide-react'
+import { Check, CreditCard, QrCode, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { PLAN_LIST, type PlanId } from './plans'
 
@@ -105,6 +105,17 @@ export function Paywall({
               >
                 {plan.cadenceLabel}
               </p>
+              <div className="mt-2.5">
+                <span
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] ${
+                    plan.id === 'annual'
+                      ? 'bg-[rgba(160,243,212,0.18)] text-[var(--mint-strong)]'
+                      : 'bg-[var(--line)] text-[var(--muted)]'
+                  }`}
+                >
+                  {plan.id === 'annual' ? 'PIX ou Cartão (até 12x)' : 'Apenas Cartão'}
+                </span>
+              </div>
             </div>
             <ul
               className={`flex flex-col gap-2 text-sm ${
@@ -132,7 +143,15 @@ export function Paywall({
                   : 'bg-[var(--teal)] text-white hover:bg-[var(--teal-mid)]'
               }`}
             >
-              <CreditCard size={17} />
+              {plan.id === 'annual' ? (
+                <>
+                  <QrCode size={16} />
+                  <span className="opacity-60 text-xs">/</span>
+                  <CreditCard size={16} />
+                </>
+              ) : (
+                <CreditCard size={17} />
+              )}
               {loadingPlan === plan.id
                 ? 'Abrindo checkout...'
                 : `Assinar ${plan.label.toLowerCase()}`}
