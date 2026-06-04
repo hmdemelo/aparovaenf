@@ -91,7 +91,8 @@ export async function createStripeCheckout(
 
   try {
     const stripe = new Stripe(input.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2024-06-20' as unknown as Stripe.LatestApiVersion,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      apiVersion: '2024-06-20' as any,
     })
 
     const session = await stripe.checkout.sessions.create({

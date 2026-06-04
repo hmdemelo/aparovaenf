@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
         return fail(ErrorCodes.UNAUTHENTICATED, 'Missing stripe signature header')
       }
       const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-        apiVersion: '2024-06-20' as unknown as Stripe.LatestApiVersion,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        apiVersion: '2024-06-20' as any,
       })
       event = stripe.webhooks.constructEvent(
         rawBody,
@@ -55,7 +56,8 @@ export async function POST(request: NextRequest) {
   const recorded = await events.recordReceived({
     providerEventId,
     eventType,
-    payload: event as unknown as Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    payload: event as any,
   })
   if (!recorded.ok) {
     console.error('[stripe.webhook] could not record event', recorded.error)
