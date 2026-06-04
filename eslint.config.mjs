@@ -11,6 +11,10 @@ const eslintConfig = defineConfig([
     ".next/**",
     "out/**",
     "build/**",
+    "coverage/**",
+    "dist/**",
+    "playwright-report/**",
+    "test-results/**",
     "next-env.d.ts",
     // Local tooling not part of the app
     ".claude/**",

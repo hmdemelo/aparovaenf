@@ -45,6 +45,62 @@ export const subscriptionStatuses = [
 export const subscriptionStatusSchema = z.enum(subscriptionStatuses)
 export type SubscriptionStatus = z.infer<typeof subscriptionStatusSchema>
 
+// --- Authentication -------------------------------------------------------
+
+const AUTH_REDIRECT_FALLBACK = '/'
+const AUTH_REDIRECT_BASE = 'https://aprovaenf.local'
+
+export function normalizeAuthRedirectPath(
+  value: string | null | undefined,
+): string {
+  const raw = typeof value === 'string' ? value.trim() : ''
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) {
+    return AUTH_REDIRECT_FALLBACK
+  }
+
+  try {
+    const parsed = new URL(raw, AUTH_REDIRECT_BASE)
+    if (parsed.origin !== AUTH_REDIRECT_BASE) {
+      return AUTH_REDIRECT_FALLBACK
+    }
+
+    const path = `${parsed.pathname}${parsed.search}${parsed.hash}`
+    return path.startsWith('/') && !path.startsWith('//')
+      ? path
+      : AUTH_REDIRECT_FALLBACK
+  } catch {
+    return AUTH_REDIRECT_FALLBACK
+  }
+}
+
+export function buildAuthCallbackUrl(
+  origin: string,
+  next: string | null | undefined,
+): string {
+  const callbackUrl = new URL('/api/auth/callback', origin)
+  callbackUrl.searchParams.set('next', normalizeAuthRedirectPath(next))
+  return callbackUrl.toString()
+}
+
+export const authEmailSchema = z
+  .string()
+  .trim()
+  .email('Informe um e-mail válido.')
+
+export const authRedirectPathSchema = z
+  .string()
+  .optional()
+  .nullable()
+  .transform(normalizeAuthRedirectPath)
+
+export const authCallbackQuerySchema = z.object({
+  code: z.string().trim().min(1).optional(),
+  next: authRedirectPathSchema,
+  error: z.string().trim().max(120).optional(),
+  error_description: z.string().trim().max(240).optional(),
+})
+export type AuthCallbackQuery = z.infer<typeof authCallbackQuerySchema>
+
 // --- Feed and answers -----------------------------------------------------
 
 // Lenient UUID/GUID shape (8-4-4-4-12 hex). We intentionally do not enforce the

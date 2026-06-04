@@ -36,6 +36,14 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z
     .string()
     .url('NEXT_PUBLIC_APP_URL must be a valid URL'),
+  GOOGLE_OAUTH_CLIENT_ID: z
+    .string()
+    .min(1, 'GOOGLE_OAUTH_CLIENT_ID cannot be empty')
+    .optional(),
+  GOOGLE_OAUTH_CLIENT_SECRET: z
+    .string()
+    .min(1, 'GOOGLE_OAUTH_CLIENT_SECRET cannot be empty')
+    .optional(),
 })
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>

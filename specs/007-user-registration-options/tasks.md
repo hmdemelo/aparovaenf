@@ -15,116 +15,67 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Project initialization and base configuration updates
+**Purpose**: Database and schema preparations
 
-- [ ] T001 Configure Google client configuration settings in `lib/env/server.ts`
+- [ ] T001 [P] Create database migration `supabase/migrations/008_add_registration_completed_column.sql` to add `registration_completed` to `user_profiles`
+- [ ] T002 [P] Update TypeScript database definitions in `lib/db/database.types.ts` to include `registration_completed`
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Core callback infrastructure required for both Google OAuth and Magic Link redirects
+**Purpose**: Core model updates and auth helpers
 
-- [ ] T002 Implement unified Next.js App Router auth callback route in `app/api/auth/callback/route.ts`
-- [ ] T003 [P] Add validation support for OAuth parameters in `lib/validation/schemas.ts`
+- [ ] T003 Update `getCurrentUser()` in `lib/auth/roles.ts` to fetch and return `registrationCompleted`
+- [ ] T004 Update schema validation in `lib/validation/schemas.ts` to handle registration status fields
 
-**Checkpoint**: Foundation ready - OAuth callback routing is set up.
+**Checkpoint**: Foundation ready - DB schemas and auth helpers updated.
 
 ---
 
-## Phase 3: User Story 1 - Authentication via Google Account (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 & 2 - Passwordless Registration & Post-Callback Password Setup (Priority: P1) 🎯 MVP
 
-**Goal**: Enable fast, single-click sign-in and registration using a Google account.
+**Goal**: Support email-only signup and force password creation upon email link validation.
 
 **Independent Test**:
-1. Go to the login page.
-2. Click the Google Sign-in button.
-3. Authenticate with Google.
-4. Verify you are redirected to the feed and a student profile is provisioned in `user_profiles`.
+1. Go to `/signup`.
+2. Verify there are no password input fields.
+3. Sign up with a new email.
+4. Click the confirmation link in the email.
+5. Verify you are redirected to `/completar-cadastro` to set a password before you can view feed questions.
 
-### Implementation for User Story 1
+### Implementation for User Stories 1 & 2
 
-- [ ] T004 [P] [US1] Create Google Sign-In Button component in `components/google-auth-button.tsx`
-- [ ] T005 [US1] Integrate Google Sign-In Button into `LoginForm` in `features/auth/login-form.tsx`
-- [ ] T006 [US1] Integrate Google Sign-In Button into `SignupForm` in `features/auth/signup-form.tsx`
-- [ ] T007 [US1] Handle Google OAuth session exchanges and custom redirects in `/app/api/auth/callback/route.ts`
+- [ ] T005 Remove password inputs and submissions from `SignupForm` in `features/auth/signup-form.tsx`
+- [ ] T006 Update auth callback route `app/api/auth/callback/route.ts` to redirect incomplete users to `/completar-cadastro` and auto-complete Google OAuth users
+- [ ] T007 [P] Create password completion client component in `features/auth/complete-registration-form.tsx`
+- [ ] T008 [P] Create `/completar-cadastro` page wrapper in `app/(public)/completar-cadastro/page.tsx`
+- [ ] T009 Update student page routes (in `app/(student)/feed/page.tsx`, `/favorites/page.tsx`, `/history/page.tsx`, `/errors/page.tsx`, `/assinar/page.tsx`) to redirect incomplete users
 
-**Checkpoint**: Google OAuth is fully functional and testable independently.
+**Checkpoint**: Password creation and redirection flow is fully functional.
 
 ---
 
-## Phase 4: User Story 2 - Passwordless Registration & Login via Email Link (Priority: P1)
+## Phase 4: User Story 4 - User Status Identification (Priority: P2)
 
-**Goal**: Enable users to sign up or sign in by requesting a secure login link sent to their email.
+**Goal**: Trace and display the correct user registration and subscription status levels on the admin dashboard.
 
 **Independent Test**:
-1. Go to the login page.
-2. Enter your email and click the send link button.
-3. Locate the confirmation link in your inbox.
-4. Click the link and verify you are logged in and redirected to the feed.
+1. Log in as an admin and open the user management tab.
+2. Verify you see the exact status labels ("cadastro não concluído", "cadastro free", or "assinatura ativa") for each user.
 
-### Implementation for User Story 2
+### Implementation for User Story 4
 
-- [ ] T008 [US2] Implement Magic Link sending logic (`signInWithOtp`) in `features/auth/login-form.tsx`
-- [ ] T009 [US2] Implement Magic Link sending logic (`signInWithOtp`) in `features/auth/signup-form.tsx`
+- [ ] T010 Update user querying service `listUsers` in `features/admin/admin-service.ts` to include `registration_completed` and status resolution
+- [ ] T011 Update the Admin Users view `app/(admin)/admin/users/page.tsx` to display the resolved status badges
 
-**Checkpoint**: Magic Link passwordless authentication is fully functional.
+**Checkpoint**: User status indicators are fully visible on the admin dashboard.
 
 ---
 
-## Phase 5: User Story 3 - Unified and Premium Authentication UI (Priority: P2)
-
-**Goal**: Provide a polished, modern, and cohesive dual-mode login/signup experience.
-
-**Independent Test**:
-Open the login page and check that Google OAuth and Magic Link input sections are styled nicely and show clear error/loading feedback.
-
-### Implementation for User Story 3
-
-- [ ] T010 [P] [US3] Refactor and align form styles in `app/(public)/login/page.tsx` and `app/(public)/signup/page.tsx`
-- [ ] T011 [US3] Implement dynamic loading state and success feedback elements in `features/auth/login-form.tsx` and `features/auth/signup-form.tsx`
-
-**Checkpoint**: The new authentication UI is polished and responsive.
-
----
-
-## Phase 6: Polish & Cross-Cutting Concerns
+## Phase 5: Polish & Cross-Cutting Concerns
 
 **Purpose**: Test validation, cleanup, and documentation checks
 
-- [ ] T012 [P] Implement automated E2E tests for callback exchange in `tests/e2e/auth-flow.spec.ts`
+- [ ] T012 [P] Update E2E tests in `tests/e2e/auth-flow.spec.ts` to verify the redirect flows and password completion screen
 - [ ] T013 Run full lint, typecheck, and test suites to verify zero regressions
-
----
-
-## Dependencies & Execution Order
-
-### Phase Dependencies
-
-- **Setup (Phase 1)**: Can start immediately.
-- **Foundational (Phase 2)**: Depends on Setup completion. Blocks user stories.
-- **User Stories (Phase 3+)**: All depend on Foundational completion. US1 and US2 can run in parallel.
-- **Polish (Final Phase)**: Runs after all user stories are implemented.
-
-### Parallel Opportunities
-
-- T003 can be implemented in parallel with T002.
-- T004 can be created in parallel with T002 or T003.
-- Once Phase 2 is complete, US1 (T004-T007) and US2 (T008-T009) can be developed independently.
-
----
-
-## Implementation Strategy
-
-### MVP First (User Story 1 Only)
-
-1. Complete Phase 1: Setup.
-2. Complete Phase 2: Foundational.
-3. Complete Phase 3: User Story 1 (Google OAuth).
-4. **STOP and VALIDATE**: Test Google OAuth login in development.
-
-### Incremental Delivery
-
-1. Deploy Google OAuth (US1) first.
-2. Complete and deploy Magic Link registration (US2).
-3. Polishing UI and adding E2E coverage.

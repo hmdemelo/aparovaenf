@@ -29,6 +29,17 @@ describe('parseServerEnv', () => {
     expect(env.STRIPE_ANNUAL_PRICE_ID).toBe('price_annual')
   })
 
+  it('accepts optional Google OAuth settings without exposing them publicly', () => {
+    const env = parseServerEnv({
+      ...validEnv,
+      GOOGLE_OAUTH_CLIENT_ID: 'google-client-id',
+      GOOGLE_OAUTH_CLIENT_SECRET: 'google-client-secret',
+    })
+
+    expect(env.GOOGLE_OAUTH_CLIENT_ID).toBe('google-client-id')
+    expect(env.GOOGLE_OAUTH_CLIENT_SECRET).toBe('google-client-secret')
+  })
+
   it('throws when a required variable is missing', () => {
     const { SUPABASE_SERVICE_ROLE_KEY, ...incomplete } = validEnv
     void SUPABASE_SERVICE_ROLE_KEY
