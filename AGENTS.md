@@ -2,6 +2,9 @@
 For additional context about technologies, project structure, scope, and
 implementation order, read:
 
+- `specs/007-user-registration-options/spec.md`
+- `specs/007-user-registration-options/plan.md`
+- `specs/007-user-registration-options/tasks.md`
 - `specs/006-stripe-migration/spec.md`
 - `specs/006-stripe-migration/plan.md`
 - `specs/006-stripe-migration/tasks.md`
