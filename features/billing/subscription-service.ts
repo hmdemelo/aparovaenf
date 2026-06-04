@@ -91,7 +91,7 @@ export async function createStripeCheckout(
 
   try {
     const stripe = new Stripe(input.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2024-06-20' as any,
+      apiVersion: '2024-06-20' as unknown as Stripe.LatestApiVersion,
     })
 
     const session = await stripe.checkout.sessions.create({

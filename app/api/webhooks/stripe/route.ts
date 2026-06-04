@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         return fail(ErrorCodes.UNAUTHENTICATED, 'Missing stripe signature header')
       }
       const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-        apiVersion: '2024-06-20' as any,
+        apiVersion: '2024-06-20' as unknown as Stripe.LatestApiVersion,
       })
       event = stripe.webhooks.constructEvent(
         rawBody,
@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
         env.STRIPE_WEBHOOK_SECRET,
       )
     }
-  } catch (err: any) {
-    console.error('[stripe.webhook] signature verification failed', err.message)
+  } catch (err: unknown) {
+    console.error('[stripe.webhook] signature verification failed', (err as Error).message)
     return fail(ErrorCodes.UNAUTHENTICATED, 'Webhook signature verification failed')
   }
 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   const recorded = await events.recordReceived({
     providerEventId,
     eventType,
-    payload: event as any,
+    payload: event as unknown as Record<string, unknown>,
   })
   if (!recorded.ok) {
     console.error('[stripe.webhook] could not record event', recorded.error)
