@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { LoginForm } from '@/features/auth/login-form'
 import { SignupForm } from '@/features/auth/signup-form'
+import { CompleteRegistrationForm } from '@/features/auth/complete-registration-form'
 import { GoogleAuthButton } from '@/components/google-auth-button'
 
 const mocks = vi.hoisted(() => ({
@@ -13,6 +14,10 @@ const mocks = vi.hoisted(() => ({
   signInWithOtp: vi.fn(),
   signInWithPassword: vi.fn(),
   signUp: vi.fn(),
+  updateUser: vi.fn(),
+  getUser: vi.fn(),
+  updateProfile: vi.fn(),
+  updateProfileEq: vi.fn(),
   fetchPostLoginDestination: vi.fn(),
 }))
 
@@ -30,7 +35,12 @@ vi.mock('@/lib/db/browser', () => ({
       signInWithOtp: mocks.signInWithOtp,
       signInWithPassword: mocks.signInWithPassword,
       signUp: mocks.signUp,
+      updateUser: mocks.updateUser,
+      getUser: mocks.getUser,
     },
+    from: () => ({
+      update: mocks.updateProfile,
+    }),
   }),
 }))
 
@@ -46,6 +56,12 @@ describe('auth forms', () => {
     mocks.signInWithOtp.mockResolvedValue({ error: null })
     mocks.signInWithPassword.mockResolvedValue({ error: null })
     mocks.signUp.mockResolvedValue({ data: { session: {} }, error: null })
+    mocks.updateUser.mockResolvedValue({ error: null })
+    mocks.getUser.mockResolvedValue({
+      data: { user: { id: '00000000-0000-0000-0000-0000000000a4' } },
+    })
+    mocks.updateProfile.mockReturnValue({ eq: mocks.updateProfileEq })
+    mocks.updateProfileEq.mockResolvedValue({ error: null })
     mocks.fetchPostLoginDestination.mockResolvedValue('/feed?career=enfermeiro-a')
   })
 
@@ -126,5 +142,34 @@ describe('auth forms', () => {
       expect(screen.getByText(/informe um e-mail válido/i)).toBeInTheDocument(),
     )
     expect(mocks.signInWithOtp).not.toHaveBeenCalled()
+  })
+
+  it('submits password completion and redirects to the post-login destination', async () => {
+    const user = userEvent.setup()
+    const sampleValue = 'novasenha123'
+    render(
+      createElement(CompleteRegistrationForm, {
+        next: '/feed?career=enfermeiro-a',
+      }),
+    )
+
+    await user.type(screen.getByTestId('password'), sampleValue)
+    await user.type(screen.getByTestId('confirm-password'), sampleValue)
+    await user.click(screen.getByTestId('submit'))
+
+    await waitFor(() =>
+      expect(mocks.updateUser).toHaveBeenCalledWith({ password: sampleValue }),
+    )
+    expect(mocks.updateProfile).toHaveBeenCalledWith({ registration_completed: true })
+    expect(mocks.updateProfileEq).toHaveBeenCalledWith(
+      'id',
+      '00000000-0000-0000-0000-0000000000a4',
+    )
+    expect(await screen.findByText(/cadastro concluído/i)).toBeInTheDocument()
+    expect(mocks.fetchPostLoginDestination).toHaveBeenCalledWith(
+      '/feed?career=enfermeiro-a',
+    )
+    expect(mocks.push).toHaveBeenCalledWith('/feed?career=enfermeiro-a')
+    expect(mocks.refresh).toHaveBeenCalled()
   })
 })

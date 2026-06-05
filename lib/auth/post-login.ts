@@ -8,9 +8,11 @@ import type { UserRole } from '@/lib/validation/schemas'
  * Rules (see navigation spec):
  * - admin  -> /admin
  * - author -> /author/questions
- * - student with active plan    -> requested `next` (when it points into the
- *   app) or the launch-career feed
- * - student without active plan  -> /assinar (paywall blocks the feed)
+ * - student with safe requested `next` -> requested path
+ * - student with active plan and no next -> launch-career feed
+ * - student without active plan and no next -> /assinar
+ *
+ * Feed and student pages still enforce trial/subscription access server-side.
  */
 
 export const SUBSCRIBE_PATH = '/assinar'
@@ -47,7 +49,7 @@ export function resolvePostLoginPath(ctx: PostLoginContext): string {
   }
   if (ctx.role === 'author') return '/author/questions'
 
-  // student
+  // student: a safe requested path is honored; page-level guards enforce access.
   if (isSafeNext(ctx.next)) return ctx.next
   if (!ctx.isSubscriber) return SUBSCRIBE_PATH
   return launchFeed(ctx.launchCareerSlug)

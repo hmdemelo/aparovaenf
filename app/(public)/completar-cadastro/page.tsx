@@ -1,6 +1,10 @@
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { CompleteRegistrationForm } from '@/features/auth/complete-registration-form'
 import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
+import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
+import { resolvePostLoginPath } from '@/lib/auth/post-login'
+import { getLaunchCareerSlug } from '@/lib/db/launch-career'
 import { normalizeAuthRedirectPath } from '@/lib/validation/schemas'
 
 export const dynamic = 'force-dynamic'
@@ -23,6 +27,32 @@ export default async function CompleteRegistrationPage({
     } catch {
       // ignore cookies() call outside request context in tests
     }
+  }
+
+  const user = await getCurrentUser()
+  if (!user) {
+    const returnPath = `/completar-cadastro?next=${encodeURIComponent(target)}`
+    redirect(`/login?next=${encodeURIComponent(returnPath)}`)
+  }
+
+  if (user.registrationCompleted) {
+    let subscriber = false
+    let launchCareerSlug: string | null = null
+    if (user.role === 'student') {
+      subscriber = await isSubscriber()
+      if (subscriber) {
+        launchCareerSlug = await getLaunchCareerSlug()
+      }
+    }
+
+    redirect(
+      resolvePostLoginPath({
+        role: user.role,
+        isSubscriber: subscriber,
+        launchCareerSlug,
+        next: target,
+      }),
+    )
   }
 
   return (

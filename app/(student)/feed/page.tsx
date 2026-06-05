@@ -22,7 +22,7 @@ export default async function FeedPage({
   if (!user) redirect(`/signup?next=${encodeURIComponent(next)}`)
   if (user.role === 'admin') redirect('/admin')
   if (user.role === 'author') redirect('/author/questions')
-  
+
   if (!user.registrationCompleted) {
     redirect(`/completar-cadastro?next=${encodeURIComponent(next)}`)
   }

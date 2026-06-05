@@ -1,6 +1,8 @@
 -- seed.sql
 -- Seed reference data, demo authors, and sample questions for local development.
 -- Runs after migrations against the local Supabase database.
+-- Integration tests expect these local fixtures; do not point them at a remote
+-- Supabase project unless it has been seeded with equivalent local-only data.
 -- Idempotent: safe to run multiple times. Uses plain statements only (no
 -- dollar-quoted function bodies) so the Supabase seed runner batches it safely.
 

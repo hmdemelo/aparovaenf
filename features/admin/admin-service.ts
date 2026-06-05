@@ -23,6 +23,36 @@ export type AdminUserRow = {
   registrationCompleted: boolean
 }
 
+export type AdminUserStatus = {
+  label: 'cadastro não concluído' | 'cadastro free' | 'assinatura ativa'
+  className: string
+}
+
+export function resolveAdminUserStatus(input: {
+  registrationCompleted: boolean
+  subscriptionStatus: string | null
+}): AdminUserStatus {
+  if (!input.registrationCompleted) {
+    return {
+      label: 'cadastro não concluído',
+      className: 'bg-amber-50 text-amber-700 border border-amber-200/60',
+    }
+  }
+
+  if (input.subscriptionStatus === 'active') {
+    return {
+      label: 'assinatura ativa',
+      className:
+        'bg-[var(--teal-light)] text-[var(--teal-ink)] border border-[rgba(0,84,64,0.12)]',
+    }
+  }
+
+  return {
+    label: 'cadastro free',
+    className: 'bg-slate-100 text-slate-700 border border-slate-200/60',
+  }
+}
+
 export async function listUsers(db: Db): Promise<AdminUserRow[]> {
   const [{ data: users }, { data: subs }] = await Promise.all([
     db
@@ -198,6 +228,7 @@ export async function createAuthor(
     email: input.email,
     name: input.name,
     role: 'author',
+    registration_completed: true,
   })
   if (profileError) {
     await serviceDb.auth.admin.deleteUser(userId)

@@ -33,19 +33,16 @@ export function CompleteRegistrationForm({ next }: { next: string }) {
     const supabase = createSupabaseBrowserClient()
 
     try {
-      // 1. Update the Supabase Auth user password
       const { error: authError } = await supabase.auth.updateUser({
-        password: password,
+        password,
       })
 
       if (authError) {
-        console.error('AUTH UPDATE USER FAILED:', authError)
         setError(authRequestErrorMessage(authError.message))
         setLoading(false)
         return
       }
 
-      // 2. Get the current authenticated user's ID
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         setError('Sessão expirada. Faça login novamente.')
@@ -53,7 +50,6 @@ export function CompleteRegistrationForm({ next }: { next: string }) {
         return
       }
 
-      // 3. Mark the user profile as completed
       const { error: profileError } = await supabase
         .from('user_profiles')
         .update({ registration_completed: true })
@@ -66,8 +62,7 @@ export function CompleteRegistrationForm({ next }: { next: string }) {
       }
 
       setSuccess(true)
-      
-      // 4. Resolve correct post-login destination and redirect
+
       const destination = await fetchPostLoginDestination(next)
       router.push(destination)
       router.refresh()
