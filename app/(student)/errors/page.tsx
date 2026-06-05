@@ -11,6 +11,11 @@ export const dynamic = 'force-dynamic'
 export default async function ErrorsPage() {
   const user = await getCurrentUser()
   if (!user) redirect('/login?next=/errors')
+
+  if (!user.registrationCompleted) {
+    redirect('/completar-cadastro?next=/errors')
+  }
+
   // Blocked for students without an active plan (navigation spec).
   if (!(await isSubscriber())) redirect('/assinar')
 

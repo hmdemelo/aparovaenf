@@ -20,13 +20,14 @@ export type AdminUserRow = {
   createdAt: string
   subscriptionStatus: string | null
   subscriptionPlan: string | null
+  registrationCompleted: boolean
 }
 
 export async function listUsers(db: Db): Promise<AdminUserRow[]> {
   const [{ data: users }, { data: subs }] = await Promise.all([
     db
       .from('user_profiles')
-      .select('id, name, email, role, created_at')
+      .select('id, name, email, role, created_at, registration_completed')
       .order('created_at', { ascending: false }),
     db.from('subscriptions').select('user_id, status, plan').eq('status', 'active'),
   ])
@@ -43,6 +44,7 @@ export async function listUsers(db: Db): Promise<AdminUserRow[]> {
       createdAt: u.created_at,
       subscriptionStatus: sub?.status ?? null,
       subscriptionPlan: sub?.plan ?? null,
+      registrationCompleted: u.registration_completed,
     }
   })
 }

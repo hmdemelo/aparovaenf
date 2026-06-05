@@ -36,29 +36,37 @@ export default async function AdminUsersPage() {
               <tr>
                 <th>E-mail</th>
                 <th>Perfil</th>
-                <th>Assinatura</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td className="min-w-52 text-[var(--ink)]">{u.email}</td>
-                  <td>
-                    <span className="rounded-full bg-[#f1efe9] px-2.5 py-1 text-[11px] font-medium text-[var(--muted)]">
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="text-[var(--muted)]">
-                    {u.subscriptionStatus ? (
-                      <span className="rounded-full bg-[var(--teal-light)] px-2.5 py-1 text-[11px] font-medium text-[var(--teal-ink)]">
-                        {u.subscriptionPlan} · {u.subscriptionStatus}
+              {users.map((u) => {
+                let statusText = 'cadastro free'
+                let statusClass = 'bg-slate-100 text-slate-700 border border-slate-200/60'
+                if (!u.registrationCompleted) {
+                  statusText = 'cadastro não concluído'
+                  statusClass = 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                } else if (u.subscriptionStatus === 'active') {
+                  statusText = 'assinatura ativa'
+                  statusClass = 'bg-[var(--teal-light)] text-[var(--teal-ink)] border border-[rgba(0,84,64,0.12)]'
+                }
+
+                return (
+                  <tr key={u.id}>
+                    <td className="min-w-52 text-[var(--ink)]">{u.email}</td>
+                    <td>
+                      <span className="rounded-full bg-[#f1efe9] px-2.5 py-1 text-[11px] font-medium text-[var(--muted)]">
+                        {u.role}
                       </span>
-                    ) : (
-                      'Sem assinatura'
-                    )}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${statusClass}`}>
+                        {statusText}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

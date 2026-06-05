@@ -246,3 +246,16 @@ from (values
   ('00000000-0000-0000-0000-0000000000f8','D','Somente em ambiente hospitalar.',false,'Pode atuar em diversos contextos de saude.',3)
 ) as v(qid, label, text, is_correct, comment, position)
 on conflict (question_id, position) do nothing;
+
+-- Set registration_completed to true for seed users.
+UPDATE public.user_profiles
+SET registration_completed = true
+WHERE email IN (
+  'admin@aprovaenf.com.br',
+  'teste@aprovaenf.com.br',
+  'admin@aprovaenf.local',
+  'aluno@aprovaenf.local',
+  'assinante@aprovaenf.local',
+  'autor1@aprovaenf.local',
+  'autor2@aprovaenf.local'
+);

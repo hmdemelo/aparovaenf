@@ -11,6 +11,10 @@ export default async function FavoritesPage() {
   const user = await getCurrentUser()
   if (!user) redirect('/login?next=/favorites')
 
+  if (!user.registrationCompleted) {
+    redirect('/completar-cadastro?next=/favorites')
+  }
+
   const subscriber = await isSubscriber()
   const db = await createSupabaseServerClient()
   const favorites = subscriber ? await listFavorites(db, user.id) : []

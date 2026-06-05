@@ -15,6 +15,7 @@ export type CurrentUser = {
   id: string
   email: string | null
   role: UserRole
+  registrationCompleted: boolean
 }
 
 /** Returns the authenticated user with role, or null if not signed in. */
@@ -27,7 +28,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { data: profile } = await supabase
     .from('user_profiles')
-    .select('role, email')
+    .select('role, email, registration_completed')
     .eq('id', user.id)
     .single()
 
@@ -35,6 +36,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     id: user.id,
     email: profile?.email ?? user.email ?? null,
     role: (profile?.role as UserRole) ?? 'student',
+    registrationCompleted: profile?.registration_completed ?? false,
   }
 }
 

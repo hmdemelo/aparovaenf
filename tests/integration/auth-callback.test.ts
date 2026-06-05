@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({
   createSupabaseServerClient: vi.fn(),
   exchangeCodeForSession: vi.fn(),
+  getUser: vi.fn(),
+  from: vi.fn(),
   getCurrentUser: vi.fn(),
   getLaunchCareerSlug: vi.fn(),
   isSubscriber: vi.fn(),
@@ -32,13 +34,49 @@ describe('GET /api/auth/callback', () => {
     vi.clearAllMocks()
 
     mocks.exchangeCodeForSession.mockResolvedValue({ error: null })
-    mocks.createSupabaseServerClient.mockResolvedValue({
-      auth: { exchangeCodeForSession: mocks.exchangeCodeForSession },
+    mocks.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: '00000000-0000-0000-0000-0000000000a4',
+          email: 'aluno@aprovaenf.local',
+          app_metadata: { provider: 'email' },
+        },
+      },
+      error: null,
     })
+
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: {
+            role: 'student',
+            registration_completed: true,
+          },
+          error: null,
+        }),
+      }),
+    })
+
+    mocks.from.mockReturnValue({
+      select: selectMock,
+      update: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null }),
+      }),
+    })
+
+    mocks.createSupabaseServerClient.mockResolvedValue({
+      auth: {
+        exchangeCodeForSession: mocks.exchangeCodeForSession,
+        getUser: mocks.getUser,
+      },
+      from: mocks.from,
+    })
+
     mocks.getCurrentUser.mockResolvedValue({
       id: '00000000-0000-0000-0000-0000000000a4',
       email: 'aluno@aprovaenf.local',
       role: 'student',
+      registrationCompleted: true,
     })
     mocks.isSubscriber.mockResolvedValue(true)
     mocks.getLaunchCareerSlug.mockResolvedValue('enfermeiro-a')
@@ -95,5 +133,97 @@ describe('GET /api/auth/callback', () => {
     expect(mocks.exchangeCodeForSession).not.toHaveBeenCalled()
     expect(response.headers.get('location')).toContain('/login')
     expect(response.headers.get('location')).toContain('auth_error=missing_code')
+  })
+
+  it('redirects standard magic link user with incomplete registration to /completar-cadastro', async () => {
+    // Setup getUser mock for standard email user
+    mocks.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: '00000000-0000-0000-0000-0000000000a4',
+          email: 'aluno@aprovaenf.local',
+          app_metadata: { provider: 'email', providers: ['email'] },
+        },
+      },
+      error: null,
+    })
+
+    // Setup profile to return registration_completed: false
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: {
+            role: 'student',
+            registration_completed: false,
+          },
+          error: null,
+        }),
+      }),
+    })
+    mocks.from.mockReturnValue({
+      select: selectMock,
+    })
+
+    const { GET } = await import('@/app/api/auth/callback/route')
+
+    const response = await GET(
+      request('/api/auth/callback?code=magic-link-code&next=%2Ffeed%3Fcareer%3Denfermeiro-a'),
+    )
+
+    expect(response.status).toBe(307)
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/completar-cadastro?next=%2Ffeed%3Fcareer%3Denfermeiro-a',
+    )
+  })
+
+  it('auto-completes registration and redirects Google OAuth logins directly to feed', async () => {
+    // Setup getUser mock for Google user
+    mocks.getUser.mockResolvedValue({
+      data: {
+        user: {
+          id: '00000000-0000-0000-0000-0000000000a4',
+          email: 'aluno-google@aprovaenf.local',
+          app_metadata: { provider: 'google', providers: ['google'] },
+        },
+      },
+      error: null,
+    })
+
+    // Setup profile mock (not completed initially)
+    const selectMock = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValue({
+          data: {
+            role: 'student',
+            registration_completed: false,
+          },
+          error: null,
+        }),
+      }),
+    })
+    const updateEqMock = vi.fn().mockResolvedValue({ error: null })
+    const updateMock = vi.fn().mockReturnValue({
+      eq: updateEqMock,
+    })
+    mocks.from.mockReturnValue({
+      select: selectMock,
+      update: updateMock,
+    })
+
+    const { GET } = await import('@/app/api/auth/callback/route')
+
+    const response = await GET(
+      request('/api/auth/callback?code=google-oauth-code&next=%2Ffeed%3Fcareer%3Denfermeiro-a'),
+    )
+
+    // Verify it updated user_profiles setting registration_completed: true
+    expect(updateMock).toHaveBeenCalledWith({ registration_completed: true })
+    expect(updateEqMock).toHaveBeenCalledWith('id', '00000000-0000-0000-0000-0000000000a4')
+
+    // Redirects directly to feed
+    expect(response.status).toBe(307)
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/feed?career=enfermeiro-a',
+    )
   })
 })

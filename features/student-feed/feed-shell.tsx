@@ -68,9 +68,15 @@ export function FeedShell({
         return
       }
       const { question: q, trial_status } = json.data
-      if (trial_status.signup_required) setGate('signup')
-      else if (trial_status.paywall_required) setGate('paywall')
-      else setGate('none')
+      if (trial_status.signup_required) {
+        setGate('signup')
+      } else if (trial_status.paywall_required) {
+        setGate('paywall')
+        window.location.href = '/assinar'
+        return
+      } else {
+        setGate('none')
+      }
       setSubscriptionActive(trial_status.subscription_active)
       setQuestion(q)
     } catch {
@@ -102,9 +108,15 @@ export function FeedShell({
       })
       const json: ApiEnvelope<AnswerResponse> = await res.json()
       if (!json.success) {
-        if (json.error.code === 'signup_required') setGate('signup')
-        else if (json.error.code === 'subscription_required') setGate('paywall')
-        else setError(json.error.message)
+        if (json.error.code === 'signup_required') {
+          setGate('signup')
+        } else if (json.error.code === 'subscription_required') {
+          setGate('paywall')
+          window.location.href = '/assinar'
+          return
+        } else {
+          setError(json.error.message)
+        }
         return
       }
       setFeedback(json.data)

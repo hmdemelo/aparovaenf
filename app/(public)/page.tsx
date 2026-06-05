@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { ArrowRight, CheckCircle2, MessageCircle } from 'lucide-react'
 import { createSupabaseServiceClient } from '@/lib/db/server'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
@@ -79,6 +80,13 @@ export default async function LandingPage({
       event_name: ProductEventNames.CAREER_SELECTED,
       career_id: id || null,
       metadata: { career_slug: slug },
+    })
+
+    const cookieStore = await cookies()
+    cookieStore.set('selected_career', slug, {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      sameSite: 'lax',
     })
 
     const next = `/feed?career=${slug}`

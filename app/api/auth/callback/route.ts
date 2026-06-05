@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { isSubscriber, getCurrentUser } from '@/lib/auth/roles'
+import { cookies } from 'next/headers'
+import { isSubscriber } from '@/lib/auth/roles'
 import { resolvePostLoginPath } from '@/lib/auth/post-login'
 import { getLaunchCareerSlug } from '@/lib/db/launch-career'
 import { createSupabaseServerClient } from '@/lib/db/server'
@@ -30,7 +31,19 @@ export async function GET(request: Request) {
   const parsed = authCallbackQuerySchema.safeParse(
     Object.fromEntries(requestUrl.searchParams.entries()),
   )
-  const next = parsed.success ? parsed.data.next : '/'
+  let next = parsed.success ? parsed.data.next : '/'
+
+  if (next === '/' || next === '') {
+    try {
+      const cookieStore = await cookies()
+      const selectedCareer = cookieStore.get('selected_career')?.value
+      if (selectedCareer) {
+        next = `/feed?career=${selectedCareer}`
+      }
+    } catch {
+      // ignore cookies() call outside request context in tests
+    }
+  }
 
   if (!parsed.success) {
     return redirectToLogin(requestUrl, next, 'invalid_link')
@@ -50,14 +63,38 @@ export async function GET(request: Request) {
     return redirectToLogin(requestUrl, next, 'invalid_link')
   }
 
-  const user = await getCurrentUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return redirectToLogin(requestUrl, next, 'session_missing')
   }
 
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role, registration_completed')
+    .eq('id', user.id)
+    .single()
+
+  const role = profile?.role ?? 'student'
+  const isGoogle = user.app_metadata?.provider === 'google' || user.app_metadata?.providers?.includes('google')
+  let registrationCompleted = profile?.registration_completed ?? false
+
+  if (isGoogle && !registrationCompleted) {
+    await supabase
+      .from('user_profiles')
+      .update({ registration_completed: true })
+      .eq('id', user.id)
+    registrationCompleted = true
+  }
+
+  if (!registrationCompleted) {
+    const completeUrl = new URL('/completar-cadastro', requestUrl.origin)
+    completeUrl.searchParams.set('next', next)
+    return NextResponse.redirect(completeUrl)
+  }
+
   let subscriber = false
   let launchCareerSlug: string | null = null
-  if (user.role === 'student') {
+  if (role === 'student') {
     subscriber = await isSubscriber()
     if (subscriber) {
       launchCareerSlug = await getLaunchCareerSlug()
@@ -65,7 +102,7 @@ export async function GET(request: Request) {
   }
 
   const destination = resolvePostLoginPath({
-    role: user.role,
+    role,
     isSubscriber: subscriber,
     launchCareerSlug,
     next,

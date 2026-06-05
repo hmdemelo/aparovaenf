@@ -48,6 +48,7 @@ async function createTemporaryStudent(
     role: 'student',
     email,
     name: 'Aluno pagamento E2E',
+    registration_completed: true,
   })
   if (profile.error) throw new Error(profile.error.message)
 
@@ -64,7 +65,7 @@ test('paywall starts checkout and simulated webhook unlocks the feed', async ({
   const student = await createTemporaryStudent(service, testInfo.project.name)
 
   try {
-    await login(page, student.email, '/feed?career=enfermeiro-a')
+    await login(page, student.email, '/assinar')
 
     await expect(page.getByTestId('paywall')).toBeVisible({ timeout: 30_000 })
 

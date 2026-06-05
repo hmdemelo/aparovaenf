@@ -1,9 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { CheckCircle2, KeyRound, LoaderCircle, Mail } from 'lucide-react'
+import { CheckCircle2, LoaderCircle, Mail } from 'lucide-react'
 import { GoogleAuthButton } from '@/components/google-auth-button'
 import { createSupabaseBrowserClient } from '@/lib/db/browser'
 import {
@@ -11,7 +10,6 @@ import {
   buildAuthCallbackUrl,
 } from '@/lib/validation/schemas'
 import { authRequestErrorMessage } from './auth-messages'
-import { fetchPostLoginDestination } from './post-login-destination'
 
 type SignupIdentityValidation =
   | { ok: true; email: string; name: string }
@@ -23,13 +21,10 @@ type SignupIdentityValidation =
  * active immediately and we continue to `next`.
  */
 export function SignupForm({ next }: { next: string }) {
-  const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
-  const [passwordLoading, setPasswordLoading] = useState(false)
   const [magicLoading, setMagicLoading] = useState(false)
 
   function validateSignupIdentity(): SignupIdentityValidation {
@@ -78,44 +73,6 @@ export function SignupForm({ next }: { next: string }) {
     setMagicLoading(false)
   }
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setPasswordLoading(true)
-    setError(null)
-    setNotice(null)
-
-    const identity = validateSignupIdentity()
-    if (!identity.ok) {
-      setError(identity.error)
-      setPasswordLoading(false)
-      return
-    }
-
-    const supabase = createSupabaseBrowserClient()
-    const { data, error } = await supabase.auth.signUp({
-      email: identity.email,
-      password,
-      options: {
-        data: { name: identity.name },
-        emailRedirectTo: buildAuthCallbackUrl(window.location.origin, next),
-      },
-    })
-    if (error) {
-      setError(error.message)
-      setPasswordLoading(false)
-      return
-    }
-    // If confirmation is required there is no active session yet.
-    if (!data.session) {
-      setNotice('Confirme seu e-mail para continuar.')
-      setPasswordLoading(false)
-      return
-    }
-    const destination = await fetchPostLoginDestination(next)
-    router.push(destination)
-    router.refresh()
-  }
-
   return (
     <div className="flex flex-col gap-4" data-testid="signup-form">
       <GoogleAuthButton
@@ -130,7 +87,7 @@ export function SignupForm({ next }: { next: string }) {
         <span className="h-px flex-1 bg-[var(--line)]" />
       </div>
 
-      <form onSubmit={onSubmit} className="flex flex-col gap-3">
+      <form onSubmit={(e) => { e.preventDefault(); void sendMagicLink(); }} className="flex flex-col gap-3">
         <input
           type="text"
           required
@@ -151,37 +108,6 @@ export function SignupForm({ next }: { next: string }) {
           data-testid="email"
           className="aprova-field"
         />
-        <button
-          type="button"
-          disabled={magicLoading}
-          onClick={sendMagicLink}
-          data-testid="magic-link-submit"
-          className="aprova-button py-3.5 disabled:cursor-not-allowed disabled:bg-[var(--hint)]"
-        >
-          {magicLoading ? (
-            <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
-          ) : (
-            <Mail aria-hidden="true" className="h-4 w-4" />
-          )}
-          {magicLoading ? 'Enviando...' : 'Enviar link de acesso'}
-        </button>
-
-        <div className="mt-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--hint)]">
-          <KeyRound aria-hidden="true" className="h-3.5 w-3.5" />
-          <span>Senha</span>
-        </div>
-
-        <input
-          type="password"
-          required
-          minLength={6}
-          placeholder="Senha (mín. 6 caracteres)"
-          aria-label="Senha"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          data-testid="password"
-          className="aprova-field"
-        />
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         {notice && (
           <p className="flex items-start gap-2 text-sm text-[var(--teal)]">
@@ -191,16 +117,16 @@ export function SignupForm({ next }: { next: string }) {
         )}
         <button
           type="submit"
-          disabled={passwordLoading}
-          data-testid="submit"
-          className="aprova-button aprova-button-ghost py-3.5 disabled:cursor-not-allowed disabled:opacity-60"
+          disabled={magicLoading}
+          data-testid="magic-link-submit"
+          className="aprova-button py-3.5 disabled:cursor-not-allowed disabled:bg-[var(--hint)]"
         >
-          {passwordLoading ? (
+          {magicLoading ? (
             <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
           ) : (
-            <KeyRound aria-hidden="true" className="h-4 w-4" />
+            <Mail aria-hidden="true" className="h-4 w-4" />
           )}
-          {passwordLoading ? 'Criando...' : 'Criar com senha'}
+          {magicLoading ? 'Enviando...' : 'Enviar link de acesso'}
         </button>
       </form>
       <Link

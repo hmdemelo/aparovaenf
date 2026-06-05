@@ -48,6 +48,7 @@ export function resolvePostLoginPath(ctx: PostLoginContext): string {
   if (ctx.role === 'author') return '/author/questions'
 
   // student
+  if (isSafeNext(ctx.next)) return ctx.next
   if (!ctx.isSubscriber) return SUBSCRIBE_PATH
-  return isSafeNext(ctx.next) ? ctx.next : launchFeed(ctx.launchCareerSlug)
+  return launchFeed(ctx.launchCareerSlug)
 }

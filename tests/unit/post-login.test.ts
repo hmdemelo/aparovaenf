@@ -22,13 +22,24 @@ describe('resolvePostLoginPath', () => {
     ).toBe('/author/questions')
   })
 
-  it('sends students without an active plan to the paywall', () => {
+  it('honors a feed `next` even for non-subscribers (allowing trial access)', () => {
     expect(
       resolvePostLoginPath({
         ...base,
         role: 'student',
         isSubscriber: false,
         next: '/feed?career=enfermagem',
+      }),
+    ).toBe('/feed?career=enfermagem')
+  })
+
+  it('sends students without an active plan to the paywall if next is missing', () => {
+    expect(
+      resolvePostLoginPath({
+        ...base,
+        role: 'student',
+        isSubscriber: false,
+        next: null,
       }),
     ).toBe('/assinar')
   })

@@ -18,6 +18,11 @@ const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
 export default async function HistoryPage() {
   const user = await getCurrentUser()
   if (!user) redirect('/login?next=/history')
+
+  if (!user.registrationCompleted) {
+    redirect('/completar-cadastro?next=/history')
+  }
+
   // Blocked for students without an active plan (navigation spec).
   if (!(await isSubscriber())) redirect('/assinar')
 

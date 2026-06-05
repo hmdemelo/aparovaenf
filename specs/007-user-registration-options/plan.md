@@ -6,9 +6,9 @@
 ## Summary
 Add support for passwordless authentication options to the platform:
 1. **Google OAuth**: A single-click login/signup option.
-2. **Passwordless Magic Links**: An email-only registration and login option. Users submit their email, receive a secure confirmation link, and click it to complete registration and authenticate.
+2. **Passwordless Magic Links**: A name/email-only registration option. Users submit their email, receive a secure confirmation link, and click it to return to the app where they set a password and complete registration.
 
-We will create a unified callback route `/api/auth/callback/route.ts` and modify the registration/login views to present these two authentication modes.
+We will use a unified callback route `/api/auth/callback/route.ts`, a password-completion page at `/completar-cadastro`, and status tracking via `user_profiles.registration_completed`.
 
 ---
 
@@ -45,6 +45,7 @@ We will create a unified callback route `/api/auth/callback/route.ts` and modify
   - When returning from Google OAuth, automatically set `registration_completed = true` in their `user_profiles` row.
   - When returning from Magic Link, if the user has `registration_completed === false`, redirect them to `/completar-cadastro?next=${encodeURIComponent(next)}`.
 * **Password Completion Page**: Create a new page `app/(public)/completar-cadastro/page.tsx` rendering a form that:
+  - Requires an authenticated Supabase session before rendering the password form.
   - Takes a new password and calls `supabase.auth.updateUser({ password })`.
   - Upon success, updates `registration_completed: true` in `public.user_profiles`.
   - Redirects to `next` (e.g., `/feed`).
@@ -58,6 +59,20 @@ We will map user attributes to three states:
 These states will be resolved:
 * In student page routes (`/feed`, `/favorites`, `/errors`, `/history`, `/assinar`) to redirect users with `registration_completed === false` to `/completar-cadastro`.
 * In `features/admin/admin-service.ts` and `app/(admin)/admin/users/page.tsx` to display the exact status text for each user.
+
+### 4. Existing Staff and Post-Login Rules
+* Users provisioned by trusted admin flows (for example authors created with a temporary password) must be saved with `registration_completed = true` because they already have a password.
+* Completed free students may be redirected to a requested feed path after login; the feed route remains responsible for enforcing the post-signup trial and eventual paywall redirect.
+* `/completar-cadastro` must not be a public password form. If no session exists, the page redirects to `/login` with a safe `next` value. If registration is already complete, the user is redirected using the normal post-login destination resolver.
+
+### 5. Remaining Implementation Corrections
+The current worktree has most feature behavior implemented, but the remaining implementation must close:
+
+1. Server-side session guard and completed-user redirect for `/completar-cadastro`.
+2. `registration_completed = true` in trusted author provisioning.
+3. Removal of debug logging and whitespace issues.
+4. Documentation/task status alignment.
+5. Full verification, including the known local Supabase integration fixture failures.
 
 ---
 
@@ -92,8 +107,9 @@ specs/007-user-registration-options/
 ## Verification Plan
 
 ### Automated Tests
-- Implement automated E2E mock callback testing in Playwright to verify that exchange code redirects succeed and create the corresponding user profiles.
-- Run `npm run lint` and `npm run typecheck` to ensure no linting/compiler errors are introduced.
+- Vitest coverage for callback exchange, Google auto-completion, Magic Link incomplete registration redirect, post-login destination rules, and admin status mapping.
+- Playwright coverage for login/signup auth options and `/completar-cadastro`.
+- Run `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:integration`, `npm run test:e2e -- tests/e2e/auth-flow.spec.ts`, and `npm run build`.
 
 ### Manual Verification
 - Test registration/login using a real Google account in the development environment.

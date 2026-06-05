@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
 import { resolvePostLoginPath } from '@/lib/auth/post-login'
 import { getLaunchCareerSlug } from '@/lib/db/launch-career'
@@ -18,7 +19,19 @@ export async function GET(request: Request) {
     return fail(ErrorCodes.UNAUTHENTICATED, 'Authentication required')
   }
 
-  const next = new URL(request.url).searchParams.get('next')
+  let next = new URL(request.url).searchParams.get('next')
+
+  if (!next || next === '/') {
+    try {
+      const cookieStore = await cookies()
+      const selectedCareer = cookieStore.get('selected_career')?.value
+      if (selectedCareer) {
+        next = `/feed?career=${selectedCareer}`
+      }
+    } catch {
+      // ignore cookies() call outside request context in tests
+    }
+  }
 
   let subscriber = false
   let launchCareerSlug: string | null = null

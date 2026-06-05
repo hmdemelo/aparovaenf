@@ -1,4 +1,14 @@
 import { test, expect, type Page } from '@playwright/test'
+import { createClient } from '@supabase/supabase-js'
+
+test.beforeEach(async () => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (url && key) {
+    const db = createClient(url, key, { auth: { persistSession: false } })
+    await db.from('answer_attempts').delete().eq('user_id', '00000000-0000-0000-0000-0000000000a4')
+  }
+})
 
 /**
  * US4 — subscriber retention.
@@ -46,16 +56,16 @@ test('subscriber favorites a question and finds it in favorites', async ({ page 
 test('non-subscriber is prompted to subscribe when accessing features', async ({ page }) => {
   test.setTimeout(120_000)
   
-  // Try to log in with a non-subscriber account, expecting redirect to paywall (/assinar).
+  // Try to log in with a non-subscriber account, expecting redirect to selected feed (trial enabled).
   await page.goto(`/login?next=${encodeURIComponent('/feed?career=enfermeiro-a')}`)
   await page.getByTestId('email').fill('aluno@aprovaenf.local')
   await page.getByTestId('password').fill('aprovaenf123')
   await page.getByTestId('submit').click()
-  await expect(page).toHaveURL(/\/assinar/, { timeout: 30_000 })
+  await expect(page).toHaveURL(/\/feed\?career=enfermeiro-a/, { timeout: 30_000 })
 
-  // Trying to visit feed directly redirects to paywall too.
+  // Trying to visit feed directly allows access (trial enabled).
   await page.goto('/feed?career=enfermeiro-a')
-  await expect(page).toHaveURL(/\/assinar/, { timeout: 15_000 })
+  await expect(page).toHaveURL(/\/feed\?career=enfermeiro-a/, { timeout: 15_000 })
 
   // Favorites page renders the locked state.
   await page.goto('/favorites')

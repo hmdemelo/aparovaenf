@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
-import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
+import { getCurrentUser } from '@/lib/auth/roles'
 import { FeedShell } from '@/features/student-feed/feed-shell'
 import { loadFeedFilterOptions } from '@/features/student-feed/feed-filter-options'
+import { resolveTrialStatus } from '@/features/trial/trial-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +22,15 @@ export default async function FeedPage({
   if (!user) redirect(`/signup?next=${encodeURIComponent(next)}`)
   if (user.role === 'admin') redirect('/admin')
   if (user.role === 'author') redirect('/author/questions')
-  if (!(await isSubscriber())) redirect('/assinar')
+  
+  if (!user.registrationCompleted) {
+    redirect(`/completar-cadastro?next=${encodeURIComponent(next)}`)
+  }
+
+  const { status } = await resolveTrialStatus()
+  if (!status.canAnswer && !status.subscriptionActive) {
+    redirect('/assinar')
+  }
 
   const filterOptions = await loadFeedFilterOptions(career)
 

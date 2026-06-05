@@ -15,6 +15,10 @@ export default async function SubscribePage() {
   if (user.role === 'admin') redirect('/admin')
   if (user.role === 'author') redirect('/author/questions')
 
+  if (!user.registrationCompleted) {
+    redirect('/completar-cadastro?next=/assinar')
+  }
+
   if (await isSubscriber()) {
     const slug = await getLaunchCareerSlug()
     redirect(slug ? `/feed?career=${slug}` : '/')
