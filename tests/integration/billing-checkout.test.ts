@@ -103,7 +103,7 @@ describe('POST /api/billing/checkout', () => {
     expect(mockStripeCreate).toHaveBeenCalledTimes(1)
     expect(mockStripeCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        payment_method_types: ['card', 'pix'],
+        payment_method_types: ['card'],
         line_items: [{ price: 'price_annual', quantity: 1 }],
         mode: 'subscription',
         customer_email: 'aluno@aprovaenf.local',

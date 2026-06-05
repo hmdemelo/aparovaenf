@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, CreditCard, QrCode, Sparkles } from 'lucide-react'
+import { Check, CreditCard, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { PLAN_LIST, type PlanId } from './plans'
 
@@ -113,7 +113,7 @@ export function Paywall({
                       : 'bg-[var(--line)] text-[var(--muted)]'
                   }`}
                 >
-                  {plan.id === 'annual' ? 'PIX ou Cartão (até 12x)' : 'PIX ou Cartão'}
+                  Pagamento com cartão
                 </span>
               </div>
             </div>
@@ -143,8 +143,6 @@ export function Paywall({
                   : 'bg-[var(--teal)] text-white hover:bg-[var(--teal-mid)]'
               }`}
             >
-              <QrCode size={16} />
-              <span className="opacity-60 text-xs">/</span>
               <CreditCard size={16} />
               {loadingPlan === plan.id
                 ? 'Abrindo checkout...'

@@ -13,34 +13,14 @@ test('auth callback rejects missing codes without leaving the app', async ({ pag
   expect(location).toContain('next=%2F')
 })
 
-test('login page exposes Google and magic-link authentication', async ({ page }) => {
-  await page.route(/\/auth\/v1\/otp/, async (route) => {
-    const corsHeaders = {
-      'access-control-allow-headers': '*',
-      'access-control-allow-methods': 'POST, OPTIONS',
-      'access-control-allow-origin': '*',
-    }
-
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: corsHeaders })
-      return
-    }
-
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: corsHeaders,
-      body: JSON.stringify({}),
-    })
-  })
-
+test('login page exposes Google and email/password authentication', async ({ page }) => {
   await page.goto('/login?next=%2Ffeed%3Fcareer%3Denfermeiro-a')
   await expect(page.getByTestId('google-auth')).toBeVisible()
-
-  await page.getByTestId('email').fill('aluno@aprovaenf.local')
-  await page.getByTestId('magic-link-submit').click()
-
-  await expect(page.getByText(/enviamos um link de acesso/i)).toBeVisible()
+  await expect(page.getByTestId('email')).toBeVisible()
+  await expect(page.getByTestId('password')).toBeVisible()
+  await expect(page.getByTestId('submit')).toBeVisible()
+  await expect(page.getByTestId('magic-link-submit')).toHaveCount(0)
+  await expect(page.getByText(/enviar link de acesso/i)).toHaveCount(0)
 })
 
 test('signup without password sends magic link', async ({ page }) => {

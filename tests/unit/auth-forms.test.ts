@@ -79,23 +79,27 @@ describe('auth forms', () => {
     })
   })
 
-  it('sends a login magic link and shows success feedback', async () => {
+  it('shows only Google and email/password options on the login form', () => {
+    render(createElement(LoginForm, { next: '/feed?career=enfermeiro-a' }))
+
+    expect(screen.getByTestId('google-auth')).toBeInTheDocument()
+    expect(screen.getByTestId('email')).toBeInTheDocument()
+    expect(screen.getByTestId('password')).toBeInTheDocument()
+    expect(screen.getByTestId('submit')).toBeInTheDocument()
+    expect(screen.queryByTestId('magic-link-submit')).not.toBeInTheDocument()
+    expect(screen.queryByText(/enviar link de acesso/i)).not.toBeInTheDocument()
+  })
+
+  it('does not create users from the login form', async () => {
     const user = userEvent.setup()
     render(createElement(LoginForm, { next: '/feed?career=enfermeiro-a' }))
 
     await user.type(screen.getByTestId('email'), 'aluno@aprovaenf.local')
-    await user.click(screen.getByTestId('magic-link-submit'))
+    await user.type(screen.getByTestId('password'), 'aprovaenf123')
+    await user.click(screen.getByTestId('submit'))
 
-    expect(mocks.signInWithOtp).toHaveBeenCalledWith({
-      email: 'aluno@aprovaenf.local',
-      options: {
-        emailRedirectTo: `${window.location.origin}/api/auth/callback?next=%2Ffeed%3Fcareer%3Denfermeiro-a`,
-        shouldCreateUser: true,
-      },
-    })
-    expect(
-      await screen.findByText(/enviamos um link de acesso/i),
-    ).toBeInTheDocument()
+    expect(mocks.signInWithPassword).toHaveBeenCalled()
+    expect(mocks.signInWithOtp).not.toHaveBeenCalled()
   })
 
   it('keeps password login available for existing seeded users', async () => {
@@ -131,17 +135,18 @@ describe('auth forms', () => {
     })
   })
 
-  it('validates magic-link e-mails before calling Supabase', async () => {
+  it('validates login e-mails before calling Supabase', async () => {
     const user = userEvent.setup()
     render(createElement(LoginForm, { next: '/' }))
 
     await user.type(screen.getByTestId('email'), 'email-invalido')
-    await user.click(screen.getByTestId('magic-link-submit'))
+    await user.type(screen.getByTestId('password'), 'aprovaenf123')
+    await user.click(screen.getByTestId('submit'))
 
     await waitFor(() =>
       expect(screen.getByText(/informe um e-mail válido/i)).toBeInTheDocument(),
     )
-    expect(mocks.signInWithOtp).not.toHaveBeenCalled()
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled()
   })
 
   it('submits password completion and redirects to the post-login destination', async () => {

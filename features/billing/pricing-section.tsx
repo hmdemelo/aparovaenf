@@ -94,7 +94,7 @@ export function PricingSection() {
                       : 'bg-[var(--line)] text-[var(--muted)]'
                   }`}
                 >
-                  {plan.id === 'annual' ? 'PIX ou Cartão (até 12x)' : 'Apenas Cartão'}
+                  Pagamento com cartão
                 </span>
               </div>
             </div>
@@ -118,7 +118,7 @@ export function PricingSection() {
         ))}
       </div>
       <p className="mt-4 text-center text-xs text-[var(--muted)]">
-        Plano anual suporta PIX ou Cartão (parcelamento em até 12x).
+        Pagamento seguro processado pela Stripe.
       </p>
     </section>
   )

@@ -9,8 +9,10 @@ describe('PricingSection', () => {
 
     expect(screen.getByText('R$ 29,90')).toBeInTheDocument()
     expect(screen.getByText('R$ 287,00')).toBeInTheDocument()
+    expect(screen.getAllByText('Pagamento com cartão')).toHaveLength(2)
 
     const text = document.body.textContent?.toLowerCase() ?? ''
+    expect(text).not.toContain('pix')
     expect(text).not.toContain('simulado')
     expect(text).not.toContain('offline')
     expect(text).not.toContain('20.000')
