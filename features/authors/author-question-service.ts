@@ -24,10 +24,10 @@ export type AlternativeDraft = {
 }
 
 export type QuestionDraftInput = {
-  career_id: string
-  subject_id: string
+  career_id?: string | null
+  subject_id?: string | null
   board_id?: string | null
-  difficulty: Difficulty
+  difficulty?: Difficulty | null
   source_type: SourceType
   source_orgao?: string | null
   source_cargo?: string | null
@@ -111,10 +111,10 @@ async function syncQuestionTags(
 function questionRow(authorId: string, input: QuestionDraftInput) {
   return {
     author_id: authorId,
-    career_id: input.career_id,
-    subject_id: input.subject_id,
+    career_id: input.career_id ?? null,
+    subject_id: input.subject_id ?? null,
     board_id: input.board_id ?? null,
-    difficulty: input.difficulty,
+    difficulty: input.difficulty ?? null,
     source_type: input.source_type,
     source_orgao: input.source_orgao ?? null,
     source_cargo: input.source_cargo ?? null,
@@ -236,7 +236,7 @@ export async function publishQuestion(
     general_comment: question.general_comment ?? undefined,
     career_id: question.career_id,
     subject_id: question.subject_id,
-    difficulty: question.difficulty as Difficulty,
+    difficulty: question.difficulty,
     alternatives: (alternatives ?? []).map((a) => ({
       label: a.label,
       text: a.text,

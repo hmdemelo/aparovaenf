@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
+import { parseBulkQuestionCsv } from '@/features/admin/bulk-question-import-parser'
 
 vi.mock('@/features/admin/admin-permissions', () => ({
   resolveAdminContext: vi.fn(async () => ({
@@ -18,5 +19,8 @@ describe('GET /api/admin/questions/bulk-template', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('content-type')).toContain('text/csv')
     expect(text).toContain('career;subject;difficulty;statement')
+    const parsed = parseBulkQuestionCsv(text)
+    expect(parsed.globalErrors).toEqual([])
+    expect(parsed.errors).toEqual([])
   })
 })

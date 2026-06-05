@@ -91,10 +91,10 @@ d('author question pipeline (local Supabase)', () => {
   function importedIncompleteRow(): ParsedQuestionRow {
     return {
       line: 2,
-      careerName: 'Enfermeiro(a)',
-      subjectName: 'Fundamentos de Enfermagem',
+      careerName: null,
+      subjectName: null,
       boardName: null,
-      difficulty: 'facil',
+      difficulty: null,
       sourceType: 'autoral',
       sourceOrgao: null,
       sourceCargo: null,
@@ -136,7 +136,9 @@ d('author question pipeline (local Supabase)', () => {
     expect(blocked.ok).toBe(false)
     if (!blocked.ok) {
       expect(blocked.code).toBe('validation')
-      expect(blocked.errors).toContain('general comment is required to publish')
+      expect(blocked.errors).toContain(
+        'Comentário geral é obrigatório para publicar.',
+      )
     }
 
     // Add the comment, then publish succeeds.
@@ -198,8 +200,15 @@ d('author question pipeline (local Supabase)', () => {
     expect(blocked.ok).toBe(false)
     if (!blocked.ok) {
       expect(blocked.code).toBe('validation')
-      expect(blocked.errors).toContain('general comment is required to publish')
-      expect(blocked.errors).toContain('exactly one correct alternative is required')
+      expect(blocked.errors).toContain(
+        'Comentário geral é obrigatório para publicar.',
+      )
+      expect(blocked.errors).toContain(
+        'Marque exatamente uma alternativa correta.',
+      )
+      expect(blocked.errors).toContain('Carreira é obrigatória para publicar.')
+      expect(blocked.errors).toContain('Disciplina é obrigatória para publicar.')
+      expect(blocked.errors).toContain('Dificuldade é obrigatória para publicar.')
     }
   })
 

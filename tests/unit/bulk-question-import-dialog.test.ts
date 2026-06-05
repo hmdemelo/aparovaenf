@@ -22,6 +22,13 @@ describe('BulkQuestionImportDialog', () => {
             imported: 1,
             failed: 1,
             created_question_ids: ['created-question-1'],
+            warnings: [
+              {
+                line: 2,
+                field: 'difficulty',
+                message: 'Dificuldade não reconhecida.',
+              },
+            ],
             errors: [
               {
                 line: 3,
@@ -54,6 +61,8 @@ describe('BulkQuestionImportDialog', () => {
     await waitFor(() => expect(onImported).toHaveBeenCalled())
     expect(screen.getByText('1 importada')).toBeInTheDocument()
     expect(screen.getByText('1 falhou')).toBeInTheDocument()
+    expect(screen.getByText('1 aviso')).toBeInTheDocument()
+    expect(screen.getByText(/Dificuldade não reconhecida/)).toBeInTheDocument()
     expect(screen.getByText(/Linha 3/)).toBeInTheDocument()
   })
 

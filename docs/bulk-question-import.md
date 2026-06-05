@@ -56,9 +56,9 @@ Colunas principais:
 
 | Coluna | Obrigatorio | Observacao |
 | --- | --- | --- |
-| `career` | Sim | Nome ou slug da carreira existente |
-| `subject` | Sim | Disciplina existente dentro da carreira |
-| `difficulty` | Sim | `facil`, `media`, `dificil` |
+| `career` | Nao | Nome ou slug da carreira existente; tambem aceita o cabecalho `especialidade` |
+| `subject` | Nao | Disciplina existente dentro da carreira |
+| `difficulty` | Nao | `facil`, `media`, `dificil` |
 | `statement` | Sim | Enunciado |
 | `alt_a` | Sim | Alternativa A |
 | `alt_b` | Sim | Alternativa B |
@@ -93,7 +93,7 @@ Aliases compativeis:
 - `source_reference`: `source`, `fonte`, `origem`
 - `source_year`: `year`, `ano`
 - `general_comment`: `commentary`, `comentario`, `comentariogeral`
-- `career`: `carreira`
+- `career`: `carreira`, `especialidade`, `specialty`
 - `difficulty`: `dificuldade`
 
 ## Exemplo
@@ -108,10 +108,12 @@ Enfermeiro(a);Saude Publica e SUS;facil;"Qual principio do SUS garante atendimen
 1. A rota valida que o usuario autenticado e admin.
 2. A rota valida autor, tipo/tamanho do arquivo e limites globais.
 3. O parser le o CSV, normaliza cabecalhos e valida cada linha.
-4. Linhas validas sao resolvidas contra carreiras, disciplinas e bancas
-   existentes.
+4. Carreira, disciplina, dificuldade e banca podem ficar vazias. Quando um
+   valor preenchido nao corresponde ao catalogo, a questao e importada com o
+   campo vazio e um aviso informa que o autor devera classifica-la.
 5. Cada linha valida cria uma questao `draft` e alternativas ordenadas.
-6. Linhas invalidas sao retornadas com numero da linha e mensagem em portugues.
+6. Linhas invalidas sao retornadas com numero da linha e mensagem em portugues;
+   classificacoes pendentes sao retornadas separadamente como avisos.
 7. Um evento operacional registra admin, autor, arquivo e contadores do import.
 
 ## Resposta Da API
@@ -128,6 +130,13 @@ Sucesso parcial ou total:
     "imported": 8,
     "failed": 2,
     "created_question_ids": ["uuid-da-questao"],
+    "warnings": [
+      {
+        "line": 3,
+        "field": "subject",
+        "message": "Disciplina nao encontrada; o autor devera preenche-la na plataforma."
+      }
+    ],
     "errors": [
       {
         "line": 4,
@@ -141,3 +150,7 @@ Sucesso parcial ou total:
 
 Erros globais do arquivo, como tipo invalido, mais de 5 MB ou mais de 500
 linhas, retornam erro de validacao e nao criam nenhuma questao.
+
+Rascunhos podem permanecer sem carreira, disciplina, dificuldade ou banca. A
+publicacao continua bloqueada ate o autor preencher carreira, disciplina e
+dificuldade, alem dos demais requisitos editoriais.

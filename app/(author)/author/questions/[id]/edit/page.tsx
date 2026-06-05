@@ -4,7 +4,6 @@ import { resolveAuthorContext } from '@/features/authors/author-context'
 import { getAuthorQuestion } from '@/features/authors/author-question-service'
 import { loadClassificationOptions } from '@/features/authors/classification-options'
 import { QuestionEditor, type EditorInitial } from '@/features/authors/question-editor'
-import type { Difficulty } from '@/lib/validation/schemas'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,7 +34,12 @@ export default async function EditQuestionPage({
     career_id: question.career_id,
     subject_id: question.subject_id,
     board_id: question.board_id,
-    difficulty: question.difficulty as Difficulty,
+    difficulty: question.difficulty,
+    source_type: question.source_type,
+    source_orgao: question.source_orgao,
+    source_cargo: question.source_cargo,
+    source_year: question.source_year,
+    source_reference: question.source_reference,
     statement: question.statement,
     general_comment: question.general_comment,
     alternatives,

@@ -21,15 +21,18 @@ function validQuestion(): QuestionValidationInput {
 }
 
 describe('validateForDraft', () => {
-  it('accepts a question with statement, career, subject, and difficulty', () => {
-    const result = validateForDraft({ ...validQuestion(), general_comment: undefined })
+  it('accepts a question with only a statement', () => {
+    const result = validateForDraft({
+      statement: validQuestion().statement,
+      general_comment: undefined,
+    })
     expect(result.valid).toBe(true)
   })
 
   it('requires a statement', () => {
     const result = validateForDraft({ ...validQuestion(), statement: '   ' })
     expect(result.valid).toBe(false)
-    expect(result.errors).toContain('statement is required')
+    expect(result.errors).toContain('Enunciado é obrigatório.')
   })
 
   it('does not require a general comment for a draft', () => {
@@ -48,7 +51,25 @@ describe('validateForPublish', () => {
   it('requires a general comment', () => {
     const result = validateForPublish({ ...validQuestion(), general_comment: '  ' })
     expect(result.valid).toBe(false)
-    expect(result.errors).toContain('general comment is required to publish')
+    expect(result.errors).toContain('Comentário geral é obrigatório para publicar.')
+  })
+
+  it('requires classification fields only when publishing', () => {
+    const result = validateForPublish({
+      ...validQuestion(),
+      career_id: null,
+      subject_id: null,
+      difficulty: null,
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        'Carreira é obrigatória para publicar.',
+        'Disciplina é obrigatória para publicar.',
+        'Dificuldade é obrigatória para publicar.',
+      ]),
+    )
   })
 
   it('requires at least two alternatives', () => {
@@ -57,7 +78,7 @@ describe('validateForPublish', () => {
       alternatives: [{ label: 'A', text: 'Só uma', is_correct: true }],
     })
     expect(result.valid).toBe(false)
-    expect(result.errors).toContain('at least two alternatives are required')
+    expect(result.errors).toContain('Informe pelo menos duas alternativas.')
   })
 
   it('requires exactly one correct alternative — none is invalid', () => {
@@ -69,7 +90,7 @@ describe('validateForPublish', () => {
       ],
     })
     expect(result.valid).toBe(false)
-    expect(result.errors).toContain('exactly one correct alternative is required')
+    expect(result.errors).toContain('Marque exatamente uma alternativa correta.')
   })
 
   it('requires exactly one correct alternative — two is invalid', () => {
@@ -81,7 +102,7 @@ describe('validateForPublish', () => {
       ],
     })
     expect(result.valid).toBe(false)
-    expect(result.errors).toContain('exactly one correct alternative is required')
+    expect(result.errors).toContain('Marque exatamente uma alternativa correta.')
   })
 
   it('rejects alternatives with empty text', () => {
@@ -93,7 +114,7 @@ describe('validateForPublish', () => {
       ],
     })
     expect(result.valid).toBe(false)
-    expect(result.errors).toContain('every alternative needs text')
+    expect(result.errors).toContain('Todas as alternativas precisam de texto.')
   })
 
   it('accumulates multiple errors', () => {

@@ -83,7 +83,7 @@ export type AdminQuestionRow = {
   id: string
   statement: string
   status: string
-  difficulty: string
+  difficulty: string | null
   author: string | null
   subject: string | null
   createdAt: string

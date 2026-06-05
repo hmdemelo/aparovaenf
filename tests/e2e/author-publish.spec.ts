@@ -35,7 +35,7 @@ test('author logs in, is blocked publishing without a comment, then publishes', 
   // Publish without a general comment -> blocked with a clear reason.
   await page.getByTestId('publish').click()
   await expect(page.getByTestId('editor-errors')).toContainText(
-    'general comment is required to publish',
+    'Comentário geral é obrigatório para publicar.',
     { timeout: 30_000 },
   )
 

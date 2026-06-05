@@ -10,6 +10,8 @@ export type BulkImportRowError = {
   message: string
 }
 
+export type BulkImportRowWarning = BulkImportRowError
+
 export type ParsedAlternativeRow = {
   label: string
   text: string
@@ -18,10 +20,10 @@ export type ParsedAlternativeRow = {
 
 export type ParsedQuestionRow = {
   line: number
-  careerName: string
-  subjectName: string
+  careerName: string | null
+  subjectName: string | null
   boardName: string | null
-  difficulty: Difficulty
+  difficulty: Difficulty | null
   sourceType: SourceType
   sourceOrgao: string | null
   sourceCargo: string | null
@@ -36,6 +38,7 @@ export type ParsedQuestionRow = {
 export type BulkQuestionCsvParseResult = {
   rows: ParsedQuestionRow[]
   errors: BulkImportRowError[]
+  warnings: BulkImportRowWarning[]
   globalErrors: string[]
   totalRows: number
 }
@@ -45,6 +48,8 @@ type RawQuestionRow = Record<string, string | undefined>
 const HEADER_ALIASES: Record<string, string> = {
   carreira: 'career',
   career: 'career',
+  especialidade: 'career',
+  specialty: 'career',
   subject: 'subject',
   materia: 'subject',
   disciplina: 'subject',
@@ -149,11 +154,13 @@ function parseYear(value: string): number | null | 'invalid' {
 function parseRow(row: RawQuestionRow, index: number) {
   const line = index + 2
   const errors: BulkImportRowError[] = []
+  const warnings: BulkImportRowWarning[] = []
 
   const statement = cell(row, 'statement')
-  const careerName = cell(row, 'career')
-  const subjectName = cell(row, 'subject')
-  const difficulty = normalizeDifficulty(cell(row, 'difficulty'))
+  const careerName = cell(row, 'career') || null
+  const subjectName = cell(row, 'subject') || null
+  const difficultyValue = cell(row, 'difficulty')
+  const difficulty = normalizeDifficulty(difficultyValue)
   const sourceType = normalizeSourceType(cell(row, 'source_type'))
   const sourceYear = parseYear(cell(row, 'source_year'))
   const correctLabel = cell(row, 'correct').toUpperCase()
@@ -161,17 +168,12 @@ function parseRow(row: RawQuestionRow, index: number) {
   if (!statement) {
     errors.push({ line, field: 'statement', message: 'Enunciado e obrigatorio.' })
   }
-  if (!careerName) {
-    errors.push({ line, field: 'career', message: 'Carreira e obrigatoria.' })
-  }
-  if (!subjectName) {
-    errors.push({ line, field: 'subject', message: 'Disciplina e obrigatoria.' })
-  }
-  if (!difficulty) {
-    errors.push({
+  if (difficultyValue && !difficulty) {
+    warnings.push({
       line,
       field: 'difficulty',
-      message: 'Dificuldade deve ser facil, media ou dificil.',
+      message:
+        'Dificuldade não reconhecida; o autor deverá preenchê-la na plataforma.',
     })
   }
   if (sourceYear === 'invalid') {
@@ -222,8 +224,8 @@ function parseRow(row: RawQuestionRow, index: number) {
     }
   }
 
-  if (errors.length > 0 || !difficulty || !sourceType || sourceYear === 'invalid') {
-    return { row: null, errors }
+  if (errors.length > 0 || !sourceType || sourceYear === 'invalid') {
+    return { row: null, errors, warnings }
   }
 
   const parsed: ParsedQuestionRow = {
@@ -242,7 +244,7 @@ function parseRow(row: RawQuestionRow, index: number) {
     correctLabel: correctLabel || null,
     alternatives,
   }
-  return { row: parsed, errors }
+  return { row: parsed, errors, warnings }
 }
 
 export function parseBulkQuestionCsv(text: string): BulkQuestionCsvParseResult {
@@ -254,9 +256,10 @@ export function parseBulkQuestionCsv(text: string): BulkQuestionCsvParseResult {
   })
 
   const totalRows = parsed.data.length
-  const globalErrors = parsed.errors.map(
-    (error) => `Linha ${error.row ?? '?'}: ${error.message}`,
-  )
+  const globalErrors = parsed.errors.map((error) => {
+    const line = error.row === undefined ? '?' : error.row + 2
+    return `Linha ${line}: ${error.message}`
+  })
   if (totalRows === 0) {
     globalErrors.push('O CSV deve conter pelo menos uma linha de dados.')
   }
@@ -264,17 +267,19 @@ export function parseBulkQuestionCsv(text: string): BulkQuestionCsvParseResult {
     globalErrors.push('O CSV deve ter no máximo 500 linhas de dados.')
   }
   if (globalErrors.length > 0) {
-    return { rows: [], errors: [], globalErrors, totalRows }
+    return { rows: [], errors: [], warnings: [], globalErrors, totalRows }
   }
 
   const rows: ParsedQuestionRow[] = []
   const errors: BulkImportRowError[] = []
+  const warnings: BulkImportRowWarning[] = []
 
   parsed.data.forEach((rawRow, index) => {
     const result = parseRow(rawRow, index)
     errors.push(...result.errors)
+    warnings.push(...result.warnings)
     if (result.row) rows.push(result.row)
   })
 
-  return { rows, errors, globalErrors, totalRows }
+  return { rows, errors, warnings, globalErrors, totalRows }
 }

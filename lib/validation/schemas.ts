@@ -157,10 +157,10 @@ export type AlternativeInput = z.infer<typeof alternativeInputSchema>
  * separately by the publish validation in features/questions.
  */
 export const questionInputSchema = z.object({
-  career_id: uuidSchema,
-  subject_id: uuidSchema,
+  career_id: uuidSchema.optional().nullable(),
+  subject_id: uuidSchema.optional().nullable(),
   board_id: uuidSchema.optional(),
-  difficulty: difficultySchema,
+  difficulty: difficultySchema.optional().nullable(),
   source_type: sourceTypeSchema,
   source_orgao: z.string().optional(),
   source_cargo: z.string().optional(),
@@ -188,10 +188,10 @@ export type AuthorAlternativeInput = z.infer<typeof authorAlternativeSchema>
  * always required so there is something to save.
  */
 export const authorQuestionInputSchema = z.object({
-  career_id: uuidSchema,
-  subject_id: uuidSchema,
+  career_id: uuidSchema.optional().nullable(),
+  subject_id: uuidSchema.optional().nullable(),
   board_id: uuidSchema.optional().nullable(),
-  difficulty: difficultySchema,
+  difficulty: difficultySchema.optional().nullable(),
   source_type: sourceTypeSchema.default('autoral'),
   source_orgao: z.string().optional().nullable(),
   source_cargo: z.string().optional().nullable(),
@@ -249,6 +249,8 @@ export const bulkImportRowErrorSchema = z.object({
   message: z.string().min(1),
 })
 export type BulkImportRowErrorInput = z.infer<typeof bulkImportRowErrorSchema>
+export const bulkImportRowWarningSchema = bulkImportRowErrorSchema
+export type BulkImportRowWarningInput = BulkImportRowErrorInput
 
 export const bulkQuestionImportResultSchema = z.object({
   author_id: uuidSchema,
@@ -258,6 +260,7 @@ export const bulkQuestionImportResultSchema = z.object({
   failed: z.number().int().nonnegative(),
   created_question_ids: z.array(uuidSchema.or(z.string().min(1))),
   errors: z.array(bulkImportRowErrorSchema),
+  warnings: z.array(bulkImportRowWarningSchema),
 })
 export type BulkQuestionImportResultInput = z.infer<
   typeof bulkQuestionImportResultSchema

@@ -26,6 +26,7 @@ type ImportResult = {
   failed: number
   created_question_ids: string[]
   errors: ImportError[]
+  warnings: ImportError[]
 }
 
 export function BulkQuestionImportDialog({
@@ -77,6 +78,8 @@ export function BulkQuestionImportDialog({
   }
 
   const visibleErrors = result?.errors.slice(0, 50) ?? []
+  const warningCount = result?.warnings?.length ?? 0
+  const visibleWarnings = result?.warnings?.slice(0, 50) ?? []
 
   return (
     <form
@@ -90,6 +93,10 @@ export function BulkQuestionImportDialog({
         </p>
         <p className="mt-1">
           CSV UTF-8, separado por ponto e vírgula, até 5 MB e 500 linhas.
+        </p>
+        <p className="mt-1">
+          Carreira, disciplina, dificuldade e banca podem ficar vazias no
+          rascunho.
         </p>
         <a
           href="/api/admin/questions/bulk-template"
@@ -139,7 +146,21 @@ export function BulkQuestionImportDialog({
             <span className="rounded-full bg-[var(--warn-bg)] px-3 py-1 text-[var(--warn)]">
               {result.failed} {result.failed === 1 ? 'falhou' : 'falharam'}
             </span>
+            {warningCount > 0 && (
+              <span className="rounded-full bg-[var(--surface-paper)] px-3 py-1 text-[var(--muted)]">
+                {warningCount} {warningCount === 1 ? 'aviso' : 'avisos'}
+              </span>
+            )}
           </div>
+          {visibleWarnings.length > 0 && (
+            <ul className="mt-3 max-h-48 overflow-y-auto text-sm text-[var(--warn)]">
+              {visibleWarnings.map((warning, index) => (
+                <li key={`warning-${warning.line}-${warning.field}-${index}`}>
+                  Linha {warning.line}: {warning.message}
+                </li>
+              ))}
+            </ul>
+          )}
           {visibleErrors.length > 0 && (
             <ul className="mt-3 max-h-48 overflow-y-auto text-sm text-[var(--muted)]">
               {visibleErrors.map((rowError, index) => (

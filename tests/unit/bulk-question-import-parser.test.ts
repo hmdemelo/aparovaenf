@@ -59,6 +59,45 @@ describe('parseBulkQuestionCsv', () => {
     expect(result.rows[0].statement).toBe('Texto com; ponto e virgula')
   })
 
+  it('accepts blank classification fields for imported drafts', () => {
+    const result = parseBulkQuestionCsv(
+      [
+        'career;subject;difficulty;statement;alt_a;alt_b;board',
+        ';;;Questao sem classificacao;A;B;',
+      ].join('\n'),
+    )
+
+    expect(result.globalErrors).toEqual([])
+    expect(result.errors).toEqual([])
+    expect(result.warnings).toEqual([])
+    expect(result.rows[0]).toMatchObject({
+      careerName: null,
+      subjectName: null,
+      difficulty: null,
+      boardName: null,
+    })
+  })
+
+  it('keeps rows with invalid optional difficulty and reports a warning', () => {
+    const result = parseBulkQuestionCsv(
+      [
+        'career;subject;difficulty;statement;alt_a;alt_b',
+        'Enfermeiro(a);SUS;intermediaria;Questao;A;B',
+      ].join('\n'),
+    )
+
+    expect(result.errors).toEqual([])
+    expect(result.rows[0].difficulty).toBeNull()
+    expect(result.warnings).toEqual([
+      {
+        line: 2,
+        field: 'difficulty',
+        message:
+          'Dificuldade não reconhecida; o autor deverá preenchê-la na plataforma.',
+      },
+    ])
+  })
+
   it('reports row-level errors and keeps valid rows', () => {
     const result = parseBulkQuestionCsv(
       validCsv(
@@ -67,10 +106,9 @@ describe('parseBulkQuestionCsv', () => {
     )
 
     expect(result.rows).toHaveLength(1)
-    expect(result.errors.map((error) => error.line)).toEqual([3, 3, 3, 3])
+    expect(result.errors.map((error) => error.line)).toEqual([3, 3, 3])
     expect(result.errors.map((error) => error.field)).toEqual([
       'statement',
-      'subject',
       'alternatives',
       'correct',
     ])

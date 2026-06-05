@@ -17,9 +17,9 @@ export type AlternativeValidationInput = {
 export type QuestionValidationInput = {
   statement: string
   general_comment?: string
-  career_id?: string
-  subject_id?: string
-  difficulty?: Difficulty
+  career_id?: string | null
+  subject_id?: string | null
+  difficulty?: Difficulty | null
   alternatives?: AlternativeValidationInput[]
 }
 
@@ -29,37 +29,44 @@ function isBlank(value: string | undefined | null): boolean {
   return !value || value.trim().length === 0
 }
 
-function validateClassification(input: QuestionValidationInput, errors: string[]) {
-  if (isBlank(input.statement)) errors.push('statement is required')
-  if (!input.career_id) errors.push('career is required')
-  if (!input.subject_id) errors.push('subject is required')
-  if (!input.difficulty) errors.push('difficulty is required')
+function validateStatement(input: QuestionValidationInput, errors: string[]) {
+  if (isBlank(input.statement)) errors.push('Enunciado é obrigatório.')
+}
+
+function validatePublishClassification(
+  input: QuestionValidationInput,
+  errors: string[],
+) {
+  if (!input.career_id) errors.push('Carreira é obrigatória para publicar.')
+  if (!input.subject_id) errors.push('Disciplina é obrigatória para publicar.')
+  if (!input.difficulty) errors.push('Dificuldade é obrigatória para publicar.')
 }
 
 export function validateForDraft(input: QuestionValidationInput): ValidationResult {
   const errors: string[] = []
-  validateClassification(input, errors)
+  validateStatement(input, errors)
   return { valid: errors.length === 0, errors }
 }
 
 export function validateForPublish(input: QuestionValidationInput): ValidationResult {
   const errors: string[] = []
-  validateClassification(input, errors)
+  validateStatement(input, errors)
+  validatePublishClassification(input, errors)
 
   if (isBlank(input.general_comment)) {
-    errors.push('general comment is required to publish')
+    errors.push('Comentário geral é obrigatório para publicar.')
   }
 
   const alternatives = input.alternatives ?? []
   if (alternatives.length < 2) {
-    errors.push('at least two alternatives are required')
+    errors.push('Informe pelo menos duas alternativas.')
   }
   if (alternatives.some((a) => isBlank(a.text))) {
-    errors.push('every alternative needs text')
+    errors.push('Todas as alternativas precisam de texto.')
   }
   const correctCount = alternatives.filter((a) => a.is_correct).length
   if (correctCount !== 1) {
-    errors.push('exactly one correct alternative is required')
+    errors.push('Marque exatamente uma alternativa correta.')
   }
 
   return { valid: errors.length === 0, errors }

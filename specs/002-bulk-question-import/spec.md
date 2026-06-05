@@ -90,9 +90,10 @@ line-specific validation feedback in Portuguese.
 - The selected author no longer exists when the admin submits the modal.
 - The file is not CSV, is empty, exceeds 5 MB, or has more than 500 data rows.
 - CSV headers contain accents, spaces, periods, hyphens, or different casing.
-- Required current-model fields are missing: statement, career, subject, or
-  difficulty.
-- Career, subject, difficulty, or board names do not match existing records.
+- Required content fields are missing: statement or at least two alternatives.
+- Career, subject, difficulty, or board are blank.
+- Career, subject, difficulty, or board names do not match existing records;
+  the row is imported with pending classification and a warning.
 - A row has fewer than two alternatives or more than five alternatives.
 - A row marks a correct answer whose alternative text is blank or absent.
 - A row provides invalid year values or unsupported source type values.
@@ -118,9 +119,9 @@ line-specific validation feedback in Portuguese.
   `docs/bulk-question-import.md`, including statement/enunciado, alternatives
   A-E, correct answer/gabarito, subject/disciplina, source/origem, year/ano, and
   commentary/comentario.
-- **FR-008**: The current import template MUST require fields needed by the
-  existing question model: career, subject, difficulty, statement, and at least
-  two alternatives.
+- **FR-008**: The current import template MUST require statement and at least
+  two alternatives. Career/specialty, subject, difficulty, and board MUST be
+  optional for imported drafts.
 - **FR-009**: The system MUST validate each data row independently and report
   the row number and error message for invalid rows.
 - **FR-010**: Valid rows MUST create draft questions assigned to the selected
@@ -147,6 +148,13 @@ line-specific validation feedback in Portuguese.
 - **FR-020**: The existing `docs/bulk-question-import.md` MUST NOT be treated as
   directly implementable without adaptation to the current author-owned draft
   model.
+- **FR-021**: Blank optional classification values MUST be stored as null and
+  completed later by the author.
+- **FR-022**: Unknown career, subject, difficulty, or board values MUST NOT
+  reject an otherwise valid row; the system MUST import the row with that field
+  empty and return a warning.
+- **FR-023**: Authors MUST be able to save incomplete imported drafts, but
+  publication MUST require career, subject, and difficulty.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -180,8 +188,8 @@ line-specific validation feedback in Portuguese.
   not a new separate approval queue.
 - CSV is the only input format for this feature. JSON support from the existing
   bulk document is out of scope.
-- The import uses the current database model, where career, subject, difficulty,
-  author, and statement are required for a draft question.
+- The draft database model permits null career, subject, difficulty, and board.
+  Published questions continue to require career, subject, and difficulty.
 - Existing author ownership and publish validation remain the source of truth.
 - The 5 MB and 500-row limits from `docs/bulk-question-import.md` are reasonable
   defaults for the MVP.

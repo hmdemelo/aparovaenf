@@ -35,7 +35,9 @@ function parsedRow(overrides: Partial<ParsedQuestionRow> = {}): ParsedQuestionRo
   }
 }
 
-function createDb() {
+function createDb(options?: {
+  questionInsertError?: { code: string; message: string }
+}) {
   const tables = new Map<string, unknown[]>([
     [
       'author_profiles',
@@ -91,6 +93,9 @@ function createDb() {
         return { data, error: null }
       }),
       single: vi.fn(async () => {
+        if (state.table === 'questions' && options?.questionInsertError) {
+          return { data: null, error: options.questionInsertError }
+        }
         const rows = inserts[state.table] ?? []
         return { data: rows.at(-1) ?? null, error: null }
       }),
@@ -158,16 +163,119 @@ describe('importBulkQuestionsForAuthor', () => {
 
     expect(result.ok).toBe(true)
     if (!result.ok) throw new Error(result.message)
-    expect(result.imported).toBe(1)
-    expect(result.failed).toBe(1)
-    expect(result.errors).toEqual([
+    expect(result.imported).toBe(2)
+    expect(result.failed).toBe(0)
+    expect(result.errors).toEqual([])
+    expect(result.warnings).toEqual([
       {
         line: 3,
         field: 'subject',
-        message: 'Disciplina nao encontrada para a carreira informada.',
+        message:
+          'Disciplina não encontrada para a carreira informada; o autor deverá preenchê-la na plataforma.',
       },
     ])
-    expect(inserts.questions).toHaveLength(1)
+    expect(inserts.questions).toHaveLength(2)
+    expect(inserts.questions[1]).toMatchObject({
+      career_id: CAREER_ID,
+      subject_id: null,
+    })
+  })
+
+  it('creates a draft with null classification when optional fields are blank', async () => {
+    const { db, inserts } = createDb()
+
+    const result = await importBulkQuestionsForAuthor(db, {
+      authorId: AUTHOR_ID,
+      adminUserId: ADMIN_ID,
+      fileName: 'questoes.csv',
+      fileSize: 1234,
+      rows: [
+        parsedRow({
+          careerName: null,
+          subjectName: null,
+          boardName: null,
+          difficulty: null,
+        }),
+      ],
+      parseErrors: [],
+      parseWarnings: [],
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) throw new Error(result.message)
+    expect(result.imported).toBe(1)
+    expect(result.failed).toBe(0)
+    expect(result.warnings).toEqual([])
+    expect(inserts.questions[0]).toMatchObject({
+      career_id: null,
+      subject_id: null,
+      board_id: null,
+      difficulty: null,
+      status: 'draft',
+    })
+  })
+
+  it('imports unknown optional catalogs as null and reports warnings', async () => {
+    const { db, inserts } = createDb()
+
+    const result = await importBulkQuestionsForAuthor(db, {
+      authorId: AUTHOR_ID,
+      adminUserId: ADMIN_ID,
+      fileName: 'questoes.csv',
+      fileSize: 1234,
+      rows: [
+        parsedRow({
+          careerName: 'Especialidade inexistente',
+          subjectName: 'Disciplina inexistente',
+          boardName: 'Banca inexistente',
+        }),
+      ],
+      parseErrors: [],
+      parseWarnings: [],
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) throw new Error(result.message)
+    expect(result.imported).toBe(1)
+    expect(result.failed).toBe(0)
+    expect(result.warnings.map((warning) => warning.field)).toEqual([
+      'career',
+      'subject',
+      'board',
+    ])
+    expect(inserts.questions[0]).toMatchObject({
+      career_id: null,
+      subject_id: null,
+      board_id: null,
+    })
+  })
+
+  it('stops with a safe error when the database still requires classification', async () => {
+    const { db } = createDb({
+      questionInsertError: {
+        code: '23502',
+        message:
+          'null value in column "career_id" of relation "questions" violates not-null constraint',
+      },
+    })
+
+    const result = await importBulkQuestionsForAuthor(db, {
+      authorId: AUTHOR_ID,
+      adminUserId: ADMIN_ID,
+      fileName: 'questoes.csv',
+      fileSize: 1234,
+      rows: [
+        parsedRow({ careerName: null, subjectName: null, difficulty: null }),
+      ],
+      parseErrors: [],
+    })
+
+    expect(result).toEqual({
+      ok: false,
+      code: 'schema_outdated',
+      message:
+        'O banco de dados ainda não está preparado para importar rascunhos sem classificação.',
+    })
   })
 
   it('returns not_found when the selected author does not exist', async () => {

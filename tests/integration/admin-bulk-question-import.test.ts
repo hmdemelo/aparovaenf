@@ -24,6 +24,13 @@ vi.mock('@/features/admin/bulk-question-import-service', () => ({
     failed: 0,
     created_question_ids: ['created-question-1'],
     errors: [],
+    warnings: [
+      {
+        line: 2,
+        field: 'difficulty',
+        message: 'Dificuldade não reconhecida.',
+      },
+    ],
   })),
 }))
 
@@ -48,6 +55,13 @@ describe('POST /api/admin/authors/[id]/questions/bulk-import', () => {
     expect(response.status).toBe(200)
     expect(json.success).toBe(true)
     expect(json.data.imported).toBe(1)
+    expect(json.data.warnings).toEqual([
+      {
+        line: 2,
+        field: 'difficulty',
+        message: 'Dificuldade não reconhecida.',
+      },
+    ])
   })
 
   it('rejects non-CSV uploads before invoking the service', async () => {

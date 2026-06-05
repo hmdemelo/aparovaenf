@@ -372,9 +372,9 @@ export type Database = {
           answer_key_changed: boolean
           author_id: string
           board_id: string | null
-          career_id: string
+          career_id: string | null
           created_at: string
-          difficulty: Database["public"]["Enums"]["question_difficulty"]
+          difficulty: Database["public"]["Enums"]["question_difficulty"] | null
           general_comment: string | null
           id: string
           published_at: string | null
@@ -385,7 +385,7 @@ export type Database = {
           source_year: number | null
           statement: string
           status: Database["public"]["Enums"]["question_status"]
-          subject_id: string
+          subject_id: string | null
           updated_at: string
         }
         Insert: {
@@ -393,9 +393,9 @@ export type Database = {
           answer_key_changed?: boolean
           author_id: string
           board_id?: string | null
-          career_id: string
+          career_id?: string | null
           created_at?: string
-          difficulty: Database["public"]["Enums"]["question_difficulty"]
+          difficulty?: Database["public"]["Enums"]["question_difficulty"] | null
           general_comment?: string | null
           id?: string
           published_at?: string | null
@@ -406,7 +406,7 @@ export type Database = {
           source_year?: number | null
           statement: string
           status?: Database["public"]["Enums"]["question_status"]
-          subject_id: string
+          subject_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -414,9 +414,9 @@ export type Database = {
           answer_key_changed?: boolean
           author_id?: string
           board_id?: string | null
-          career_id?: string
+          career_id?: string | null
           created_at?: string
-          difficulty?: Database["public"]["Enums"]["question_difficulty"]
+          difficulty?: Database["public"]["Enums"]["question_difficulty"] | null
           general_comment?: string | null
           id?: string
           published_at?: string | null
@@ -427,7 +427,7 @@ export type Database = {
           source_year?: number | null
           statement?: string
           status?: Database["public"]["Enums"]["question_status"]
-          subject_id?: string
+          subject_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -794,4 +794,3 @@ export const Constants = {
     },
   },
 } as const
-

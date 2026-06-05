@@ -80,12 +80,14 @@ export async function POST(
     totalRows: parsed.totalRows,
     rows: parsed.rows,
     parseErrors: parsed.errors,
+    parseWarnings: parsed.warnings,
   })
 
   if (!result.ok) {
-    return result.code === 'not_found'
-      ? fail(ErrorCodes.NOT_FOUND, 'Autor não encontrado')
-      : fail(ErrorCodes.INTERNAL, result.message)
+    if (result.code === 'not_found') {
+      return fail(ErrorCodes.NOT_FOUND, 'Autor não encontrado')
+    }
+    return fail(ErrorCodes.INTERNAL, result.message)
   }
 
   return ok({
@@ -96,5 +98,6 @@ export async function POST(
     failed: result.failed,
     created_question_ids: result.created_question_ids,
     errors: result.errors,
+    warnings: result.warnings,
   })
 }

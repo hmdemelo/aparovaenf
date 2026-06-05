@@ -2,23 +2,28 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, X } from 'lucide-react'
+import { AlertTriangle, Plus, X } from 'lucide-react'
 import {
   AlternativesEditor,
   labelForIndex,
   type EditableAlternative,
 } from './alternatives-editor'
-import type { Difficulty } from '@/lib/validation/schemas'
+import type { Difficulty, SourceType } from '@/lib/validation/schemas'
 
 type Option = { id: string; name: string }
 type SubjectOption = Option & { career_id: string }
 
 export type EditorInitial = {
   id: string
-  career_id: string
-  subject_id: string
+  career_id: string | null
+  subject_id: string | null
   board_id: string | null
-  difficulty: Difficulty
+  difficulty: Difficulty | null
+  source_type: SourceType
+  source_orgao: string | null
+  source_cargo: string | null
+  source_year: number | null
+  source_reference: string | null
   statement: string
   general_comment: string | null
   alternatives: EditableAlternative[]
@@ -48,13 +53,15 @@ const DIFFICULTIES: { value: Difficulty; label: string }[] = [
 export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
   const router = useRouter()
   const [questionId, setQuestionId] = useState<string | null>(initial?.id ?? null)
-  const [careerId, setCareerId] = useState(initial?.career_id ?? careers[0]?.id ?? '')
+  const [careerId, setCareerId] = useState(
+    initial ? initial.career_id ?? '' : careers[0]?.id ?? '',
+  )
   const [subjectId, setSubjectId] = useState(initial?.subject_id ?? '')
   // Board options are local state so a board added inline shows up immediately.
   const [boardOptions, setBoardOptions] = useState<Option[]>(boards)
   const [boardId, setBoardId] = useState(initial?.board_id ?? '')
-  const [difficulty, setDifficulty] = useState<Difficulty>(
-    initial?.difficulty ?? 'media',
+  const [difficulty, setDifficulty] = useState<Difficulty | ''>(
+    initial ? initial.difficulty ?? '' : 'media',
   )
   const [statement, setStatement] = useState(initial?.statement ?? '')
   const [generalComment, setGeneralComment] = useState(initial?.general_comment ?? '')
@@ -76,11 +83,15 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
 
   function buildPayload() {
     return {
-      career_id: careerId,
-      subject_id: subjectId,
+      career_id: careerId || null,
+      subject_id: subjectId || null,
       board_id: boardId || null,
-      difficulty,
-      source_type: 'autoral' as const,
+      difficulty: difficulty || null,
+      source_type: initial?.source_type ?? ('autoral' as const),
+      source_orgao: initial?.source_orgao ?? null,
+      source_cargo: initial?.source_cargo ?? null,
+      source_year: initial?.source_year ?? null,
+      source_reference: initial?.source_reference ?? null,
       statement,
       general_comment: generalComment || null,
       alternatives: alternatives.map((a, index) => ({
@@ -92,6 +103,12 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
       tags,
     }
   }
+
+  const pendingClassification = [
+    !careerId ? 'carreira' : null,
+    !subjectId ? 'disciplina' : null,
+    !difficulty ? 'dificuldade' : null,
+  ].filter((field): field is string => Boolean(field))
 
   // Persist (create or update) and return the question id, or null on failure.
   async function save(): Promise<string | null> {
@@ -147,6 +164,18 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
 
   return (
     <div className="flex flex-col gap-4" data-testid="question-editor">
+      {pendingClassification.length > 0 && (
+        <div
+          className="flex items-start gap-2 rounded-[var(--radius-sm)] bg-[var(--warn-bg)] px-3 py-2 text-sm text-[var(--warn)]"
+          data-testid="pending-classification"
+        >
+          <AlertTriangle size={17} className="mt-0.5 shrink-0" />
+          <span>
+            Classificação pendente: {pendingClassification.join(', ')}. Complete
+            antes de publicar.
+          </span>
+        </div>
+      )}
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
           Carreira
@@ -159,6 +188,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
             data-testid="career"
             className="aprova-field"
           >
+            <option value="">Selecione</option>
             {careers.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -186,10 +216,13 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
           Dificuldade
           <select
             value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+            onChange={(e) =>
+              setDifficulty(e.target.value ? (e.target.value as Difficulty) : '')
+            }
             data-testid="difficulty"
             className="aprova-field"
           >
+            <option value="">Selecione</option>
             {DIFFICULTIES.map((d) => (
               <option key={d.value} value={d.value}>
                 {d.label}
