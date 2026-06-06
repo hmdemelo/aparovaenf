@@ -201,12 +201,12 @@ export function FeedShell({
       onTouchEnd={onTouchEnd}
     >
       <header className="aprova-appbar sticky top-0 z-40">
-        <div className="mx-auto flex h-16 w-full max-w-[980px] items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex h-16 w-full max-w-[430px] items-center justify-between px-4">
           <Link href="/" aria-label="aprovaenf início">
             <AprovaenfLogo className="text-[var(--teal)]" />
           </Link>
 
-          <nav className="hidden items-center gap-5 text-sm font-semibold text-[var(--muted)] md:flex">
+          <nav className="hidden items-center gap-3.5 text-xs font-semibold text-[var(--muted)] md:flex">
             <Link href={feedHref} className="text-[var(--teal)]">
               Estudo
             </Link>
@@ -227,7 +227,7 @@ export function FeedShell({
             {subscriptionActive ? 'PRO' : 'Trial'}
           </span>
         </div>
-        <div className="mx-auto h-1.5 w-full max-w-[980px] px-4 sm:px-6">
+        <div className="mx-auto h-1.5 w-full max-w-[430px] px-4">
           <div className="h-full overflow-hidden rounded-full bg-[var(--surface)]">
             <div className="h-full w-[42%] rounded-full bg-[var(--teal-mid)]" />
           </div>
