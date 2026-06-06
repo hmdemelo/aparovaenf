@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { createSupabaseServerClient } from '@/lib/db/server'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
-import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { listAnswerHistory } from '@/features/account/answer-history-service'
 
 export const dynamic = 'force-dynamic'
@@ -30,10 +29,7 @@ export default async function HistoryPage() {
   const history = await listAnswerHistory(db, user.id)
 
   return (
-    <main className="mx-auto min-h-screen max-w-xl px-4 py-8">
-      <Link href="/" aria-label="aprovaenf início">
-        <AprovaenfLogo className="mb-8 text-[var(--teal)]" />
-      </Link>
+    <main className="mx-auto w-full max-w-2xl px-4 py-6 md:py-10">
       <h1 className="font-display mb-6 text-[28px] font-semibold text-[var(--ink)]">
         Histórico de questões
       </h1>
@@ -81,13 +77,6 @@ export default async function HistoryPage() {
           })}
         </ul>
       )}
-
-      <Link
-        href="/"
-        className="mt-6 inline-block text-sm font-semibold text-[var(--teal)] underline"
-      >
-        ← Voltar ao início
-      </Link>
     </main>
   )
 }

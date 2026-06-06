@@ -1,9 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
-import { BookOpen, Heart, History, SlidersHorizontal, UserCircle, X } from 'lucide-react'
-import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
+import { SlidersHorizontal, X } from 'lucide-react'
 import { QuestionCard } from './question-card'
 import { AnswerFeedback } from './answer-feedback'
 import { SignupGate } from '@/features/trial/signup-gate'
@@ -41,7 +39,6 @@ export function FeedShell({
   const [error, setError] = useState<string | null>(null)
   const [favorited, setFavorited] = useState(false)
   const [favoriteMsg, setFavoriteMsg] = useState<string | null>(null)
-  const [subscriptionActive, setSubscriptionActive] = useState(false)
 
   // Feed filters (Subject + Board + Tags). Board is sent as a slug, subject and
   // tags as ids; an empty value means "no filter on that dimension".
@@ -77,7 +74,6 @@ export function FeedShell({
       } else {
         setGate('none')
       }
-      setSubscriptionActive(trial_status.subscription_active)
       setQuestion(q)
     } catch {
       setError('Não foi possível carregar a questão.')
@@ -120,7 +116,6 @@ export function FeedShell({
         return
       }
       setFeedback(json.data)
-      setSubscriptionActive(json.data.trial_status.subscription_active)
     } catch {
       setError('Não foi possível enviar a resposta.')
     } finally {
@@ -176,10 +171,6 @@ export function FeedShell({
     touchStartY.current = null
   }
 
-  const feedParams = new URLSearchParams({ career: careerSlug })
-  if (boardFilterSlug) feedParams.set('board', boardFilterSlug)
-  const feedHref = `/feed?${feedParams.toString()}`
-
   function toggleTag(id: string) {
     setTagIds((prev) =>
       prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
@@ -196,45 +187,11 @@ export function FeedShell({
 
   return (
     <div
-      className="min-h-dvh pb-28"
+      className="w-full min-h-full py-4 md:py-8"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      <header className="aprova-appbar sticky top-0 z-40">
-        <div className="mx-auto flex h-16 w-full max-w-[430px] items-center justify-between px-4">
-          <Link href="/" aria-label="aprovaenf início">
-            <AprovaenfLogo className="text-[var(--teal)]" />
-          </Link>
-
-          <nav className="hidden items-center gap-3.5 text-xs font-semibold text-[var(--muted)] md:flex">
-            <Link href={feedHref} className="text-[var(--teal)]">
-              Estudo
-            </Link>
-            <Link href="/favorites" className="transition hover:text-[var(--teal)]">
-              Favoritos
-            </Link>
-            <Link href="/errors" className="transition hover:text-[var(--teal)]">
-              Erros
-            </Link>
-            <Link href="/login" className="transition hover:text-[var(--teal)]">
-              Conta
-            </Link>
-          </nav>
-
-          <span
-            className={`aprova-pill ${subscriptionActive ? 'aprova-pill-pro' : ''}`}
-          >
-            {subscriptionActive ? 'PRO' : 'Trial'}
-          </span>
-        </div>
-        <div className="mx-auto h-1.5 w-full max-w-[430px] px-4">
-          <div className="h-full overflow-hidden rounded-full bg-[var(--surface)]">
-            <div className="h-full w-[42%] rounded-full bg-[var(--teal-mid)]" />
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto flex w-full max-w-[430px] flex-col gap-4 px-4 py-6 sm:py-8">
+      <main className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-4 sm:py-6">
         {hasFilterOptions && filterOptions && (
           <section data-testid="feed-filters">
             <button
@@ -409,37 +366,6 @@ export function FeedShell({
           </p>
         )}
       </main>
-
-      <nav className="aprova-bottom-nav fixed bottom-5 left-1/2 z-50 grid w-[min(92vw,420px)] -translate-x-1/2 grid-cols-4 p-2 md:hidden">
-        <Link
-          href={feedHref}
-          className="aprova-nav-tab aprova-nav-tab-active"
-        >
-          <BookOpen size={21} />
-          Estudo
-        </Link>
-        <Link
-          href="/favorites"
-          className="aprova-nav-tab"
-        >
-          <Heart size={21} />
-          Favoritos
-        </Link>
-        <Link
-          href="/errors"
-          className="aprova-nav-tab"
-        >
-          <History size={21} />
-          Erros
-        </Link>
-        <Link
-          href="/login"
-          className="aprova-nav-tab"
-        >
-          <UserCircle size={21} />
-          Conta
-        </Link>
-      </nav>
     </div>
   )
 }

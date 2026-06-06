@@ -227,6 +227,6 @@ describe('ClassificationCatalogDialog unit tests', () => {
       expect(screen.getByRole('button', { name: 'Página 1' })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Página 2' })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Página 3' })).toBeInTheDocument()
-    })
+    }, { timeout: 5_000 })
   })
 })

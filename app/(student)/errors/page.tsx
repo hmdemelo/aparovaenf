@@ -1,8 +1,6 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/db/server'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
-import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { listErrorHistory } from '@/features/student-feed/error-history-service'
 
 export const dynamic = 'force-dynamic'
@@ -23,10 +21,7 @@ export default async function ErrorsPage() {
   const errors = await listErrorHistory(db, user.id)
 
   return (
-    <main className="mx-auto min-h-screen max-w-xl px-4 py-8">
-      <Link href="/" aria-label="aprovaenf início">
-        <AprovaenfLogo className="mb-8 text-[var(--teal)]" />
-      </Link>
+    <main className="mx-auto w-full max-w-2xl px-4 py-6 md:py-10">
       <h1 className="font-display mb-6 text-[28px] font-semibold text-[var(--ink)]">
         Meus erros
       </h1>
@@ -57,13 +52,6 @@ export default async function ErrorsPage() {
           ))}
         </ul>
       )}
-
-      <Link
-        href="/"
-        className="mt-6 inline-block text-sm font-semibold text-[var(--teal)] underline"
-      >
-        ← Voltar ao início
-      </Link>
     </main>
   )
 }

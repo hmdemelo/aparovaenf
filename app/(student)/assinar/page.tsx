@@ -1,8 +1,6 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
 import { getLaunchCareerSlug } from '@/lib/db/launch-career'
-import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { Paywall } from '@/features/billing/paywall'
 
 export const dynamic = 'force-dynamic'
@@ -25,10 +23,7 @@ export default async function SubscribePage() {
   }
 
   return (
-    <main className="mx-auto min-h-screen max-w-xl px-4 py-8">
-      <Link href="/" aria-label="aprovaenf início">
-        <AprovaenfLogo className="mb-8 text-[var(--teal)]" />
-      </Link>
+    <main className="mx-auto w-full max-w-2xl px-4 py-6 md:py-10">
       <Paywall
         title="Assine para acessar as questões"
         description="Escolha um plano e pratique sem limites: questões comentadas, favoritos e histórico de erros."

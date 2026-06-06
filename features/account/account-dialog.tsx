@@ -14,10 +14,17 @@ type ApiEnvelope<T> =
 type AccountDialogProps = {
   initialProfile: AccountProfile
   compact?: boolean
+  triggerVariant?: 'default' | 'compact' | 'mobile-nav'
 }
 
-export function AccountDialog({ initialProfile, compact = false }: AccountDialogProps) {
+export function AccountDialog({
+  initialProfile,
+  compact = false,
+  triggerVariant,
+}: AccountDialogProps) {
   const router = useRouter()
+  const resolvedTriggerVariant =
+    triggerVariant ?? (compact ? 'compact' : 'default')
   const [open, setOpen] = useState(false)
   const [profile, setProfile] = useState(initialProfile)
   const [name, setName] = useState(initialProfile.name)
@@ -125,14 +132,29 @@ export function AccountDialog({ initialProfile, compact = false }: AccountDialog
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className={`inline-flex items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--line-2)] bg-white text-[var(--ink)] transition hover:border-[color:var(--teal)] hover:text-[var(--teal)] ${
-          compact ? 'h-10 w-10 p-0' : 'gap-2 px-4 py-2 text-sm font-semibold'
+        className={`inline-flex items-center justify-center text-[var(--ink)] transition hover:text-[var(--teal)] ${
+          resolvedTriggerVariant === 'mobile-nav'
+            ? 'min-h-11 flex-col gap-1 rounded-md px-2 py-1 text-[11px] font-semibold'
+            : `rounded-[var(--radius-sm)] border border-[color:var(--line-2)] bg-white ${
+                resolvedTriggerVariant === 'compact'
+                  ? 'h-10 w-10 p-0'
+                  : 'gap-2 px-4 py-2 text-sm font-semibold'
+              }`
         }`}
-        title={compact ? 'Minha conta' : undefined}
+        title={
+          resolvedTriggerVariant === 'compact' ? 'Minha conta' : undefined
+        }
+        aria-label={
+          resolvedTriggerVariant === 'compact' ? 'Minha conta' : undefined
+        }
         data-testid="account-open"
       >
         <UserCircle size={18} />
-        {!compact && 'Minha conta'}
+        {resolvedTriggerVariant === 'mobile-nav'
+          ? 'Conta'
+          : resolvedTriggerVariant === 'default'
+            ? 'Minha conta'
+            : null}
       </button>
 
       {open && (
