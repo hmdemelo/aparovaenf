@@ -2,6 +2,8 @@
 For additional context about technologies, project structure, scope, and
 implementation order, read:
 
+- `specs/008-author-classification-catalogs/spec.md`
+- `specs/008-author-classification-catalogs/plan.md`
 - `specs/007-user-registration-options/spec.md`
 - `specs/007-user-registration-options/plan.md`
 - `specs/007-user-registration-options/tasks.md`

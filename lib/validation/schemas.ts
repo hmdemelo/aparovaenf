@@ -200,7 +200,7 @@ export const authorQuestionInputSchema = z.object({
   statement: z.string().min(1, 'statement is required'),
   general_comment: z.string().optional().nullable(),
   alternatives: z.array(authorAlternativeSchema).optional(),
-  tags: z.array(z.string().trim().min(1).max(60)).max(20).optional(),
+  topic_ids: z.array(uuidSchema).max(20).optional(),
 })
 export type AuthorQuestionInput = z.infer<typeof authorQuestionInputSchema>
 
@@ -307,3 +307,34 @@ export const favoriteInputSchema = z.object({
   question_id: uuidSchema,
 })
 export type FavoriteInput = z.infer<typeof favoriteInputSchema>
+
+// --- Author classification catalogs -------------------------------------
+
+export const catalogQuerySchema = z.object({
+  q: z.string().max(80).optional().nullable(),
+  page: z.coerce.number().int().min(1).default(1),
+  page_size: z.coerce.number().int().min(1).max(20).default(20),
+})
+export type CatalogQuery = z.infer<typeof catalogQuerySchema>
+
+export const disciplinesQuerySchema = catalogQuerySchema.extend({
+  career_id: uuidSchema.optional().nullable(),
+})
+export type DisciplinesQuery = z.infer<typeof disciplinesQuerySchema>
+
+export const topicsQuerySchema = catalogQuerySchema.extend({
+  discipline_id: uuidSchema.optional().nullable(),
+})
+export type TopicsQuery = z.infer<typeof topicsQuerySchema>
+
+export const createDisciplineInputSchema = z.object({
+  name: z.string().trim().min(1, 'nome da disciplina é obrigatório').max(120),
+  career_id: uuidSchema,
+})
+export type CreateDisciplineInput = z.infer<typeof createDisciplineInputSchema>
+
+export const createTopicInputSchema = z.object({
+  name: z.string().trim().min(1, 'nome do assunto é obrigatório').max(120),
+  discipline_id: uuidSchema,
+})
+export type CreateTopicInput = z.infer<typeof createTopicInputSchema>

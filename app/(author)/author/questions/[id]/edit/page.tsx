@@ -43,7 +43,7 @@ export default async function EditQuestionPage({
     statement: question.statement,
     general_comment: question.general_comment,
     alternatives,
-    tags: (question.tags ?? []).map((t) => t.name),
+    tags: question.tags ?? [],
   }
 
   return (

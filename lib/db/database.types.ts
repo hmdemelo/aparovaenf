@@ -194,6 +194,8 @@ export type Database = {
       boards: {
         Row: {
           created_at: string
+          created_by_kind: string
+          created_by_author_id: string | null
           id: string
           is_priority: boolean
           name: string
@@ -201,6 +203,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by_kind?: string
+          created_by_author_id?: string | null
           id?: string
           is_priority?: boolean
           name: string
@@ -208,12 +212,22 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by_kind?: string
+          created_by_author_id?: string | null
           id?: string
           is_priority?: boolean
           name?: string
           slug?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "boards_created_by_author_id_fkey"
+            columns: ["created_by_author_id"]
+            isOneToOne: false
+            referencedRelation: "author_profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       careers: {
         Row: {
@@ -495,6 +509,8 @@ export type Database = {
         Row: {
           career_id: string
           created_at: string
+          created_by_kind: string
+          created_by_author_id: string | null
           id: string
           name: string
           slug: string
@@ -502,6 +518,8 @@ export type Database = {
         Insert: {
           career_id: string
           created_at?: string
+          created_by_kind?: string
+          created_by_author_id?: string | null
           id?: string
           name: string
           slug: string
@@ -509,6 +527,8 @@ export type Database = {
         Update: {
           career_id?: string
           created_at?: string
+          created_by_kind?: string
+          created_by_author_id?: string | null
           id?: string
           name?: string
           slug?: string
@@ -521,6 +541,13 @@ export type Database = {
             referencedRelation: "careers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "subjects_created_by_author_id_fkey"
+            columns: ["created_by_author_id"]
+            isOneToOne: false
+            referencedRelation: "author_profiles"
+            referencedColumns: ["id"]
+          }
         ]
       }
       subscriptions: {
@@ -576,23 +603,47 @@ export type Database = {
       tags: {
         Row: {
           created_at: string
+          created_by_kind: string
+          created_by_author_id: string | null
           id: string
           name: string
           slug: string
+          subject_id: string | null
         }
         Insert: {
           created_at?: string
+          created_by_kind?: string
+          created_by_author_id?: string | null
           id?: string
           name: string
           slug: string
+          subject_id?: string | null
         }
         Update: {
           created_at?: string
+          created_by_kind?: string
+          created_by_author_id?: string | null
           id?: string
           name?: string
           slug?: string
+          subject_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tags_created_by_author_id_fkey"
+            columns: ["created_by_author_id"]
+            isOneToOne: false
+            referencedRelation: "author_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tags_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       user_profiles: {
         Row: {

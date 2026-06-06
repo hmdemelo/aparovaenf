@@ -36,7 +36,7 @@ export type QuestionDraftInput = {
   statement: string
   general_comment?: string | null
   alternatives?: AlternativeDraft[]
-  tags?: string[]
+  topic_ids?: string[]
 }
 
 export type ServiceResult<T> =
@@ -68,10 +68,61 @@ async function replaceAlternatives(
   return insError?.message ?? null
 }
 
+async function validateTopicIds(
+  db: Db,
+  questionId: string | null,
+  subjectId: string | null,
+  topicIds: string[],
+): Promise<ServiceResult<null>> {
+  if (topicIds.length > 20) {
+    return { ok: false, code: 'validation', errors: ['Máximo de 20 assuntos permitidos.'] }
+  }
+  if (!subjectId) {
+    return { ok: false, code: 'validation', errors: ['Selecione uma disciplina antes de adicionar assuntos.'] }
+  }
+
+  const { data: dbTags, error: tagCheckError } = await db
+    .from('tags')
+    .select('id, subject_id')
+    .in('id', topicIds)
+
+  if (tagCheckError || !dbTags) {
+    return { ok: false, code: 'error', errors: ['Erro ao validar os assuntos.'] }
+  }
+
+  if (dbTags.length !== topicIds.length) {
+    return { ok: false, code: 'validation', errors: ['Um ou mais assuntos selecionados não existem.'] }
+  }
+
+  let existingTagIds: string[] = []
+  if (questionId) {
+    const { data: currentTags } = await db
+      .from('question_tags')
+      .select('tag_id')
+      .eq('question_id', questionId)
+    existingTagIds = (currentTags ?? []).map((t) => t.tag_id)
+  }
+
+  for (const tag of dbTags) {
+    if (tag.subject_id !== subjectId) {
+      const isLegacyPreserved = tag.subject_id === null && existingTagIds.includes(tag.id)
+      if (!isLegacyPreserved) {
+        return {
+          ok: false,
+          code: 'validation',
+          errors: ['O assunto selecionado não pertence à disciplina.']
+        }
+      }
+    }
+  }
+
+  return { ok: true, data: null }
+}
+
 async function syncQuestionTags(
   db: Db,
   questionId: string,
-  tagNames: string[],
+  topicIds: string[],
 ): Promise<string | null> {
   const { error: delError } = await db
     .from('question_tags')
@@ -79,29 +130,14 @@ async function syncQuestionTags(
     .eq('question_id', questionId)
   if (delError) return delError.message
 
-  if (!tagNames || tagNames.length === 0) return null
+  if (!topicIds || topicIds.length === 0) return null
 
-  const cleanedTags = Array.from(
-    new Set(tagNames.map((t) => t.trim()).filter(Boolean)),
-  )
-  if (cleanedTags.length === 0) return null
+  const cleanedIds = Array.from(new Set(topicIds.filter(Boolean)))
+  if (cleanedIds.length === 0) return null
 
-  const tagRecords = cleanedTags.map((name) => ({
-    name,
-    slug: slugify(name),
-  }))
-
-  const { data: upsertedTags, error: tagError } = await db
-    .from('tags')
-    .upsert(tagRecords, { onConflict: 'slug' })
-    .select('id')
-
-  if (tagError) return tagError.message
-  if (!upsertedTags) return 'Failed to upsert tags'
-
-  const tagJoins = upsertedTags.map((tag) => ({
+  const tagJoins = cleanedIds.map((tagId) => ({
     question_id: questionId,
-    tag_id: tag.id,
+    tag_id: tagId,
   }))
 
   const { error: joinError } = await db.from('question_tags').insert(tagJoins)
@@ -144,8 +180,11 @@ export async function createDraftQuestion(
     if (altError) return { ok: false, code: 'error', errors: [altError] }
   }
 
-  if (input.tags) {
-    const tagError = await syncQuestionTags(db, data.id, input.tags)
+  if (input.topic_ids) {
+    const valResult = await validateTopicIds(db, null, input.subject_id ?? null, input.topic_ids)
+    if (!valResult.ok) return valResult
+
+    const tagError = await syncQuestionTags(db, data.id, input.topic_ids)
     if (tagError) return { ok: false, code: 'error', errors: [tagError] }
   }
 
@@ -173,8 +212,11 @@ export async function updateQuestion(
     if (altError) return { ok: false, code: 'error', errors: [altError] }
   }
 
-  if (input.tags) {
-    const tagError = await syncQuestionTags(db, questionId, input.tags)
+  if (input.topic_ids) {
+    const valResult = await validateTopicIds(db, questionId, input.subject_id ?? null, input.topic_ids)
+    if (!valResult.ok) return valResult
+
+    const tagError = await syncQuestionTags(db, questionId, input.topic_ids)
     if (tagError) return { ok: false, code: 'error', errors: [tagError] }
   }
 
@@ -279,7 +321,7 @@ export async function getAuthorQuestion(
       `id, statement, general_comment, career_id, subject_id, board_id, difficulty,
        source_type, source_orgao, source_cargo, source_year, source_reference, status,
        alternatives(id, label, text, is_correct, alternative_comment, position),
-       tags:question_tags(tag:tags(id, name, slug))`,
+       tags:question_tags(tag:tags(id, name, slug, subject_id))`,
     )
     .eq('id', questionId)
     .eq('author_id', authorId)
@@ -287,7 +329,7 @@ export async function getAuthorQuestion(
 
   if (!data) return null
 
-  type QuestionTagRow = { tag: { id: string; name: string; slug: string } | null }
+  type QuestionTagRow = { tag: { id: string; name: string; slug: string; subject_id: string | null } | null }
   const formattedTags = ((data.tags ?? []) as QuestionTagRow[])
     .map((qt) => qt.tag)
     .filter((tag): tag is NonNullable<typeof tag> => Boolean(tag))

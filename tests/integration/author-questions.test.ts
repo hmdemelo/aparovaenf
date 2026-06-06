@@ -213,9 +213,25 @@ d('author question pipeline (local Supabase)', () => {
   })
 
   it('creates, updates and retrieves question tags correctly', async () => {
+    const { data: tag1 } = await service
+      .from('tags')
+      .insert({ name: 'Biossegurança Integration Test', slug: 'biosseguranca-it', subject_id: subjectId })
+      .select('id')
+      .single()
+    const { data: tag2 } = await service
+      .from('tags')
+      .insert({ name: 'PNI 2026 Integration Test', slug: 'pni-2026-it', subject_id: subjectId })
+      .select('id')
+      .single()
+    const { data: tag3 } = await service
+      .from('tags')
+      .insert({ name: 'Vacina COVID Integration Test', slug: 'vacina-covid-it', subject_id: subjectId })
+      .select('id')
+      .single()
+
     const result = await createDraftQuestion(author1, authorId1, {
       ...draftInput(),
-      tags: ['biosseguranca', 'pni-2026'],
+      topic_ids: [tag1!.id, tag2!.id],
     })
     expect(result.ok).toBe(true)
     if (!result.ok) return
@@ -227,13 +243,13 @@ d('author question pipeline (local Supabase)', () => {
       .select('tag:tags(name)')
       .eq('question_id', result.data.id)
     const tagNames = (qTags ?? []).map((t) => (t.tag as { name: string }).name)
-    expect(tagNames).toContain('biosseguranca')
-    expect(tagNames).toContain('pni-2026')
+    expect(tagNames).toContain('Biossegurança Integration Test')
+    expect(tagNames).toContain('PNI 2026 Integration Test')
 
     // Update tags (one removed, one added)
     const updated = await updateQuestion(author1, authorId1, result.data.id, {
       ...draftInput(),
-      tags: ['pni-2026', 'vacina-covid'],
+      topic_ids: [tag2!.id, tag3!.id],
     })
     expect(updated.ok).toBe(true)
 
@@ -243,15 +259,18 @@ d('author question pipeline (local Supabase)', () => {
       .select('tag:tags(name)')
       .eq('question_id', result.data.id)
     const tagNames2 = (qTags2 ?? []).map((t) => (t.tag as { name: string }).name)
-    expect(tagNames2).not.toContain('biosseguranca')
-    expect(tagNames2).toContain('pni-2026')
-    expect(tagNames2).toContain('vacina-covid')
+    expect(tagNames2).not.toContain('Biossegurança Integration Test')
+    expect(tagNames2).toContain('PNI 2026 Integration Test')
+    expect(tagNames2).toContain('Vacina COVID Integration Test')
 
     // Retrieve via service
     const question = await getAuthorQuestion(author1, authorId1, result.data.id)
     expect(question).not.toBeNull()
     const retrievedTags = (question?.tags ?? []).map((t) => (t as { name: string }).name)
-    expect(retrievedTags).toContain('pni-2026')
-    expect(retrievedTags).toContain('vacina-covid')
+    expect(retrievedTags).toContain('PNI 2026 Integration Test')
+    expect(retrievedTags).toContain('Vacina COVID Integration Test')
+
+    // Clean up created tags
+    await service.from('tags').delete().in('id', [tag1!.id, tag2!.id, tag3!.id])
   })
 })
