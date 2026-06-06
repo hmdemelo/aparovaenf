@@ -33,11 +33,11 @@ alter table public.boards
 update public.tags t
 set subject_id = sub.subject_id
 from (
-  select qt.tag_id, q.subject_id
+  select qt.tag_id, min(q.subject_id::text)::uuid as subject_id
   from public.question_tags qt
   join public.questions q on q.id = qt.question_id
   where q.subject_id is not null
-  group by qt.tag_id, q.subject_id
+  group by qt.tag_id
   having count(distinct q.subject_id) = 1
 ) sub
 where t.id = sub.tag_id and t.subject_id is null;

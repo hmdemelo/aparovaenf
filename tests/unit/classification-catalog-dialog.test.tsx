@@ -131,4 +131,102 @@ describe('ClassificationCatalogDialog unit tests', () => {
       expect(screen.getByText('IDECAN')).toBeInTheDocument()
     })
   })
+
+  it('reopens on the tab requested by the editor', async () => {
+    const props = {
+      isOpen: true,
+      onClose: mockClose,
+      initialTab: 'disciplines' as const,
+      careers: mockCareers,
+      currentCareerId: 'career-1',
+      onSelectDiscipline: mockSelectDiscipline,
+      onSelectBoard: mockSelectBoard,
+      selectedTopicIds: [],
+      selectedTopics: [],
+      onConfirmTopics: mockConfirmTopics,
+    }
+    const { rerender } = render(createElement(ClassificationCatalogDialog, props))
+
+    await waitFor(() => {
+      expect(screen.getByText('Saúde da Família')).toBeInTheDocument()
+    })
+
+    rerender(createElement(ClassificationCatalogDialog, {
+      ...props,
+      isOpen: false,
+      initialTab: 'boards',
+    }))
+    rerender(createElement(ClassificationCatalogDialog, {
+      ...props,
+      isOpen: true,
+      initialTab: 'boards',
+    }))
+
+    await waitFor(() => {
+      expect(screen.getByText('IDECAN')).toBeInTheDocument()
+    })
+  })
+
+  it('keeps the dialog open when a discipline change is cancelled', async () => {
+    const rejectSelection = vi.fn(() => false)
+    render(
+      createElement(ClassificationCatalogDialog, {
+        isOpen: true,
+        onClose: mockClose,
+        careers: mockCareers,
+        currentCareerId: 'career-1',
+        onSelectDiscipline: rejectSelection,
+        onSelectBoard: mockSelectBoard,
+        selectedTopicIds: [],
+        selectedTopics: [],
+        onConfirmTopics: mockConfirmTopics,
+      })
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Saúde da Família')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('Selecionar'))
+
+    expect(rejectSelection).toHaveBeenCalledOnce()
+    expect(mockClose).not.toHaveBeenCalled()
+  })
+
+  it('renders numbered pagination controls', async () => {
+    vi.mocked(fetch).mockImplementation(async () => ({
+      json: async () => ({
+        success: true,
+        data: {
+          items: [{
+            id: 'subject-1',
+            name: 'Saúde da Família',
+            created_by: { label: 'Sistema', is_current_user: false },
+            created_at: '2026-06-05T00:00:00Z',
+            career: { id: 'career-1', name: 'Enfermeiro(a)' }
+          }],
+          pagination: { page: 1, page_size: 20, total: 45, total_pages: 3 }
+        }
+      })
+    }) as Response)
+
+    render(
+      createElement(ClassificationCatalogDialog, {
+        isOpen: true,
+        onClose: mockClose,
+        careers: mockCareers,
+        currentCareerId: 'career-1',
+        onSelectDiscipline: mockSelectDiscipline,
+        onSelectBoard: mockSelectBoard,
+        selectedTopicIds: [],
+        selectedTopics: [],
+        onConfirmTopics: mockConfirmTopics,
+      })
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Página 1' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Página 2' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Página 3' })).toBeInTheDocument()
+    })
+  })
 })

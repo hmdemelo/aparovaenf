@@ -25,7 +25,13 @@ test('author logs in, is blocked publishing without a comment, then publishes', 
   await expect(page.getByTestId('question-editor')).toBeVisible({ timeout: 30_000 })
 
   // Fill classification and content (leave the general comment empty for now).
-  await page.getByTestId('subject').selectOption({ index: 1 })
+  await page.getByTestId('discipline-catalog').click()
+  const disciplineResults = page
+    .getByTestId('catalog-items-list')
+    .getByRole('button', { name: 'Selecionar' })
+  await expect(disciplineResults.first()).toBeVisible()
+  await disciplineResults.first().click()
+  await expect(page.getByTestId('subject-value')).not.toContainText('Nenhuma selecionada')
   await page.getByTestId('statement').fill('Questão E2E: qual a conduta correta?')
   await page.getByTestId('alt-text-0').fill('Alternativa incorreta')
   await page.getByTestId('alt-text-1').fill('Alternativa correta')

@@ -11,8 +11,8 @@ export const dynamic = 'force-dynamic'
 
 function authFail(code: 'unauthenticated' | 'forbidden') {
   return code === 'unauthenticated'
-    ? fail(ErrorCodes.UNAUTHENTICATED, 'Authentication required')
-    : fail(ErrorCodes.FORBIDDEN, 'Author access required')
+    ? fail(ErrorCodes.UNAUTHENTICATED, 'Faça login para acessar o catálogo.')
+    : fail(ErrorCodes.FORBIDDEN, 'Acesso restrito a autores e administradores.')
 }
 
 // GET /api/author/topics
@@ -23,15 +23,15 @@ export async function GET(request: NextRequest) {
   const searchParams = Object.fromEntries(request.nextUrl.searchParams.entries())
   const parsed = topicsQuerySchema.safeParse(searchParams)
   if (!parsed.success) {
-    return fail(ErrorCodes.VALIDATION, parsed.error.issues[0]?.message ?? 'Invalid query parameters')
+    return fail(ErrorCodes.VALIDATION, parsed.error.issues[0]?.message ?? 'Parâmetros de consulta inválidos.')
   }
 
   try {
     const data = await listTopics(ctx.db, ctx.authorId, parsed.data)
     return ok(data)
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Internal error'
-    return fail(ErrorCodes.INTERNAL, message)
+  } catch (error) {
+    console.error('Failed to list author topics', error)
+    return fail(ErrorCodes.INTERNAL, 'Não foi possível carregar os assuntos.')
   }
 }
 
@@ -44,12 +44,12 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json()
   } catch {
-    return fail(ErrorCodes.VALIDATION, 'Invalid JSON body')
+    return fail(ErrorCodes.VALIDATION, 'Corpo JSON inválido.')
   }
 
   const parsed = createTopicInputSchema.safeParse(body)
   if (!parsed.success) {
-    return fail(ErrorCodes.VALIDATION, parsed.error.issues[0]?.message ?? 'Invalid input')
+    return fail(ErrorCodes.VALIDATION, parsed.error.issues[0]?.message ?? 'Dados inválidos.')
   }
 
   const result = await createTopic(ctx.db, ctx, parsed.data)

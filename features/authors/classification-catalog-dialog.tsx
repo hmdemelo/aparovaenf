@@ -21,20 +21,33 @@ type Props = {
   careers: { id: string; name: string }[]
   currentCareerId?: string
   currentDisciplineId?: string
-  onSelectDiscipline: (discipline: { id: string; name: string }) => void
+  currentDisciplineName?: string
+  onSelectDiscipline: (discipline: { id: string; name: string }) => boolean | void
   onSelectBoard: (board: { id: string; name: string }) => void
   selectedTopicIds: string[]
   selectedTopics: { id: string; name: string; slug: string; subject_id: string | null }[]
   onConfirmTopics: (topicIds: string[], topics: { id: string; name: string; slug: string; subject_id: string | null }[]) => void
 }
 
-export function ClassificationCatalogDialog({
+export function ClassificationCatalogDialog(props: Props) {
+  if (!props.isOpen) return null
+
+  return (
+    <ClassificationCatalogDialogContent
+      key={props.initialTab ?? 'disciplines'}
+      {...props}
+    />
+  )
+}
+
+function ClassificationCatalogDialogContent({
   isOpen,
   onClose,
   initialTab = 'disciplines',
   careers,
   currentCareerId = '',
   currentDisciplineId = '',
+  currentDisciplineName = '',
   onSelectDiscipline,
   onSelectBoard,
   selectedTopics,
@@ -61,26 +74,6 @@ export function ClassificationCatalogDialog({
   const [tempSelectedTopics, setTempSelectedTopics] = useState<{ id: string; name: string; slug: string; subject_id: string | null }[]>(selectedTopics)
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Synced state on open/tab change
-  useEffect(() => {
-    if (isOpen) {
-      const timer = setTimeout(() => {
-        setSearchQuery('')
-        setPage(1)
-        setShowCreateForm(false)
-        setCreateName('')
-        setCreateError(null)
-        setTempSelectedTopics(selectedTopics)
-        if (activeTab === 'topics') {
-          setCreateDisciplineId(currentDisciplineId)
-        } else if (activeTab === 'disciplines') {
-          setCreateCareerId(currentCareerId)
-        }
-      }, 0)
-      return () => clearTimeout(timer)
-    }
-  }, [isOpen, activeTab, currentCareerId, currentDisciplineId, selectedTopics])
 
   // Fetch list when activeTab, searchQuery, or page changes
   const fetchItems = useCallback(async () => {
@@ -149,8 +142,8 @@ export function ClassificationCatalogDialog({
   // Handle Item Selection (for disciplines/boards)
   const handleSelectItem = (item: CatalogItem) => {
     if (activeTab === 'disciplines') {
-      onSelectDiscipline({ id: item.id, name: item.name })
-      onClose()
+      const accepted = onSelectDiscipline({ id: item.id, name: item.name })
+      if (accepted !== false) onClose()
     } else if (activeTab === 'boards') {
       onSelectBoard({ id: item.id, name: item.name })
       onClose()
@@ -173,6 +166,17 @@ export function ClassificationCatalogDialog({
     onConfirmTopics(ids, tempSelectedTopics)
     onClose()
   }
+
+  const visiblePageNumbers = Array.from(
+    { length: Math.min(totalPages, 5) },
+    (_, index) => {
+      const firstPage = Math.min(
+        Math.max(1, page - 2),
+        Math.max(1, totalPages - 4),
+      )
+      return firstPage + index
+    },
+  )
 
   // Handle Creation Form Submission
   const handleCreate = async (e: React.FormEvent) => {
@@ -249,6 +253,18 @@ export function ClassificationCatalogDialog({
   // Get active subjects/disciplines to display in topic create dropdown (if we don't have catalog options, we list what is fetched or just use currentDisciplineId)
   // Since we only create subjects for current career, we can fetch disciplines under current career
   const [careerDisciplines, setCareerDisciplines] = useState<{ id: string; name: string }[]>([])
+  const availableDisciplines = currentDisciplineId && !careerDisciplines.some(
+    (discipline) => discipline.id === currentDisciplineId,
+  )
+    ? [
+        {
+          id: currentDisciplineId,
+          name: currentDisciplineName || 'Disciplina atual',
+        },
+        ...careerDisciplines,
+      ]
+    : careerDisciplines
+
   useEffect(() => {
     if (isOpen && activeTab === 'topics' && currentCareerId) {
       fetch(`/api/author/disciplines?career_id=${currentCareerId}&page_size=20`)
@@ -261,8 +277,6 @@ export function ClassificationCatalogDialog({
         .catch(() => {})
     }
   }, [isOpen, activeTab, currentCareerId])
-
-  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs transition-opacity duration-200">
@@ -292,6 +306,7 @@ export function ClassificationCatalogDialog({
             <button
               key={tab}
               onClick={() => handleTabChange(tab)}
+              data-testid={`catalog-tab-${tab}`}
               className={`flex-1 py-3 text-center text-sm font-semibold border-b-2 transition ${
                 activeTab === tab
                   ? 'border-[var(--teal)] text-[var(--teal)] font-bold'
@@ -317,12 +332,14 @@ export function ClassificationCatalogDialog({
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder={`Pesquisar ${activeTab === 'disciplines' ? 'disciplina' : activeTab === 'topics' ? 'assunto' : 'banca'}...`}
+                data-testid="catalog-search"
                 className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-hidden focus:border-[var(--teal)] focus:ring-1 focus:ring-[var(--teal)]"
               />
             </div>
             <button
               onClick={() => setShowCreateForm(!showCreateForm)}
               aria-label="Cadastrar novo item"
+              data-testid="catalog-create-toggle"
               title="Cadastrar novo item"
               className={`flex items-center justify-center p-2 rounded-lg border text-sm transition shrink-0 ${
                 showCreateForm 
@@ -347,6 +364,7 @@ export function ClassificationCatalogDialog({
                 </label>
                 <input
                   id="create-name"
+                  data-testid="catalog-create-name"
                   type="text"
                   value={createName}
                   onChange={(e) => setCreateName(e.target.value)}
@@ -393,7 +411,7 @@ export function ClassificationCatalogDialog({
                     required
                   >
                     <option value="">Selecione a Disciplina</option>
-                    {careerDisciplines.map((d) => (
+                    {availableDisciplines.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.name}
                       </option>
@@ -419,6 +437,7 @@ export function ClassificationCatalogDialog({
                 </button>
                 <button
                   type="submit"
+                  data-testid="catalog-create-submit"
                   disabled={creating}
                   className="px-3 py-1.5 text-xs font-semibold rounded-md bg-[var(--teal)] text-white hover:opacity-90 disabled:opacity-50 flex items-center gap-1 transition"
                 >
@@ -493,6 +512,7 @@ export function ClassificationCatalogDialog({
                           <button
                             type="button"
                             onClick={() => handleSelectItem(item)}
+                            data-testid={`catalog-select-${item.id}`}
                             className="px-3 py-1.5 text-xs font-bold rounded-md border border-[var(--teal)] text-[var(--teal)] hover:bg-[var(--teal)] hover:text-white transition"
                           >
                             Selecionar
@@ -511,7 +531,7 @@ export function ClassificationCatalogDialog({
             
             {/* Pagination controls */}
             {totalPages > 1 ? (
-              <div className="flex items-center gap-2 text-xs font-semibold text-[var(--muted)]">
+              <div className="flex flex-wrap items-center gap-1 text-xs font-semibold text-[var(--muted)]">
                 <button
                   disabled={page === 1}
                   onClick={() => setPage(page - 1)}
@@ -520,9 +540,22 @@ export function ClassificationCatalogDialog({
                 >
                   <ChevronLeft size={16} />
                 </button>
-                <span>
-                  Pág. {page} de {totalPages} ({totalItems} total)
-                </span>
+                {visiblePageNumbers.map((pageNumber) => (
+                  <button
+                    key={pageNumber}
+                    type="button"
+                    onClick={() => setPage(pageNumber)}
+                    aria-label={`Página ${pageNumber}`}
+                    aria-current={pageNumber === page ? 'page' : undefined}
+                    className={`min-w-7 rounded-md border px-2 py-1 transition ${
+                      pageNumber === page
+                        ? 'border-[var(--teal)] bg-[var(--teal)] text-white'
+                        : 'border-[var(--line)] hover:bg-[var(--surface)]'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
                 <button
                   disabled={page === totalPages}
                   onClick={() => setPage(page + 1)}
@@ -531,6 +564,7 @@ export function ClassificationCatalogDialog({
                 >
                   <ChevronRight size={16} />
                 </button>
+                <span className="ml-1 whitespace-nowrap">{totalItems} itens</span>
               </div>
             ) : (
               <span className="text-xs font-semibold text-[var(--muted)]">
@@ -543,7 +577,9 @@ export function ClassificationCatalogDialog({
               <button
                 type="button"
                 onClick={handleConfirmAssuntos}
-                className="w-full sm:w-auto px-4 py-2 text-sm font-bold rounded-lg bg-[var(--teal)] text-white hover:opacity-90 flex items-center justify-center gap-1.5 transition"
+                data-testid="catalog-confirm-topics"
+                disabled={creating}
+                className="w-full sm:w-auto px-4 py-2 text-sm font-bold rounded-lg bg-[var(--teal)] text-white hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1.5 transition"
               >
                 <Check size={16} />
                 Confirmar Assuntos ({tempSelectedTopics.length})

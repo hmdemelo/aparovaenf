@@ -1,11 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from '@/lib/db/database.types'
+import type { Database, Json } from '@/lib/db/database.types'
 import { slugify } from '@/lib/text/slugify'
 import { createSupabaseServiceClient, createSupabaseServerClient } from '@/lib/db/server'
 import { getCurrentUser } from '@/lib/auth/roles'
 import { getAuthorProfileId } from '@/features/authors/author-permissions'
 
 type Db = SupabaseClient<Database>
+const CATALOG_CREATE_ERROR = 'Não foi possível cadastrar este item. Tente novamente.'
 
 export type CatalogContext =
   | { ok: true; db: Db; userId: string; role: 'author' | 'admin'; authorId: string | null }
@@ -61,7 +62,7 @@ function getCreatorInfo(
 export async function logCatalogEvent(
   userId: string,
   event: 'author_catalog_item_created' | 'author_catalog_item_create_failed',
-  metadata: Record<string, unknown>
+  metadata: Json,
 ) {
   try {
     const db = createSupabaseServiceClient()
@@ -185,7 +186,7 @@ export async function createDiscipline(
       career_id: input.career_id,
       error: error.message
     })
-    return { ok: false, code: 'error', errors: [error.message] }
+    return { ok: false, code: 'error', errors: [CATALOG_CREATE_ERROR] }
   }
 
   await logCatalogEvent(context.userId, 'author_catalog_item_created', {
@@ -304,6 +305,7 @@ export async function createTopic(
       const { data: existing } = await db
         .from('tags')
         .select('id, name')
+        .eq('subject_id', input.discipline_id)
         .eq('slug', slugified)
         .maybeSingle()
 
@@ -317,7 +319,7 @@ export async function createTopic(
       discipline_id: input.discipline_id,
       error: error.message
     })
-    return { ok: false, code: 'error', errors: [error.message] }
+    return { ok: false, code: 'error', errors: [CATALOG_CREATE_ERROR] }
   }
 
   await logCatalogEvent(context.userId, 'author_catalog_item_created', {
@@ -429,7 +431,7 @@ export async function createBoard(
       name: trimmed,
       error: error.message
     })
-    return { ok: false, code: 'error', errors: [error.message] }
+    return { ok: false, code: 'error', errors: [CATALOG_CREATE_ERROR] }
   }
 
   await logCatalogEvent(context.userId, 'author_catalog_item_created', {

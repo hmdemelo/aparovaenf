@@ -17,13 +17,13 @@ test('author manages classifications (disciplines, subjects, boards) in catalog 
   await page.getByTestId('new-question').click()
   await expect(page.getByTestId('question-editor')).toBeVisible({ timeout: 30_000 })
 
-  // Open the catalog dialog for disciplines (first "Buscar" button)
-  await page.locator('button:has-text("Buscar")').first().click()
+  // Open the catalog dialog for disciplines.
+  await page.getByTestId('discipline-catalog').click()
   await expect(page.getByText('Gerenciar classificações')).toBeVisible()
 
   // Check tab clicks
-  await page.getByRole('button', { name: 'Bancas' }).click()
-  await page.getByRole('button', { name: 'Disciplinas' }).click()
+  await page.getByTestId('catalog-tab-boards').click()
+  await page.getByTestId('catalog-tab-disciplines').click()
 
   // Close the dialog
   await page.getByLabel('Fechar modal').click()

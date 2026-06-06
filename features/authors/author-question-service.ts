@@ -77,6 +77,9 @@ async function validateTopicIds(
   if (topicIds.length > 20) {
     return { ok: false, code: 'validation', errors: ['Máximo de 20 assuntos permitidos.'] }
   }
+  if (topicIds.length === 0) {
+    return { ok: true, data: null }
+  }
   if (!subjectId) {
     return { ok: false, code: 'validation', errors: ['Selecione uma disciplina antes de adicionar assuntos.'] }
   }
@@ -166,6 +169,12 @@ export async function createDraftQuestion(
   authorId: string,
   input: QuestionDraftInput,
 ): Promise<ServiceResult<{ id: string }>> {
+  const topicIds = Array.from(new Set(input.topic_ids ?? []))
+  if (input.topic_ids) {
+    const valResult = await validateTopicIds(db, null, input.subject_id ?? null, topicIds)
+    if (!valResult.ok) return valResult
+  }
+
   const { data, error } = await db
     .from('questions')
     .insert({ ...questionRow(authorId, input), status: 'draft' })
@@ -181,10 +190,7 @@ export async function createDraftQuestion(
   }
 
   if (input.topic_ids) {
-    const valResult = await validateTopicIds(db, null, input.subject_id ?? null, input.topic_ids)
-    if (!valResult.ok) return valResult
-
-    const tagError = await syncQuestionTags(db, data.id, input.topic_ids)
+    const tagError = await syncQuestionTags(db, data.id, topicIds)
     if (tagError) return { ok: false, code: 'error', errors: [tagError] }
   }
 
@@ -201,6 +207,17 @@ export async function updateQuestion(
     return { ok: false, code: 'forbidden', errors: ['not your question'] }
   }
 
+  const topicIds = Array.from(new Set(input.topic_ids ?? []))
+  if (input.topic_ids) {
+    const valResult = await validateTopicIds(
+      db,
+      questionId,
+      input.subject_id ?? null,
+      topicIds,
+    )
+    if (!valResult.ok) return valResult
+  }
+
   const { error } = await db
     .from('questions')
     .update(questionRow(authorId, input))
@@ -213,10 +230,7 @@ export async function updateQuestion(
   }
 
   if (input.topic_ids) {
-    const valResult = await validateTopicIds(db, questionId, input.subject_id ?? null, input.topic_ids)
-    if (!valResult.ok) return valResult
-
-    const tagError = await syncQuestionTags(db, questionId, input.topic_ids)
+    const tagError = await syncQuestionTags(db, questionId, topicIds)
     if (tagError) return { ok: false, code: 'error', errors: [tagError] }
   }
 
@@ -234,20 +248,40 @@ export type BoardRecord = { id: string; name: string; slug: string }
 export async function createBoardInline(
   db: Db,
   name: string,
+  authorId: string,
 ): Promise<ServiceResult<BoardRecord>> {
   const trimmed = name.trim()
   if (!trimmed) {
-    return { ok: false, code: 'validation', errors: ['board name is required'] }
+    return { ok: false, code: 'validation', errors: ['O nome da banca é obrigatório.'] }
   }
 
+  const slug = slugify(trimmed)
   const { data, error } = await db
     .from('boards')
-    .upsert({ name: trimmed, slug: slugify(trimmed) }, { onConflict: 'slug' })
+    .insert({
+      name: trimmed,
+      slug,
+      created_by_kind: 'author',
+      created_by_author_id: authorId,
+    })
     .select('id, name, slug')
     .single()
 
+  if (error?.code === '23505') {
+    const { data: existing } = await db
+      .from('boards')
+      .select('id, name, slug')
+      .eq('slug', slug)
+      .single()
+    if (existing) return { ok: true, data: existing }
+  }
+
   if (error || !data) {
-    return { ok: false, code: 'error', errors: [error?.message ?? 'insert failed'] }
+    return {
+      ok: false,
+      code: 'error',
+      errors: ['Não foi possível cadastrar a banca. Tente novamente.'],
+    }
   }
   return { ok: true, data }
 }

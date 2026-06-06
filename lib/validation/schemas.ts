@@ -204,9 +204,19 @@ export const authorQuestionInputSchema = z.object({
 })
 export type AuthorQuestionInput = z.infer<typeof authorQuestionInputSchema>
 
+const catalogNameSchema = (requiredMessage: string) =>
+  z.string()
+    .trim()
+    .min(1, requiredMessage)
+    .max(120)
+    .refine(
+      (value) => /[\p{L}\p{N}]/u.test(value),
+      'informe um nome com letras ou números',
+    )
+
 /** Inline board creation payload (author "+" quick-add). */
 export const createBoardInputSchema = z.object({
-  name: z.string().trim().min(1, 'nome da banca é obrigatório').max(120),
+  name: catalogNameSchema('nome da banca é obrigatório'),
 })
 export type CreateBoardInput = z.infer<typeof createBoardInputSchema>
 
@@ -328,13 +338,13 @@ export const topicsQuerySchema = catalogQuerySchema.extend({
 export type TopicsQuery = z.infer<typeof topicsQuerySchema>
 
 export const createDisciplineInputSchema = z.object({
-  name: z.string().trim().min(1, 'nome da disciplina é obrigatório').max(120),
+  name: catalogNameSchema('nome da disciplina é obrigatório'),
   career_id: uuidSchema,
 })
 export type CreateDisciplineInput = z.infer<typeof createDisciplineInputSchema>
 
 export const createTopicInputSchema = z.object({
-  name: z.string().trim().min(1, 'nome do assunto é obrigatório').max(120),
+  name: catalogNameSchema('nome do assunto é obrigatório'),
   discipline_id: uuidSchema,
 })
 export type CreateTopicInput = z.infer<typeof createTopicInputSchema>

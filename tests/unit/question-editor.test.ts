@@ -77,4 +77,50 @@ describe('QuestionEditor incomplete imported drafts', () => {
       source_reference: 'IDECAN-2024-Q01',
     })
   })
+
+  it('shows a discipline created from the catalog as selected', async () => {
+    const user = userEvent.setup()
+    const fetchMock = vi.fn(async (_url: RequestInfo | URL, request?: RequestInit) => {
+      if (request?.method === 'POST') {
+        return {
+          json: async () => ({
+            success: true,
+            data: {
+              created: true,
+              item: { id: 'subject-new', name: 'Cuidados Paliativos' },
+            },
+          }),
+        }
+      }
+      return {
+        json: async () => ({
+          success: true,
+          data: {
+            items: [],
+            pagination: { page: 1, page_size: 20, total: 0, total_pages: 0 },
+          },
+        }),
+      }
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(
+      createElement(QuestionEditor, {
+        careers: [{ id: 'career-1', name: 'Enfermeiro(a)' }],
+        subjects: [],
+        boards: [],
+      }),
+    )
+
+    await user.click(screen.getByTestId('discipline-catalog'))
+    await user.click(screen.getByTestId('catalog-create-toggle'))
+    await user.type(screen.getByTestId('catalog-create-name'), 'Cuidados Paliativos')
+    await user.click(screen.getByTestId('catalog-create-submit'))
+
+    await waitFor(() => {
+      expect(screen.getByTestId('subject-value')).toHaveTextContent(
+        'Cuidados Paliativos',
+      )
+    })
+  })
 })

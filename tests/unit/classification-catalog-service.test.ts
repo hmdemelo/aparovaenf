@@ -96,4 +96,28 @@ describe('classification-catalog-service unit tests', () => {
       expect(result.data.item.name).toBe('Ventilação Mecânica')
     }
   })
+
+  it('looks up a duplicate topic only inside the requested discipline', async () => {
+    mockDb.single.mockResolvedValueOnce({
+      data: null,
+      error: { code: '23505', message: 'duplicate key' }
+    })
+    mockDb.maybeSingle.mockResolvedValueOnce({
+      data: { id: 'topic-1', name: 'Imunização' },
+      error: null
+    })
+
+    const result = await createTopic(mockDb, {
+      role: 'author',
+      authorId: 'author-1',
+      userId: 'user-1'
+    }, {
+      name: 'Imunização',
+      discipline_id: 'subject-1'
+    })
+
+    expect(result.ok).toBe(true)
+    expect(mockDb.eq).toHaveBeenCalledWith('subject_id', 'subject-1')
+    expect(mockDb.eq).toHaveBeenCalledWith('slug', 'imunizacao')
+  })
 })

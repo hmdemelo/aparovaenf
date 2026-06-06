@@ -55,6 +55,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
   const [careerId, setCareerId] = useState(
     initial ? initial.career_id ?? '' : careers[0]?.id ?? '',
   )
+  const [subjectOptions, setSubjectOptions] = useState<SubjectOption[]>(subjects)
   const [subjectId, setSubjectId] = useState(initial?.subject_id ?? '')
   // Board options are local state so a board added inline/modal shows up immediately.
   const [boardOptions, setBoardOptions] = useState<Option[]>(boards)
@@ -212,9 +213,12 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
         <div className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
           <span>Disciplina</span>
           <div className="flex gap-2">
-            <div className="aprova-field flex-1 flex items-center justify-between min-h-[38px] bg-[var(--paper)] py-1.5 px-3 border border-[var(--line)] rounded-[var(--radius-sm)]">
+            <div
+              className="aprova-field flex-1 flex items-center justify-between min-h-[38px] bg-[var(--paper)] py-1.5 px-3 border border-[var(--line)] rounded-[var(--radius-sm)]"
+              data-testid="subject-value"
+            >
               <span className={subjectId ? 'text-[var(--ink)] font-normal' : 'text-[var(--muted)] font-normal'}>
-                {subjects.find((s) => s.id === subjectId)?.name ?? 'Nenhuma selecionada'}
+                {subjectOptions.find((s) => s.id === subjectId)?.name ?? 'Nenhuma selecionada'}
               </span>
             </div>
             <button
@@ -223,6 +227,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
                 setCatalogTab('disciplines')
                 setIsCatalogOpen(true)
               }}
+              data-testid="discipline-catalog"
               className="aprova-button px-3"
             >
               Buscar
@@ -254,7 +259,10 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
       <div className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)] sm:w-1/2">
         <span>Banca (opcional)</span>
         <div className="flex gap-2">
-          <div className="aprova-field flex-1 flex items-center justify-between min-h-[38px] bg-[var(--paper)] py-1.5 px-3 border border-[var(--line)] rounded-[var(--radius-sm)]">
+          <div
+            className="aprova-field flex-1 flex items-center justify-between min-h-[38px] bg-[var(--paper)] py-1.5 px-3 border border-[var(--line)] rounded-[var(--radius-sm)]"
+            data-testid="board-value"
+          >
             <span className={boardId ? 'text-[var(--ink)] font-normal' : 'text-[var(--muted)] font-normal'}>
               {boardOptions.find((b) => b.id === boardId)?.name ?? 'Nenhuma selecionada'}
             </span>
@@ -265,6 +273,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
               setCatalogTab('boards')
               setIsCatalogOpen(true)
             }}
+            data-testid="board-catalog"
             className="aprova-button px-3"
           >
             Buscar
@@ -299,6 +308,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
               setCatalogTab('topics')
               setIsCatalogOpen(true)
             }}
+            data-testid="topics-catalog"
             className="text-xs font-bold text-[var(--teal)] underline hover:opacity-80 disabled:opacity-50 cursor-pointer"
           >
             Gerenciar Assuntos
@@ -382,6 +392,9 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
         careers={careers}
         currentCareerId={careerId}
         currentDisciplineId={subjectId}
+        currentDisciplineName={
+          subjectOptions.find((subject) => subject.id === subjectId)?.name
+        }
         onSelectDiscipline={(discipline) => {
           if (subjectId && subjectId !== discipline.id) {
             const hasIncompatible = tags.some((t) => t.subject_id !== discipline.id)
@@ -389,11 +402,17 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
               const confirmClear = window.confirm(
                 'A alteração de disciplina removerá os assuntos que não pertencem a ela. Deseja continuar?'
               )
-              if (!confirmClear) return
+              if (!confirmClear) return false
               setTags(tags.filter((t) => t.subject_id === discipline.id))
             }
           }
+          setSubjectOptions((previous) =>
+            previous.some((subject) => subject.id === discipline.id)
+              ? previous
+              : [...previous, { ...discipline, career_id: careerId }],
+          )
           setSubjectId(discipline.id)
+          return true
         }}
         onSelectBoard={(board) => {
           setBoardOptions((prev) =>
@@ -403,7 +422,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
         }}
         selectedTopicIds={tags.map((t) => t.id)}
         selectedTopics={tags}
-        onConfirmTopics={(topicIds, topics) => {
+        onConfirmTopics={(_topicIds, topics) => {
           setTags(topics)
         }}
       />

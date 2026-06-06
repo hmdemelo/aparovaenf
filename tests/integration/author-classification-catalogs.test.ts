@@ -122,9 +122,45 @@ describe('Author Classification Catalogs Routes Integration', () => {
       expect(json.data.items[0].created_by.label).toBe('Sistema')
       expect(json.data.items[0].career.name).toBe('Enfermagem')
     })
+
+    it('does not expose database errors to the client', async () => {
+      mocks.getCurrentUser.mockResolvedValue({ id: 'user-1', role: 'author' })
+      mocks.getAuthorProfileId.mockResolvedValue('author-1')
+      mockQueryChain.range.mockResolvedValueOnce({
+        data: null,
+        count: null,
+        error: { message: 'relation public.subjects does not exist' }
+      })
+
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+      const { GET } = await import('@/app/api/author/disciplines/route')
+      const res = await GET(getRequest('http://localhost/api/author/disciplines'))
+      const json = await res.json()
+
+      expect(res.status).toBe(500)
+      expect(json.error.message).toBe('Não foi possível carregar as disciplinas.')
+      expect(json.error.message).not.toContain('public.subjects')
+      consoleError.mockRestore()
+    })
   })
 
   describe('POST /api/author/disciplines', () => {
+    it('rejects a name containing only punctuation', async () => {
+      mocks.getCurrentUser.mockResolvedValue({ id: 'user-1', role: 'author' })
+      mocks.getAuthorProfileId.mockResolvedValue('author-1')
+
+      const { POST } = await import('@/app/api/author/disciplines/route')
+      const res = await POST(postRequest('http://localhost/api/author/disciplines', {
+        name: '---',
+        career_id: '00000000-0000-0000-0000-0000000000c1'
+      }))
+      const json = await res.json()
+
+      expect(res.status).toBe(422)
+      expect(json.error.code).toBe(ErrorCodes.VALIDATION)
+      expect(mockQueryChain.insert).not.toHaveBeenCalled()
+    })
+
     it('creates a new discipline successfully', async () => {
       mocks.getCurrentUser.mockResolvedValue({ id: 'user-1', role: 'author' })
       mocks.getAuthorProfileId.mockResolvedValue('author-1')

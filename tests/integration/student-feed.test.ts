@@ -39,12 +39,25 @@ d('student feed integration (local Supabase)', () => {
   })
 
   it('filters the feed by a dynamic tag', async () => {
-    // Create a tag and link it only to f1.
-    const { data: tag } = await db
+    const { data: question } = await db
+      .from('questions')
+      .select('subject_id')
+      .eq('id', Q_F1)
+      .single()
+    await db.from('tags').delete().eq('slug', FILTER_TAG_SLUG)
+
+    // Create a topic in f1's discipline and link it only to f1.
+    const { data: tag, error: tagError } = await db
       .from('tags')
-      .upsert({ name: 'Filtro Feed E2E', slug: FILTER_TAG_SLUG }, { onConflict: 'slug' })
+      .insert({
+        name: 'Filtro Feed E2E',
+        slug: FILTER_TAG_SLUG,
+        subject_id: question!.subject_id,
+      })
       .select('id')
       .single()
+    expect(tagError).toBeNull()
+    expect(tag).not.toBeNull()
     await db
       .from('question_tags')
       .upsert({ question_id: Q_F1, tag_id: tag!.id })
