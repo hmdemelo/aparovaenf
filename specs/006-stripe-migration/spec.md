@@ -35,6 +35,7 @@ As a subscriber, I want my payment on Stripe Checkout to automatically activate 
 1. **Given** a student has paid their Stripe Checkout session, **When** Stripe fires the `checkout.session.completed` event, **Then** the local database subscription state is updated to `active` and the period dates are set correctly.
 2. **Given** a student has an active monthly plan, **When** Stripe fires `invoice.paid` for a recurring month, **Then** the local database subscription period end date is extended by 30 days.
 3. **Given** a student cancels their subscription, **When** Stripe fires `customer.subscription.deleted`, **Then** the local database subscription state is updated to `expired` or `cancelled`.
+4. **Given** a recurring card charge fails, **When** Stripe fires `invoice.payment_failed`, **Then** the local subscription is marked `past_due` and paid access is blocked until recovery.
 
 ---
 
@@ -51,7 +52,7 @@ As a subscriber, I want my payment on Stripe Checkout to automatically activate 
 - **FR-001**: System MUST create Stripe Checkout Sessions with the correct `price` corresponding to the chosen plan (Monthly or Annual).
 - **FR-002**: System MUST configure checkout sessions with metadata linking the session to the local `user_id` and `subscription_id` to allow database synchronization.
 - **FR-003**: System MUST expose a secure webhook endpoint `/api/webhooks/stripe` which validates signatures using the configure `STRIPE_WEBHOOK_SECRET`.
-- **FR-004**: System MUST handle Stripe webhook events: `checkout.session.completed`, `invoice.paid`, and `customer.subscription.deleted`.
+- **FR-004**: System MUST handle Stripe webhook events: `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`, and `customer.subscription.deleted`.
 - **FR-005**: System MUST update the local database `subscriptions` table, setting `provider` to `'stripe'`, and saving the Stripe Customer ID and Subscription ID.
 - **FR-006**: In local development, the system MUST fallback to a mock checkout URL if Stripe keys are placeholders, similar to the previous mock setup.
 
@@ -71,4 +72,4 @@ As a subscriber, I want my payment on Stripe Checkout to automatically activate 
 ## Assumptions
 
 - **A-001**: Stripe prices for Monthly (R$ 29,90) and Annual (R$ 287,00) plans are pre-configured in the Stripe Dashboard.
-- **A-002**: Stripe PIX payment method is enabled directly in the Stripe account dashboard.
+- **A-002**: The current recurring subscription checkout is card-only. Stripe PIX does not support recurring payments; annual PIX requires a separate one-time checkout design.

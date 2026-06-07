@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { parseServerEnv } from '@/lib/env/server'
 
 const validEnv = {
+  NODE_ENV: 'development',
   NEXT_PUBLIC_SUPABASE_URL: 'https://abc.supabase.co',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon-key-value',
   SUPABASE_SERVICE_ROLE_KEY: 'service-role-key-value',
@@ -27,6 +28,47 @@ describe('parseServerEnv', () => {
 
     expect(env.STRIPE_MONTHLY_PRICE_ID).toBe('price_monthly')
     expect(env.STRIPE_ANNUAL_PRICE_ID).toBe('price_annual')
+  })
+
+  it('accepts a complete live Stripe production configuration', () => {
+    const env = parseServerEnv({
+      ...validEnv,
+      NODE_ENV: 'production',
+      STRIPE_SECRET_KEY: 'sk_live_example',
+      STRIPE_WEBHOOK_SECRET: 'whsec_example',
+      STRIPE_MONTHLY_PRICE_ID: 'price_monthly',
+      STRIPE_ANNUAL_PRICE_ID: 'price_annual',
+      NEXT_PUBLIC_APP_URL: 'https://aprovaenf.com.br',
+    })
+
+    expect(env.NODE_ENV).toBe('production')
+    expect(env.STRIPE_SECRET_KEY).toBe('sk_live_example')
+  })
+
+  it('rejects mock Stripe credentials in production', () => {
+    expect(() =>
+      parseServerEnv({
+        ...validEnv,
+        NODE_ENV: 'production',
+        STRIPE_SECRET_KEY: 'stripe_dev_mock_secret_key',
+        STRIPE_WEBHOOK_SECRET: 'whsec_example',
+        STRIPE_MONTHLY_PRICE_ID: 'price_monthly',
+        STRIPE_ANNUAL_PRICE_ID: 'price_annual',
+        NEXT_PUBLIC_APP_URL: 'https://aprovaenf.com.br',
+      }),
+    ).toThrow(/STRIPE_SECRET_KEY/)
+  })
+
+  it('requires Stripe price ids and HTTPS app URL in production', () => {
+    expect(() =>
+      parseServerEnv({
+        ...validEnv,
+        NODE_ENV: 'production',
+        STRIPE_SECRET_KEY: 'sk_live_example',
+        STRIPE_WEBHOOK_SECRET: 'whsec_example',
+        NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+      }),
+    ).toThrow(/STRIPE_MONTHLY_PRICE_ID|STRIPE_ANNUAL_PRICE_ID|NEXT_PUBLIC_APP_URL/)
   })
 
   it('accepts optional Google OAuth settings without exposing them publicly', () => {

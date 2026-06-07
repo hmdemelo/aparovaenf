@@ -1,15 +1,17 @@
 import { expect, test, type Page } from '@playwright/test'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import Stripe from 'stripe'
 import type { Database } from '@/lib/db/database.types'
 import { loadLocalEnv } from '../integration/helpers/local-env'
 
 const hasLocalEnv = loadLocalEnv()
 const stripeSecret = process.env.STRIPE_SECRET_KEY
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET
 const testUserPwd = 'aprovaenf123'
 
 test.skip(
-  !hasLocalEnv || !stripeSecret,
-  'Requires local Supabase env and STRIPE_SECRET_KEY.',
+  !hasLocalEnv || !stripeSecret || !stripeWebhookSecret,
+  'Requires local Supabase env and Stripe secrets.',
 )
 
 async function login(page: Page, email: string, next: string) {
@@ -95,31 +97,35 @@ test('paywall starts checkout and simulated webhook unlocks the feed', async ({
       .toMatchObject({ plan: 'annual' })
     await expect(page).toHaveURL(/checkout=mock/, { timeout: 30_000 })
 
-    const webhookResponse = await page.request.post(
-      `/api/webhooks/stripe`,
-      {
-        headers: {
-          'stripe-signature': 'mock_signature',
-        },
-        data: {
-          id: `evt_mock_${Date.now()}`,
-          type: 'checkout.session.completed',
-          data: {
-            object: {
-              id: 'cs_mock_12345',
-              customer: 'cus_mock_' + student.userId,
-              subscription: 'sub_mock_12345',
-              client_reference_id: '00000000-0000-0000-0000-00000000c001',
-              metadata: {
-                user_id: student.userId,
-                plan: 'annual',
-                subscription_id: '00000000-0000-0000-0000-00000000c001',
-              },
-            },
+    const webhookPayload = JSON.stringify({
+      id: `evt_mock_${Date.now()}`,
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_mock_12345',
+          customer: 'cus_mock_' + student.userId,
+          subscription: 'sub_mock_12345',
+          payment_status: 'paid',
+          client_reference_id: '00000000-0000-0000-0000-00000000c001',
+          metadata: {
+            user_id: student.userId,
+            plan: 'annual',
+            subscription_id: '00000000-0000-0000-0000-00000000c001',
           },
         },
       },
-    )
+    })
+    const stripeSignature = Stripe.webhooks.generateTestHeaderString({
+      payload: webhookPayload,
+      secret: stripeWebhookSecret!,
+    })
+    const webhookResponse = await page.request.post(`/api/webhooks/stripe`, {
+      headers: {
+        'content-type': 'application/json',
+        'stripe-signature': stripeSignature,
+      },
+      data: webhookPayload,
+    })
     expect(webhookResponse.status()).toBe(200)
     const webhookJson = await webhookResponse.json()
     expect(webhookJson.data?.activated).toBe(true)

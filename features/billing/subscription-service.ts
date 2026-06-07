@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/db/database.types'
 import type { ServerEnv } from '@/lib/env/server'
 import { PLANS, type PlanId } from './plans'
+import { isStripeMockMode } from './stripe-config'
 import Stripe from 'stripe'
 
 type Db = SupabaseClient<Database>
@@ -20,6 +21,7 @@ type CheckoutUser = {
 type CreateCheckoutInput = {
   env: Pick<
     ServerEnv,
+    | 'NODE_ENV'
     | 'STRIPE_SECRET_KEY'
     | 'NEXT_PUBLIC_APP_URL'
     | 'STRIPE_MONTHLY_PRICE_ID'
@@ -73,10 +75,9 @@ export async function createPendingSubscription(
 export async function createStripeCheckout(
   input: CreateCheckoutInput,
 ): Promise<ProviderCheckout> {
-  const isDummyKey = input.env.STRIPE_SECRET_KEY?.startsWith('stripe_dev_')
-  const mockUrl = `${withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)}/?checkout=mock&provider=stripe&subscription_id=${input.subscriptionId}&plan=${input.planId}&user_id=${input.user.id}`
+  const mockUrl = `${withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)}/?checkout=mock&subscription_id=${input.subscriptionId}`
 
-  if (isDummyKey) {
+  if (isStripeMockMode(input.env)) {
     console.warn('[billing.checkout] Using fallback local mock checkout (detected stripe_dev_* API key)')
     return {
       checkoutId: 'checkout_mock_' + input.subscriptionId,
@@ -89,54 +90,39 @@ export async function createStripeCheckout(
   const appUrl = withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)
   const priceId = getStripePriceId(input.planId, input.env)
 
-  try {
-    const stripe = new Stripe(input.env.STRIPE_SECRET_KEY, {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      apiVersion: '2024-06-20' as any,
-    })
+  const stripe = new Stripe(input.env.STRIPE_SECRET_KEY)
+  const metadata = {
+    user_id: input.user.id,
+    subscription_id: input.subscriptionId,
+    plan: input.planId,
+  }
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      mode: 'subscription',
-      customer_email: input.user.email ?? undefined,
-      client_reference_id: input.subscriptionId,
-      metadata: {
-        user_id: input.user.id,
-        subscription_id: input.subscriptionId,
-        plan: input.planId,
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
       },
-      success_url: `${appUrl}/feed?subscription=success`,
-      cancel_url: `${appUrl}/assinar`,
-    })
+    ],
+    mode: 'subscription',
+    customer_email: input.user.email ?? undefined,
+    client_reference_id: input.subscriptionId,
+    metadata,
+    subscription_data: { metadata },
+    success_url: `${appUrl}/feed?subscription=success`,
+    cancel_url: `${appUrl}/assinar`,
+  })
 
-    if (!session.url) {
-      throw new Error('Stripe Checkout Session URL was not generated')
-    }
+  if (!session.url) {
+    throw new Error('Stripe Checkout Session URL was not generated')
+  }
 
-    return {
-      checkoutId: session.id,
-      checkoutUrl: session.url,
-      amountCents: PLANS[input.planId].amountCents,
-      status: session.status,
-    }
-  } catch (error) {
-    console.error('[billing.checkout] Stripe API error, falling back to mock checkout:', error)
-    const isLocalDev = appUrl.includes('localhost')
-    if (isLocalDev) {
-      return {
-        checkoutId: 'checkout_mock_' + input.subscriptionId,
-        checkoutUrl: mockUrl,
-        amountCents: PLANS[input.planId].amountCents,
-        status: 'pending',
-      }
-    }
-    throw error
+  return {
+    checkoutId: session.id,
+    checkoutUrl: session.url,
+    amountCents: PLANS[input.planId].amountCents,
+    status: session.status,
   }
 }
 
@@ -147,6 +133,22 @@ export async function cancelSubscriptionFromWebhook(
   const { error } = await db
     .from('subscriptions')
     .update({ status: 'expired' })
+    .eq('provider', PROVIDER)
+    .eq('provider_subscription_id', providerSubscriptionId)
+    .in('status', ['active', 'past_due'])
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+export async function markSubscriptionPastDueFromWebhook(
+  db: Db,
+  providerSubscriptionId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { error } = await db
+    .from('subscriptions')
+    .update({ status: 'past_due' })
+    .eq('provider', PROVIDER)
     .eq('provider_subscription_id', providerSubscriptionId)
     .eq('status', 'active')
 
@@ -164,25 +166,39 @@ export async function activateSubscriptionFromWebhook(
 
   const existing = activation.localSubscriptionId
     ? await findLocalSubscription(db, activation.localSubscriptionId)
-    : { ok: true as const, row: null }
+    : activation.providerSubscriptionId
+      ? await findLocalSubscriptionByProviderId(
+          db,
+          activation.providerSubscriptionId,
+        )
+      : { ok: true as const, row: null }
   if (!existing.ok) return { ok: false, error: existing.error }
 
   const userId = activation.userId ?? existing.row?.user_id
   if (!userId) return { ok: false, error: 'missing subscription reference' }
+  const plan = activation.plan ?? existing.row?.plan
+  if (!plan) return { ok: false, error: 'missing subscription plan in metadata' }
 
-  const subscriptionId = activation.localSubscriptionId ?? crypto.randomUUID()
+  const subscriptionId =
+    existing.row?.id ?? activation.localSubscriptionId ?? crypto.randomUUID()
   const expired = await expireOtherActiveSubscriptions(db, userId, subscriptionId)
   if (!expired.ok) return expired
 
+  const periodStart = activation.periodStart ?? new Date().toISOString()
+  const periodEnd =
+    activation.periodEnd ?? periodForPlan(plan, new Date(periodStart)).end
   const row = {
     user_id: userId,
-    plan: activation.plan,
+    plan,
     status: 'active' as const,
     provider: PROVIDER,
-    provider_customer_id: activation.providerCustomerId,
-    provider_subscription_id: activation.providerSubscriptionId,
-    current_period_start: activation.periodStart,
-    current_period_end: activation.periodEnd,
+    provider_customer_id:
+      activation.providerCustomerId ?? existing.row?.provider_customer_id,
+    provider_subscription_id:
+      activation.providerSubscriptionId ??
+      existing.row?.provider_subscription_id,
+    current_period_start: periodStart,
+    current_period_end: periodEnd,
   }
 
   if (existing.row) {
@@ -196,7 +212,7 @@ export async function activateSubscriptionFromWebhook(
       activated: true,
       subscriptionId: existing.row.id,
       userId,
-      plan: activation.plan,
+      plan,
     }
   }
 
@@ -211,7 +227,7 @@ export async function activateSubscriptionFromWebhook(
     activated: true,
     subscriptionId,
     userId,
-    plan: activation.plan,
+    plan,
   }
 }
 
@@ -226,7 +242,11 @@ function getStripePriceId(
     planId === 'monthly'
       ? env.STRIPE_MONTHLY_PRICE_ID
       : env.STRIPE_ANNUAL_PRICE_ID
-  return value?.trim() || `stripe-price-${planId}`
+  const priceId = value?.trim()
+  if (!priceId) {
+    throw new Error(`Stripe price id is not configured for plan: ${planId}`)
+  }
+  return priceId
 }
 
 function withoutTrailingSlash(value: string): string {
@@ -292,11 +312,11 @@ function extractSubscriptionActivation(payload: unknown):
       activated: true
       localSubscriptionId: string | null
       userId: string | null
-      plan: PlanId
+      plan: PlanId | null
       providerCustomerId: string | null
       providerSubscriptionId: string | null
-      periodStart: string
-      periodEnd: string
+      periodStart: string | null
+      periodEnd: string | null
     }
   | { ok: true; activated: false }
   | { ok: false; error: string } {
@@ -308,7 +328,19 @@ function extractSubscriptionActivation(payload: unknown):
 
   const data = asRecord(root.data)
   const obj = asRecord(data.object)
-  const metadata = asRecord(obj.metadata)
+  const parent = asRecord(obj.parent)
+  const subscriptionDetails = asRecord(parent.subscription_details)
+  const metadata = {
+    ...asRecord(subscriptionDetails.metadata),
+    ...asRecord(obj.metadata),
+  }
+
+  if (
+    eventType === 'checkout.session.completed' &&
+    obj.payment_status !== 'paid'
+  ) {
+    return { ok: true, activated: false }
+  }
 
   const localSubscriptionId = firstString(
     metadata.subscription_id,
@@ -321,26 +353,18 @@ function extractSubscriptionActivation(payload: unknown):
   )
 
   const plan = planFromValue(metadata.plan)
-  if (!plan) return { ok: false, error: 'missing subscription plan in metadata' }
 
   // Handle current period timestamps if present (Stripe provides seconds)
-  const periodStartSec = asNumber(obj.current_period_start)
-  const periodEndSec = asNumber(obj.current_period_end)
-
-  let periodStart: string
-  let periodEnd: string
-
-  if (periodStartSec) {
-    const start = new Date(periodStartSec * 1000)
-    periodStart = start.toISOString()
-    periodEnd = periodEndSec
-      ? new Date(periodEndSec * 1000).toISOString()
-      : periodForPlan(plan, start).end
-  } else {
-    const now = new Date()
-    periodStart = now.toISOString()
-    periodEnd = periodForPlan(plan, now).end
-  }
+  const periodStartSec =
+    asNumber(obj.period_start) ?? asNumber(obj.current_period_start)
+  const periodEndSec =
+    asNumber(obj.period_end) ?? asNumber(obj.current_period_end)
+  const periodStart = periodStartSec
+    ? new Date(periodStartSec * 1000).toISOString()
+    : null
+  const periodEnd = periodEndSec
+    ? new Date(periodEndSec * 1000).toISOString()
+    : null
 
   return {
     ok: true,
@@ -348,8 +372,10 @@ function extractSubscriptionActivation(payload: unknown):
     localSubscriptionId,
     userId,
     plan,
-    providerCustomerId: firstString(obj.customer),
-    providerSubscriptionId: firstString(obj.subscription, obj.id),
+    providerCustomerId: stripeObjectId(obj.customer),
+    providerSubscriptionId:
+      stripeObjectId(obj.subscription) ??
+      stripeObjectId(subscriptionDetails.subscription),
     periodStart,
     periodEnd,
   }
@@ -358,12 +384,35 @@ function extractSubscriptionActivation(payload: unknown):
 async function findLocalSubscription(db: Db, id: string) {
   const { data, error } = await db
     .from('subscriptions')
-    .select('id, user_id')
+    .select(
+      'id, user_id, plan, provider_customer_id, provider_subscription_id',
+    )
     .eq('id', id)
     .maybeSingle()
 
   if (error) return { ok: false as const, error: error.message }
   return { ok: true as const, row: data }
+}
+
+async function findLocalSubscriptionByProviderId(
+  db: Db,
+  providerSubscriptionId: string,
+) {
+  const { data, error } = await db
+    .from('subscriptions')
+    .select(
+      'id, user_id, plan, provider_customer_id, provider_subscription_id',
+    )
+    .eq('provider', PROVIDER)
+    .eq('provider_subscription_id', providerSubscriptionId)
+    .maybeSingle()
+
+  if (error) return { ok: false as const, error: error.message }
+  return { ok: true as const, row: data }
+}
+
+function stripeObjectId(value: unknown): string | null {
+  return asString(value) ?? asString(asRecord(value).id)
 }
 
 async function expireOtherActiveSubscriptions(

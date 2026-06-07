@@ -605,8 +605,9 @@ O arquivo `docs/bulk-question-import.md` descreve uma importacao com roles `ADMI
 - [ ] Rodar seeds em Supabase local antes de producao.
 - [ ] Validar app em Vercel Preview com fluxos controlados.
 - [ ] Rodar migrations em producao.
-- [ ] Cadastrar planos reais no Abacate Pay.
-- [ ] Configurar webhooks reais do Abacate Pay.
+- [ ] Cadastrar os preços recorrentes mensal e anual no Stripe live.
+- [ ] Configurar o webhook Stripe live com os quatro eventos documentados.
+- [ ] Configurar `sk_live_*`, `whsec_*` e os dois IDs `price_*` na Vercel.
 - [ ] Testar checkout em ambiente real/sandbox conforme disponibilidade.
 - [ ] Configurar backup do banco.
 - [ ] Configurar monitoramento de disponibilidade.
@@ -686,7 +687,8 @@ A aplicacao pode ser considerada pronta para a primeira producao quando:
 - [ ] O cadastro e exigido apos 2 respostas.
 - [ ] Um usuario cadastrado consegue responder mais 3 questoes gratuitas.
 - [ ] O paywall aparece corretamente apos 5 respostas totais.
-- [ ] O pagamento mensal e anual funcionam via Abacate Pay.
+- [ ] O pagamento mensal e anual por cartão funciona via Stripe.
+- [ ] PIX/parcelamento não são anunciados enquanto o fluxo específico não existir.
 - [ ] Uma assinatura ativa libera o feed.
 - [ ] Um assinante consegue favoritar questoes.
 - [ ] Um usuario sem assinatura nao consegue salvar favoritos persistentes.

@@ -4,7 +4,7 @@ import type { Database, Json } from '@/lib/db/database.types'
 type Db = SupabaseClient<Database>
 type PaymentEventRow = Database['public']['Tables']['payment_events']['Row']
 
-const PROVIDER = 'abacate_pay'
+const PROVIDER = 'stripe'
 
 export type RecordPaymentEventInput = {
   providerEventId: string

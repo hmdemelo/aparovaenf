@@ -9,7 +9,9 @@ import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { track } from '@/features/analytics/product-events-server'
 import { ProductEventNames } from '@/features/analytics/product-events'
 import { PricingSection } from '@/features/billing/pricing-section'
-import { activateSubscriptionFromWebhook } from '@/features/billing/subscription-service'
+import { confirmStripeMockCheckout } from '@/features/billing/mock-checkout'
+import { isStripeMockMode } from '@/features/billing/stripe-config'
+import { getServerEnv } from '@/lib/env/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,11 +27,11 @@ export default async function LandingPage({
   searchParams: Promise<{
     checkout?: string
     subscription_id?: string
-    plan?: string
-    user_id?: string
   }>
 }) {
   const params = await searchParams
+  const env = getServerEnv()
+  const mockCheckoutEnabled = isStripeMockMode(env)
   const supabase = createSupabaseServiceClient()
   const { data: careers } = await supabase
     .from('careers')
@@ -42,30 +44,16 @@ export default async function LandingPage({
   async function simulatePayment(formData: FormData) {
     'use server'
     const subscriptionId = String(formData.get('subscription_id') ?? '')
-    const plan = String(formData.get('plan') ?? '')
-    const userId = String(formData.get('user_id') ?? '')
-    if (!subscriptionId || !plan || !userId) return
+    if (!subscriptionId) return
 
-    const payload = {
-      id: `evt_mock_${Date.now()}`,
-      type: 'checkout.session.completed',
-      data: {
-        object: {
-          id: 'cs_mock_' + subscriptionId,
-          customer: 'cus_mock_' + userId,
-          subscription: 'sub_mock_' + subscriptionId,
-          client_reference_id: subscriptionId,
-          metadata: {
-            user_id: userId,
-            plan: plan,
-            subscription_id: subscriptionId,
-          }
-        }
-      }
-    }
-
+    const user = await getCurrentUser()
+    if (!user) return
     const db = createSupabaseServiceClient()
-    const result = await activateSubscriptionFromWebhook(db, payload)
+    const result = await confirmStripeMockCheckout(db, {
+      env: getServerEnv(),
+      subscriptionId,
+      authenticatedUserId: user.id,
+    })
     if (result.ok && result.activated) {
       redirect('/feed?career=enfermeiro-a&subscription=success')
     }
@@ -123,32 +111,38 @@ export default async function LandingPage({
       </header>
 
       <main id="top" className="flex flex-col">
-        {params.checkout === 'mock' && (
-          <div className="bg-[var(--teal)] text-white px-4 py-6 border-b border-[var(--mint-dim)] shadow-[0_8px_30px_rgba(20,43,38,0.2)]">
-            <div className="mx-auto max-w-[980px] flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="text-center md:text-left">
-                <p className="font-display font-semibold text-lg">Ambiente de Desenvolvimento (Mock Checkout)</p>
-                <p className="text-xs text-[var(--mint-dim)] mt-1">
-                  O checkout real do Stripe falhou ou está usando uma chave de teste. 
-                  Você pode simular o pagamento para liberar seu acesso às questões.
-                </p>
+        {mockCheckoutEnabled &&
+          params.checkout === 'mock' &&
+          params.subscription_id && (
+            <div className="border-b border-[var(--mint-dim)] bg-[var(--teal)] px-4 py-6 text-white shadow-[0_8px_30px_rgba(20,43,38,0.2)]">
+              <div className="mx-auto flex max-w-[980px] flex-col items-center justify-between gap-4 md:flex-row">
+                <div className="text-center md:text-left">
+                  <p className="font-display text-lg font-semibold">
+                    Ambiente de Desenvolvimento (Mock Checkout)
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--mint-dim)]">
+                    A simulação local foi habilitada explicitamente. Confirme o
+                    pagamento para liberar seu acesso às questões.
+                  </p>
+                </div>
+                <form action={simulatePayment}>
+                  <input
+                    type="hidden"
+                    name="subscription_id"
+                    value={params.subscription_id}
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-full bg-[var(--mint-strong)] px-5 py-3 text-sm font-semibold text-[var(--teal-ink)] shadow-[0_12px_24px_-10px_rgba(160,243,212,0.8)] transition hover:brightness-105 active:scale-[0.98]"
+                  >
+                    Simular Pagamento Confirmado
+                  </button>
+                </form>
               </div>
-              <form action={simulatePayment}>
-                <input type="hidden" name="subscription_id" value={params.subscription_id} />
-                <input type="hidden" name="plan" value={params.plan} />
-                <input type="hidden" name="user_id" value={params.user_id} />
-                <button
-                  type="submit"
-                  className="bg-[var(--mint-strong)] text-[var(--teal-ink)] px-5 py-3 rounded-full font-semibold text-sm shadow-[0_12px_24px_-10px_rgba(160,243,212,0.8)] transition hover:brightness-105 active:scale-[0.98]"
-                >
-                  Simular Pagamento Confirmado
-                </button>
-              </form>
             </div>
-          </div>
-        )}
-      {/* Hero + career selection */}
-      <section className="aprova-hero-brand px-4 pb-12 pt-9 sm:pb-14 sm:pt-12">
+          )}
+        {/* Hero + career selection */}
+        <section className="aprova-hero-brand px-4 pb-12 pt-9 sm:pb-14 sm:pt-12">
         <div className="mx-auto max-w-[640px] text-center">
           <AprovaenfLogo
             className="justify-center text-[var(--teal)]"

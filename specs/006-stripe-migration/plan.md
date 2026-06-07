@@ -9,8 +9,8 @@ This plan outlines the removal of the Abacate Pay billing integration and the tr
 We will:
 1. Complete the removal of all Abacate Pay integration code (webhook endpoint, SDK calls, setup scripts, and documentation).
 2. Integrate Stripe Checkout Sessions for monthly and annual subscriptions.
-3. Configure a secure webhook receiver endpoint at `/api/webhooks/stripe` to handle activation (`checkout.session.completed` / `invoice.paid`) and cancellation (`customer.subscription.deleted`).
-4. Maintain a robust developer testing workflow by implementing a local mock checkout fallback when Stripe credentials are not provided (keys starting with `stripe_dev_*`).
+3. Configure a secure webhook receiver endpoint at `/api/webhooks/stripe` to handle activation (`checkout.session.completed` / `invoice.paid`), failed renewals (`invoice.payment_failed`), and cancellation (`customer.subscription.deleted`).
+4. Maintain a robust developer testing workflow with an explicit local-only mock checkout (keys starting with `stripe_dev_*`) that requires an authenticated owner and never enables unsigned webhooks.
 
 ## Technical Context
 

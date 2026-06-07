@@ -2,8 +2,13 @@
 
 **Feature Branch**: `005-pix-checkout-ui`  
 **Created**: 2026-06-03  
-**Status**: Draft  
+**Status**: Superseded by `006-stripe-migration`
 **Input**: User description: "Pix support indicators in pricing and checkout UI (Option A)"
+
+> **Nota de 2026-06-07:** esta especificação dependia da Abacate Pay e não
+> descreve o checkout Stripe atual. PIX não suporta pagamentos recorrentes na
+> Stripe. Para retomar este escopo, o plano anual deve ser redesenhado como
+> pagamento único com concessão de 12 meses de acesso.
 
 ## User Scenarios & Testing *(mandatory)*
 

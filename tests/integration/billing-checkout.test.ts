@@ -58,6 +58,7 @@ describe('POST /api/billing/checkout', () => {
     vi.clearAllMocks()
 
     mocks.getServerEnv.mockReturnValue({
+      NODE_ENV: 'production',
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
       SUPABASE_SERVICE_ROLE_KEY: 'service',
@@ -113,6 +114,13 @@ describe('POST /api/billing/checkout', () => {
           subscription_id: json.data.subscription_id,
           plan: 'annual',
         },
+        subscription_data: {
+          metadata: {
+            user_id: '00000000-0000-0000-0000-0000000000a4',
+            subscription_id: json.data.subscription_id,
+            plan: 'annual',
+          },
+        },
       }),
     )
 
@@ -161,6 +169,7 @@ describe('POST /api/billing/checkout', () => {
 
   it('bypasses real Stripe integration and returns a mock checkout in development mode', async () => {
     mocks.getServerEnv.mockReturnValue({
+      NODE_ENV: 'development',
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
       SUPABASE_SERVICE_ROLE_KEY: 'service',
@@ -177,7 +186,9 @@ describe('POST /api/billing/checkout', () => {
     expect(mockStripeCreate).not.toHaveBeenCalled()
     expect(json.data.checkout_id).toContain('checkout_mock_')
     expect(json.data.checkout_url).toContain('checkout=mock')
-    expect(json.data.checkout_url).toContain('provider=stripe')
+    expect(json.data.checkout_url).toContain('subscription_id=')
+    expect(json.data.checkout_url).not.toContain('user_id=')
+    expect(json.data.checkout_url).not.toContain('plan=')
   })
 
   it('rejects unauthenticated users before creating a provider checkout', async () => {
@@ -225,5 +236,27 @@ describe('POST /api/billing/checkout', () => {
         message: 'Could not create checkout',
       },
     })
+  })
+
+  it('does not fall back to mock checkout when a real Stripe key fails locally', async () => {
+    mocks.getServerEnv.mockReturnValue({
+      NODE_ENV: 'development',
+      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
+      SUPABASE_SERVICE_ROLE_KEY: 'service',
+      STRIPE_SECRET_KEY: 'sk_test_example',
+      STRIPE_WEBHOOK_SECRET: 'whsec_test',
+      STRIPE_MONTHLY_PRICE_ID: 'price_monthly',
+      STRIPE_ANNUAL_PRICE_ID: 'price_annual',
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+    })
+    mockStripeCreate.mockRejectedValue(new Error('Stripe API is down'))
+    const { POST } = await import('@/app/api/billing/checkout/route')
+
+    const response = await POST(request({ plan: 'monthly' }))
+    const json = await response.json()
+
+    expect(response.status).toBe(502)
+    expect(json.success).toBe(false)
   })
 })

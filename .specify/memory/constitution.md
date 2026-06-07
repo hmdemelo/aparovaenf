@@ -1,11 +1,11 @@
 <!--
 Sync Impact Report
-Version change: template -> 1.0.0
+Version change: 1.1.0 -> 1.2.0
 Modified principles: template placeholders -> Aprovaenf project principles
 Added sections: Product & Technical Constraints; Development Workflow
 Removed sections: none
 Templates requiring updates: no template changes required
-Follow-up TODOs: none
+Follow-up TODOs: decide whether annual PIX will use a separate one-time checkout
 -->
 
 # aprovaenf Constitution
@@ -77,7 +77,9 @@ cannot know where students drop, why payments fail, or which content performs.
 - Alternative-level comment is optional.
 - Payment provider: Stripe.
 - Monthly plan: R$ 29,90.
-- Annual plan: R$ 287,00 with parceling/installments supported by Stripe Checkout.
+- Annual plan: R$ 287,00.
+- Current Stripe subscription checkout is card-only. PIX and card installments
+  MUST NOT be advertised until a separate supported payment flow is implemented.
 - Architecture: Next.js, TypeScript, React, Tailwind CSS, Supabase Postgres,
   Supabase Auth, Vercel, Supabase Pro.
 - No separate Supabase staging project for the first deploy.
@@ -109,4 +111,4 @@ artifacts. Versioning follows semantic versioning:
 Every implementation plan MUST include a Constitution Check. Any violation must
 state why the simpler or safer option is insufficient.
 
-**Version**: 1.1.0 | **Ratified**: 2026-06-01 | **Last Amended**: 2026-06-03
+**Version**: 1.2.0 | **Ratified**: 2026-06-01 | **Last Amended**: 2026-06-07

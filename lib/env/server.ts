@@ -8,43 +8,92 @@ import { z } from 'zod'
  * surfacing as runtime errors deep inside auth, billing, or webhook handlers.
  *
  * Only `NEXT_PUBLIC_*` values are safe to reference from browser code. The
- * service role and Abacate Pay secrets MUST stay server-side (see the
+ * service role and Stripe secrets MUST stay server-side (see the
  * constitution: Secure Data Boundaries).
  */
-const serverEnvSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z
-    .string()
-    .url('NEXT_PUBLIC_SUPABASE_URL must be a valid URL'),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z
-    .string()
-    .min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'),
-  SUPABASE_SERVICE_ROLE_KEY: z
-    .string()
-    .min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
-  STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required'),
-  STRIPE_WEBHOOK_SECRET: z
-    .string()
-    .min(1, 'STRIPE_WEBHOOK_SECRET is required'),
-  STRIPE_MONTHLY_PRICE_ID: z
-    .string()
-    .min(1, 'STRIPE_MONTHLY_PRICE_ID cannot be empty')
-    .optional(),
-  STRIPE_ANNUAL_PRICE_ID: z
-    .string()
-    .min(1, 'STRIPE_ANNUAL_PRICE_ID cannot be empty')
-    .optional(),
-  NEXT_PUBLIC_APP_URL: z
-    .string()
-    .url('NEXT_PUBLIC_APP_URL must be a valid URL'),
-  GOOGLE_OAUTH_CLIENT_ID: z
-    .string()
-    .min(1, 'GOOGLE_OAUTH_CLIENT_ID cannot be empty')
-    .optional(),
-  GOOGLE_OAUTH_CLIENT_SECRET: z
-    .string()
-    .min(1, 'GOOGLE_OAUTH_CLIENT_SECRET cannot be empty')
-    .optional(),
-})
+const serverEnvSchema = z
+  .object({
+    NODE_ENV: z
+      .enum(['development', 'test', 'production'])
+      .default('development'),
+    NEXT_PUBLIC_SUPABASE_URL: z
+      .string()
+      .url('NEXT_PUBLIC_SUPABASE_URL must be a valid URL'),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z
+      .string()
+      .min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'),
+    SUPABASE_SERVICE_ROLE_KEY: z
+      .string()
+      .min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
+    STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required'),
+    STRIPE_WEBHOOK_SECRET: z
+      .string()
+      .min(1, 'STRIPE_WEBHOOK_SECRET is required'),
+    STRIPE_MONTHLY_PRICE_ID: z
+      .string()
+      .min(1, 'STRIPE_MONTHLY_PRICE_ID cannot be empty')
+      .optional(),
+    STRIPE_ANNUAL_PRICE_ID: z
+      .string()
+      .min(1, 'STRIPE_ANNUAL_PRICE_ID cannot be empty')
+      .optional(),
+    NEXT_PUBLIC_APP_URL: z
+      .string()
+      .url('NEXT_PUBLIC_APP_URL must be a valid URL'),
+    GOOGLE_OAUTH_CLIENT_ID: z
+      .string()
+      .min(1, 'GOOGLE_OAUTH_CLIENT_ID cannot be empty')
+      .optional(),
+    GOOGLE_OAUTH_CLIENT_SECRET: z
+      .string()
+      .min(1, 'GOOGLE_OAUTH_CLIENT_SECRET cannot be empty')
+      .optional(),
+  })
+  .superRefine((env, ctx) => {
+    if (env.NODE_ENV !== 'production') return
+
+    if (!env.STRIPE_SECRET_KEY.startsWith('sk_live_')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['STRIPE_SECRET_KEY'],
+        message: 'must use an sk_live_ key in production',
+      })
+    }
+    if (!env.STRIPE_WEBHOOK_SECRET.startsWith('whsec_')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['STRIPE_WEBHOOK_SECRET'],
+        message: 'must use a whsec_ signing secret in production',
+      })
+    }
+    if (!env.STRIPE_MONTHLY_PRICE_ID?.startsWith('price_')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['STRIPE_MONTHLY_PRICE_ID'],
+        message: 'must be configured with a price_ id in production',
+      })
+    }
+    if (!env.STRIPE_ANNUAL_PRICE_ID?.startsWith('price_')) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['STRIPE_ANNUAL_PRICE_ID'],
+        message: 'must be configured with a price_ id in production',
+      })
+    }
+
+    const appUrl = new URL(env.NEXT_PUBLIC_APP_URL)
+    if (
+      appUrl.protocol !== 'https:' ||
+      appUrl.hostname === 'localhost' ||
+      appUrl.hostname === '127.0.0.1'
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['NEXT_PUBLIC_APP_URL'],
+        message: 'must be a public HTTPS URL in production',
+      })
+    }
+  })
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>
 

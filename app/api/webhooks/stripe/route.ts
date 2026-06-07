@@ -5,6 +5,7 @@ import { createPaymentEventRepository } from '@/features/billing/payment-event-r
 import {
   activateSubscriptionFromWebhook,
   cancelSubscriptionFromWebhook,
+  markSubscriptionPastDueFromWebhook,
 } from '@/features/billing/subscription-service'
 import { ok, fail, ErrorCodes } from '@/lib/api/response'
 import { createSupabaseServiceClient } from '@/lib/db/server'
@@ -19,26 +20,18 @@ export async function POST(request: NextRequest) {
   const rawBody = await request.text()
   const signature = request.headers.get('stripe-signature')
 
-  const isDevMode = env.STRIPE_SECRET_KEY.startsWith('stripe_dev_')
   let event: Stripe.Event
 
   try {
-    if (isDevMode && (!signature || signature === 'mock_signature')) {
-      event = JSON.parse(rawBody) as Stripe.Event
-    } else {
-      if (!signature) {
-        return fail(ErrorCodes.UNAUTHENTICATED, 'Missing stripe signature header')
-      }
-      const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        apiVersion: '2024-06-20' as any,
-      })
-      event = stripe.webhooks.constructEvent(
-        rawBody,
-        signature,
-        env.STRIPE_WEBHOOK_SECRET,
-      )
+    if (!signature) {
+      return fail(ErrorCodes.UNAUTHENTICATED, 'Missing stripe signature header')
     }
+    const stripe = new Stripe(env.STRIPE_SECRET_KEY)
+    event = stripe.webhooks.constructEvent(
+      rawBody,
+      signature,
+      env.STRIPE_WEBHOOK_SECRET,
+    )
   } catch (err: unknown) {
     console.error('[stripe.webhook] signature verification failed', (err as Error).message)
     return fail(ErrorCodes.UNAUTHENTICATED, 'Webhook signature verification failed')
@@ -104,6 +97,24 @@ export async function POST(request: NextRequest) {
       console.error('[stripe.webhook] processing cancellation failed', cancellation.error)
       return fail(ErrorCodes.INTERNAL, 'Could not process webhook')
     }
+  } else if (eventType === 'invoice.payment_failed') {
+    const providerSubscriptionId = subscriptionIdFromInvoice(event.data.object)
+    if (!providerSubscriptionId) {
+      await events.markFailed(
+        providerEventId,
+        'missing Stripe subscription id on failed invoice',
+      )
+      return fail(ErrorCodes.INTERNAL, 'Could not process webhook')
+    }
+    const pastDue = await markSubscriptionPastDueFromWebhook(
+      db,
+      providerSubscriptionId,
+    )
+    if (!pastDue.ok) {
+      await events.markFailed(providerEventId, pastDue.error)
+      console.error('[stripe.webhook] processing payment failure failed', pastDue.error)
+      return fail(ErrorCodes.INTERNAL, 'Could not process webhook')
+    }
   }
 
   const processed = await events.markProcessed(providerEventId)
@@ -117,4 +128,27 @@ export async function POST(request: NextRequest) {
     duplicate: recorded.status === 'duplicate',
     activated,
   })
+}
+
+function subscriptionIdFromInvoice(value: unknown): string | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const invoice = value as Record<string, unknown>
+  const direct = stripeObjectId(invoice.subscription)
+  if (direct) return direct
+
+  const parent = asRecord(invoice.parent)
+  const details = asRecord(parent.subscription_details)
+  return stripeObjectId(details.subscription)
+}
+
+function stripeObjectId(value: unknown): string | null {
+  if (typeof value === 'string' && value.trim()) return value
+  const record = asRecord(value)
+  return typeof record.id === 'string' && record.id.trim() ? record.id : null
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {}
 }

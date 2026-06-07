@@ -58,7 +58,7 @@ describe('subscription access rules', () => {
   })
 
   it.each(['pending', 'past_due', 'canceled', 'expired'] as const)(
-    'blocks %s subscriptions until Abacate Pay confirms access',
+    'blocks %s subscriptions until Stripe confirms access',
     (status) => {
       const result = evaluateSubscriptionAccess({
         isAuthenticated: true,

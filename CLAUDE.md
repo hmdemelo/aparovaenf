@@ -89,7 +89,7 @@ npx supabase gen types typescript --local > lib/db/database.types.ts  # Regenera
 
 ## Architecture
 
-**Stack**: Next.js App Router, TypeScript, React, Tailwind CSS, lucide-react, Supabase Postgres + Supabase Auth, Vercel, Abacate Pay.
+**Stack**: Next.js App Router, TypeScript, React, Tailwind CSS, lucide-react, Supabase Postgres + Supabase Auth, Vercel, Stripe.
 
 **Pattern**: Modular full-stack monolith. Routes are grouped by user surface; business rules live in domain modules under `features/`, never scattered in UI code.
 
@@ -104,7 +104,7 @@ features/
   admin/          # Bulk import parser, services, dialogs, provisioning
   questions/      # Question repository and validation
   trial/          # Trial counting rules and signup gate
-  billing/        # Plans, subscription service, paywall, Abacate Pay checkout
+  billing/        # Plans, subscription service, paywall, Stripe checkout
   authors/        # Author question service, permissions, editor
   student-feed/   # Feed shell, question card, answer feedback, favorites/errors
   analytics/      # Product event service
@@ -131,8 +131,9 @@ tests/
 - After trial ends, non-subscribers cannot review trial questions.
 
 **Subscription**:
-- Plans: monthly R$ 29,90 and annual R$ 287,00 (parceling allowed).
-- Subscription is activated **only** after server-side webhook confirmation from Abacate Pay — never based on browser return.
+- Plans: monthly R$ 29,90 and annual R$ 287,00.
+- The current checkout is a recurring Stripe subscription paid by card. PIX and card installments are not enabled in this flow.
+- Subscription is activated **only** after a signed server-side Stripe webhook — never based on browser return.
 - Webhook processing must be idempotent; use `provider_event_id` as the uniqueness key in `PaymentEvent`.
 
 **Favorites and history**: persist only for active subscribers. Non-subscriber attempts generate a `favorite_attempted` product event and show a subscription prompt.
@@ -152,7 +153,7 @@ After any schema change, regenerate TypeScript types with the Supabase CLI. Neve
 ## Security Constraints
 
 - Row Level Security must be enabled on all tables with user, content, or payment data.
-- Supabase service role and Abacate Pay secrets must never reach browser code — server-side only.
+- Supabase service role and Stripe secrets must never reach browser code — server-side only.
 - Auth tokens must not be stored in `localStorage`.
 - Validate required env vars at startup via `lib/env/server.ts`.
 - Only prefix truly public vars with `NEXT_PUBLIC_`.

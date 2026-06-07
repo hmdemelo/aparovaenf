@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import Stripe from 'stripe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -10,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   markFailed: vi.fn(),
   activateSubscriptionFromWebhook: vi.fn(),
   cancelSubscriptionFromWebhook: vi.fn(),
+  markSubscriptionPastDueFromWebhook: vi.fn(),
   track: vi.fn(),
 }))
 
@@ -28,6 +30,7 @@ vi.mock('@/features/billing/payment-event-repository', () => ({
 vi.mock('@/features/billing/subscription-service', () => ({
   activateSubscriptionFromWebhook: mocks.activateSubscriptionFromWebhook,
   cancelSubscriptionFromWebhook: mocks.cancelSubscriptionFromWebhook,
+  markSubscriptionPastDueFromWebhook: mocks.markSubscriptionPastDueFromWebhook,
 }))
 
 vi.mock('@/features/analytics/product-events-server', () => ({
@@ -35,13 +38,9 @@ vi.mock('@/features/analytics/product-events-server', () => ({
 }))
 
 const SECRET_KEY_DEV = 'stripe_dev_mock_secret_key'
-const SECRET_KEY_PROD = 'sk_live_prod_secret_key'
 const WEBHOOK_SECRET = 'whsec_test_secret'
 
-function webhookRequest(
-  rawBody: string,
-  options?: { signature?: string; key?: string },
-) {
+function webhookRequest(rawBody: string, options?: { signature?: string }) {
   const headers: Record<string, string> = {
     'content-type': 'application/json',
   }
@@ -55,12 +54,22 @@ function webhookRequest(
   })
 }
 
+function signedWebhookRequest(payload: unknown) {
+  const rawBody = JSON.stringify(payload)
+  const signature = Stripe.webhooks.generateTestHeaderString({
+    payload: rawBody,
+    secret: WEBHOOK_SECRET,
+  })
+  return webhookRequest(rawBody, { signature })
+}
+
 describe('POST /api/webhooks/stripe', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
 
     mocks.getServerEnv.mockReturnValue({
+      NODE_ENV: 'development',
       NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
       NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
       SUPABASE_SERVICE_ROLE_KEY: 'service',
@@ -89,10 +98,11 @@ describe('POST /api/webhooks/stripe', () => {
       subscriptionId: '00000000-0000-0000-0000-00000000b111',
     })
     mocks.cancelSubscriptionFromWebhook.mockResolvedValue({ ok: true })
+    mocks.markSubscriptionPastDueFromWebhook.mockResolvedValue({ ok: true })
     mocks.track.mockResolvedValue({ ok: true })
   })
 
-  it('records, activates, marks processed, and tracks a completed checkout event in dev mode', async () => {
+  it('records, activates, marks processed, and tracks a signed completed checkout event', async () => {
     const payload = {
       id: 'evt_checkout_1',
       type: 'checkout.session.completed',
@@ -102,6 +112,7 @@ describe('POST /api/webhooks/stripe', () => {
           client_reference_id: '00000000-0000-0000-0000-00000000b111',
           customer: 'cus_1',
           subscription: 'sub_1',
+          payment_status: 'paid',
           metadata: {
             user_id: '00000000-0000-0000-0000-0000000000a4',
             plan: 'annual',
@@ -109,11 +120,9 @@ describe('POST /api/webhooks/stripe', () => {
         },
       },
     }
-    const rawBody = JSON.stringify(payload)
     const { POST } = await import('@/app/api/webhooks/stripe/route')
 
-    // In dev mode, signature defaults to 'mock_signature' if omitted/passed
-    const response = await POST(webhookRequest(rawBody, { signature: 'mock_signature' }))
+    const response = await POST(signedWebhookRequest(payload))
     const json = await response.json()
 
     expect(response.status).toBe(200)
@@ -156,7 +165,7 @@ describe('POST /api/webhooks/stripe', () => {
     const payload = { id: 'evt_duplicate', type: 'checkout.session.completed', data: {} }
     const { POST } = await import('@/app/api/webhooks/stripe/route')
 
-    const response = await POST(webhookRequest(JSON.stringify(payload)))
+    const response = await POST(signedWebhookRequest(payload))
     const json = await response.json()
 
     expect(response.status).toBe(200)
@@ -172,15 +181,7 @@ describe('POST /api/webhooks/stripe', () => {
     expect(mocks.markProcessed).not.toHaveBeenCalled()
   })
 
-  it('rejects requests in production mode if the stripe signature is missing', async () => {
-    mocks.getServerEnv.mockReturnValue({
-      NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co',
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon',
-      SUPABASE_SERVICE_ROLE_KEY: 'service',
-      STRIPE_SECRET_KEY: SECRET_KEY_PROD,
-      STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
-      NEXT_PUBLIC_APP_URL: 'https://aprovaenf.test',
-    })
+  it('rejects requests without a Stripe signature even with a development key', async () => {
     const payload = { id: 'evt_no_sig', type: 'checkout.session.completed', data: {} }
     const { POST } = await import('@/app/api/webhooks/stripe/route')
 
@@ -209,7 +210,7 @@ describe('POST /api/webhooks/stripe', () => {
     }
     const { POST } = await import('@/app/api/webhooks/stripe/route')
 
-    const response = await POST(webhookRequest(JSON.stringify(payload)))
+    const response = await POST(signedWebhookRequest(payload))
     const json = await response.json()
 
     expect(response.status).toBe(500)
@@ -233,10 +234,9 @@ describe('POST /api/webhooks/stripe', () => {
         },
       },
     }
-    const rawBody = JSON.stringify(payload)
     const { POST } = await import('@/app/api/webhooks/stripe/route')
 
-    const response = await POST(webhookRequest(rawBody))
+    const response = await POST(signedWebhookRequest(payload))
     const json = await response.json()
 
     expect(response.status).toBe(200)
@@ -250,5 +250,32 @@ describe('POST /api/webhooks/stripe', () => {
     })
     expect(mocks.cancelSubscriptionFromWebhook).toHaveBeenCalledWith(expect.anything(), 'sub_deleted_123')
     expect(mocks.markProcessed).toHaveBeenCalledWith('evt_deleted_1')
+  })
+
+  it('marks a subscription past due when a recurring invoice payment fails', async () => {
+    const payload = {
+      id: 'evt_payment_failed_1',
+      type: 'invoice.payment_failed',
+      data: {
+        object: {
+          id: 'in_failed_1',
+          parent: {
+            subscription_details: {
+              subscription: 'sub_failed_123',
+            },
+          },
+        },
+      },
+    }
+    const { POST } = await import('@/app/api/webhooks/stripe/route')
+
+    const response = await POST(signedWebhookRequest(payload))
+
+    expect(response.status).toBe(200)
+    expect(mocks.markSubscriptionPastDueFromWebhook).toHaveBeenCalledWith(
+      expect.anything(),
+      'sub_failed_123',
+    )
+    expect(mocks.markProcessed).toHaveBeenCalledWith('evt_payment_failed_1')
   })
 })

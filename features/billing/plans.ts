@@ -1,6 +1,6 @@
 /**
- * Subscription plan constants. Prices are confirmed product decisions
- * (constitution): monthly R$ 29,90 and annual R$ 287,00 (parceling allowed).
+ * Subscription plan constants. Prices are confirmed product decisions:
+ * monthly R$ 29,90 and annual R$ 287,00. The current Stripe flow is card-only.
  * Amounts are in cents to avoid floating-point money bugs.
  */
 

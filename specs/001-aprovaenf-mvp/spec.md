@@ -5,6 +5,11 @@
 **Status**: Draft  
 **Input**: Consolidated product, voting, and technical decisions in `docs/`
 
+> **Payment scope note (2026-06-07):** provider-specific references to Abacate
+> Pay in this original MVP specification are superseded by
+> `specs/006-stripe-migration/spec.md`. The implemented launch flow is Stripe
+> Checkout with recurring card payments.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Student completes trial learning loop (Priority: P1)
