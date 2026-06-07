@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseServerEnv } from '@/lib/env/server'
+import { parseCoreServerEnv, parseServerEnv } from '@/lib/env/server'
 
 const validEnv = {
   NODE_ENV: 'development',
@@ -12,6 +12,21 @@ const validEnv = {
 }
 
 describe('parseServerEnv', () => {
+  it('allows the core application to start when billing is not configured', () => {
+    const env = parseCoreServerEnv({
+      ...validEnv,
+      NODE_ENV: 'production',
+      STRIPE_SECRET_KEY: '',
+      STRIPE_WEBHOOK_SECRET: '',
+      STRIPE_MONTHLY_PRICE_ID: '',
+      STRIPE_ANNUAL_PRICE_ID: '',
+      NEXT_PUBLIC_APP_URL: '',
+    })
+
+    expect(env.NODE_ENV).toBe('production')
+    expect(env.NEXT_PUBLIC_SUPABASE_URL).toBe('https://abc.supabase.co')
+  })
+
   it('returns a typed config for a complete, valid environment', () => {
     const env = parseServerEnv(validEnv)
     expect(env.NEXT_PUBLIC_SUPABASE_URL).toBe('https://abc.supabase.co')

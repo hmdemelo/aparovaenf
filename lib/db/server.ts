@@ -2,7 +2,7 @@ import 'server-only'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { createClient } from '@supabase/supabase-js'
-import { getServerEnv } from '@/lib/env/server'
+import { getCoreServerEnv } from '@/lib/env/server'
 import type { Database } from '@/lib/db/database.types'
 
 /**
@@ -18,7 +18,7 @@ import type { Database } from '@/lib/db/database.types'
  */
 
 export async function createSupabaseServerClient() {
-  const env = getServerEnv()
+  const env = getCoreServerEnv()
   const cookieStore = await cookies()
 
   return createServerClient<Database>(
@@ -48,7 +48,7 @@ let serviceClient: ReturnType<typeof createClient<Database>> | undefined
 
 export function createSupabaseServiceClient() {
   if (!serviceClient) {
-    const env = getServerEnv()
+    const env = getCoreServerEnv()
     serviceClient = createClient<Database>(
       env.NEXT_PUBLIC_SUPABASE_URL,
       env.SUPABASE_SERVICE_ROLE_KEY,

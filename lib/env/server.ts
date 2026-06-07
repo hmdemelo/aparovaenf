@@ -11,20 +11,31 @@ import { z } from 'zod'
  * service role and Stripe secrets MUST stay server-side (see the
  * constitution: Secure Data Boundaries).
  */
-const serverEnvSchema = z
-  .object({
-    NODE_ENV: z
-      .enum(['development', 'test', 'production'])
-      .default('development'),
-    NEXT_PUBLIC_SUPABASE_URL: z
-      .string()
-      .url('NEXT_PUBLIC_SUPABASE_URL must be a valid URL'),
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: z
-      .string()
-      .min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'),
-    SUPABASE_SERVICE_ROLE_KEY: z
-      .string()
-      .min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
+const coreServerEnvSchema = z.object({
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
+  NEXT_PUBLIC_SUPABASE_URL: z
+    .string()
+    .url('NEXT_PUBLIC_SUPABASE_URL must be a valid URL'),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z
+    .string()
+    .min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'),
+  SUPABASE_SERVICE_ROLE_KEY: z
+    .string()
+    .min(1, 'SUPABASE_SERVICE_ROLE_KEY is required'),
+  GOOGLE_OAUTH_CLIENT_ID: z
+    .string()
+    .min(1, 'GOOGLE_OAUTH_CLIENT_ID cannot be empty')
+    .optional(),
+  GOOGLE_OAUTH_CLIENT_SECRET: z
+    .string()
+    .min(1, 'GOOGLE_OAUTH_CLIENT_SECRET cannot be empty')
+    .optional(),
+})
+
+const serverEnvSchema = coreServerEnvSchema
+  .extend({
     STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required'),
     STRIPE_WEBHOOK_SECRET: z
       .string()
@@ -40,14 +51,6 @@ const serverEnvSchema = z
     NEXT_PUBLIC_APP_URL: z
       .string()
       .url('NEXT_PUBLIC_APP_URL must be a valid URL'),
-    GOOGLE_OAUTH_CLIENT_ID: z
-      .string()
-      .min(1, 'GOOGLE_OAUTH_CLIENT_ID cannot be empty')
-      .optional(),
-    GOOGLE_OAUTH_CLIENT_SECRET: z
-      .string()
-      .min(1, 'GOOGLE_OAUTH_CLIENT_SECRET cannot be empty')
-      .optional(),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return
@@ -95,7 +98,18 @@ const serverEnvSchema = z
     }
   })
 
+export type CoreServerEnv = z.infer<typeof coreServerEnvSchema>
 export type ServerEnv = z.infer<typeof serverEnvSchema>
+
+export function parseCoreServerEnv(
+  source: Record<string, unknown>,
+): CoreServerEnv {
+  const result = coreServerEnvSchema.safeParse(source)
+  if (!result.success) {
+    throw createEnvironmentError(result.error.issues)
+  }
+  return result.data
+}
 
 /**
  * Parse and validate an environment object. Throws a descriptive error listing
@@ -105,18 +119,30 @@ export type ServerEnv = z.infer<typeof serverEnvSchema>
 export function parseServerEnv(source: Record<string, unknown>): ServerEnv {
   const result = serverEnvSchema.safeParse(source)
   if (!result.success) {
-    const issues = result.error.issues
-      .map((issue) => {
-        const key = issue.path.join('.') || '(root)'
-        return `  - ${key}: ${issue.message}`
-      })
-      .join('\n')
-    throw new Error(`Invalid server environment variables:\n${issues}`)
+    throw createEnvironmentError(result.error.issues)
   }
   return result.data
 }
 
+function createEnvironmentError(issues: z.core.$ZodIssue[]) {
+  const details = issues
+    .map((issue) => {
+      const key = issue.path.join('.') || '(root)'
+      return `  - ${key}: ${issue.message}`
+    })
+    .join('\n')
+  return new Error(`Invalid server environment variables:\n${details}`)
+}
+
+let cachedCore: CoreServerEnv | undefined
 let cached: ServerEnv | undefined
+
+export function getCoreServerEnv(): CoreServerEnv {
+  if (!cachedCore) {
+    cachedCore = parseCoreServerEnv(process.env)
+  }
+  return cachedCore
+}
 
 /**
  * Lazily validated, cached server environment. Use this from server code that

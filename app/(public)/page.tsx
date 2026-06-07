@@ -11,7 +11,7 @@ import { ProductEventNames } from '@/features/analytics/product-events'
 import { PricingSection } from '@/features/billing/pricing-section'
 import { confirmStripeMockCheckout } from '@/features/billing/mock-checkout'
 import { isStripeMockMode } from '@/features/billing/stripe-config'
-import { getServerEnv } from '@/lib/env/server'
+import { getCoreServerEnv, getServerEnv } from '@/lib/env/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,8 +30,11 @@ export default async function LandingPage({
   }>
 }) {
   const params = await searchParams
-  const env = getServerEnv()
-  const mockCheckoutEnabled = isStripeMockMode(env)
+  const env = getCoreServerEnv()
+  const mockCheckoutEnabled = isStripeMockMode({
+    NODE_ENV: env.NODE_ENV,
+    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? '',
+  })
   const supabase = createSupabaseServiceClient()
   const { data: careers } = await supabase
     .from('careers')
