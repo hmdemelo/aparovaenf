@@ -1,5 +1,8 @@
 import { test, expect, type Page } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
+import { loadLocalEnv } from '../integration/helpers/local-env'
+
+loadLocalEnv()
 
 test.beforeEach(async () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
