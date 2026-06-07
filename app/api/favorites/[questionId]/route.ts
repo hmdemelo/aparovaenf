@@ -14,6 +14,9 @@ export async function DELETE(
 ) {
   const user = await getCurrentUser()
   if (!user) return fail(ErrorCodes.UNAUTHENTICATED, 'Authentication required')
+  if (user.forcePasswordChange) {
+    return fail(ErrorCodes.FORBIDDEN, 'Password change required')
+  }
 
   const { questionId } = await params
   if (!uuidSchema.safeParse(questionId).success) {

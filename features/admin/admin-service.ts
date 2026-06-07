@@ -20,11 +20,21 @@ export type AdminUserRow = {
   createdAt: string
   subscriptionStatus: string | null
   subscriptionPlan: string | null
+  subscriptionPeriodEnd: string | null
   registrationCompleted: boolean
+  forcePasswordChange: boolean
+  answeredCount: number
 }
 
 export type AdminUserStatus = {
-  label: 'cadastro não concluído' | 'cadastro free' | 'assinatura ativa'
+  label:
+    | 'cadastro não concluído'
+    | 'cadastro free'
+    | 'assinatura ativa'
+    | 'pagamento pendente'
+    | 'pagamento em atraso'
+    | 'assinatura cancelada'
+    | 'assinatura expirada'
   className: string
 }
 
@@ -47,6 +57,34 @@ export function resolveAdminUserStatus(input: {
     }
   }
 
+  if (input.subscriptionStatus === 'pending') {
+    return {
+      label: 'pagamento pendente',
+      className: 'bg-amber-50 text-amber-700 border border-amber-200/60',
+    }
+  }
+
+  if (input.subscriptionStatus === 'past_due') {
+    return {
+      label: 'pagamento em atraso',
+      className: 'bg-red-50 text-red-700 border border-red-200/60',
+    }
+  }
+
+  if (input.subscriptionStatus === 'canceled') {
+    return {
+      label: 'assinatura cancelada',
+      className: 'bg-slate-100 text-slate-700 border border-slate-200/60',
+    }
+  }
+
+  if (input.subscriptionStatus === 'expired') {
+    return {
+      label: 'assinatura expirada',
+      className: 'bg-slate-100 text-slate-700 border border-slate-200/60',
+    }
+  }
+
   return {
     label: 'cadastro free',
     className: 'bg-slate-100 text-slate-700 border border-slate-200/60',
@@ -54,18 +92,63 @@ export function resolveAdminUserStatus(input: {
 }
 
 export async function listUsers(db: Db): Promise<AdminUserRow[]> {
-  const [{ data: users }, { data: subs }] = await Promise.all([
+  const [
+    { data: users, error: usersError },
+    { data: subs, error: subscriptionsError },
+    { data: attempts, error: attemptsError },
+  ] = await Promise.all([
     db
       .from('user_profiles')
-      .select('id, name, email, role, created_at, registration_completed')
+      .select(
+        'id, name, email, role, created_at, registration_completed, force_password_change',
+      )
       .order('created_at', { ascending: false }),
-    db.from('subscriptions').select('user_id, status, plan').eq('status', 'active'),
+    db
+      .from('subscriptions')
+      .select(
+        'user_id, status, plan, current_period_end, created_at',
+      )
+      .order('created_at', { ascending: false }),
+    db
+      .from('answer_attempts')
+      .select('user_id')
+      .not('user_id', 'is', null),
   ])
 
-  const activeByUser = new Map((subs ?? []).map((s) => [s.user_id, s]))
+  if (usersError) throw usersError
+  if (subscriptionsError) throw subscriptionsError
+  if (attemptsError) throw attemptsError
+
+  const subscriptionPriority: Record<string, number> = {
+    active: 5,
+    past_due: 4,
+    pending: 3,
+    canceled: 2,
+    expired: 1,
+  }
+  const subscriptionByUser = new Map<string, (typeof subs)[number]>()
+  for (const subscription of subs ?? []) {
+    const current = subscriptionByUser.get(subscription.user_id)
+    if (
+      !current ||
+      (subscriptionPriority[subscription.status] ?? 0) >
+        (subscriptionPriority[current.status] ?? 0)
+    ) {
+      subscriptionByUser.set(subscription.user_id, subscription)
+    }
+  }
+
+  const answeredByUser = new Map<string, number>()
+  for (const attempt of attempts ?? []) {
+    if (!attempt.user_id) continue
+    answeredByUser.set(
+      attempt.user_id,
+      (answeredByUser.get(attempt.user_id) ?? 0) + 1,
+    )
+  }
 
   return (users ?? []).map((u) => {
-    const sub = activeByUser.get(u.id)
+    const sub = subscriptionByUser.get(u.id)
     return {
       id: u.id,
       name: u.name,
@@ -74,7 +157,10 @@ export async function listUsers(db: Db): Promise<AdminUserRow[]> {
       createdAt: u.created_at,
       subscriptionStatus: sub?.status ?? null,
       subscriptionPlan: sub?.plan ?? null,
+      subscriptionPeriodEnd: sub?.current_period_end ?? null,
       registrationCompleted: u.registration_completed,
+      forcePasswordChange: u.force_password_change,
+      answeredCount: answeredByUser.get(u.id) ?? 0,
     }
   })
 }
@@ -86,21 +172,73 @@ export type AdminQuestionRow = {
   difficulty: string | null
   author: string | null
   subject: string | null
+  board: string | null
   createdAt: string
 }
 
-export async function listAllQuestions(db: Db): Promise<AdminQuestionRow[]> {
-  const { data } = await db
+export type ListQuestionsOptions = {
+  limit?: number
+  page?: number
+  search?: string
+  status?: 'draft' | 'published' | 'unpublished' | 'archived'
+  subjectId?: string
+  boardId?: string
+}
+
+export type AdminQuestionsPage = {
+  questions: AdminQuestionRow[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+  }
+}
+
+export async function listQuestionsPage(
+  db: Db,
+  options?: ListQuestionsOptions,
+): Promise<AdminQuestionsPage> {
+  let query = db
     .from('questions')
     .select(
       `id, statement, status, difficulty, created_at,
-       author:author_profiles(display_name), subject:subjects(name)`,
+       author:author_profiles(display_name), subject:subjects(name),
+       board:boards(name)`,
+      { count: 'exact' },
     )
-    .order('created_at', { ascending: false })
 
-  return (data ?? []).map((q) => {
+  if (options?.status) {
+    query = query.eq('status', options.status)
+  }
+
+  if (options?.subjectId) {
+    query = query.eq('subject_id', options.subjectId)
+  }
+
+  if (options?.boardId) {
+    query = query.eq('board_id', options.boardId)
+  }
+
+  if (options?.search) {
+    query = query.ilike('statement', `%${options.search}%`)
+  }
+
+  const pageSize = Math.min(Math.max(options?.limit ?? 30, 1), 30)
+  const page = Math.max(options?.page ?? 1, 1)
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+  query = query
+    .order('created_at', { ascending: false })
+    .range(from, to)
+
+  const { data, error, count } = await query
+  if (error) throw error
+
+  const questions = (data ?? []).map((q) => {
     const author = Array.isArray(q.author) ? q.author[0] : q.author
     const subject = Array.isArray(q.subject) ? q.subject[0] : q.subject
+    const board = Array.isArray(q.board) ? q.board[0] : q.board
     return {
       id: q.id,
       statement: q.statement,
@@ -108,9 +246,29 @@ export async function listAllQuestions(db: Db): Promise<AdminQuestionRow[]> {
       difficulty: q.difficulty,
       author: author?.display_name ?? null,
       subject: subject?.name ?? null,
+      board: board?.name ?? null,
       createdAt: q.created_at,
     }
   })
+
+  const total = count ?? questions.length
+  return {
+    questions,
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(Math.ceil(total / pageSize), 1),
+    },
+  }
+}
+
+export async function listAllQuestions(
+  db: Db,
+  options?: ListQuestionsOptions,
+): Promise<AdminQuestionRow[]> {
+  const result = await listQuestionsPage(db, options)
+  return result.questions
 }
 
 export type UnpublishResult =
@@ -299,4 +457,53 @@ export async function updateAuthorProfile(
       createdAt: data.created_at,
     },
   }
+}
+
+export type ChangePasswordResult =
+  | { ok: true }
+  | { ok: false; code: 'not_found' | 'error'; message: string }
+
+/** Update a user's password using the service role client and set force_password_change = true. */
+export async function adminChangeUserPassword(
+  serviceDb: Db,
+  userId: string,
+  input: { password: string },
+): Promise<ChangePasswordResult> {
+  const { data: profile, error: profileError } = await serviceDb
+    .from('user_profiles')
+    .update({ force_password_change: true })
+    .eq('id', userId)
+    .select('id')
+    .maybeSingle()
+
+  if (profileError) {
+    return { ok: false, code: 'error', message: profileError.message }
+  }
+  if (!profile) {
+    return {
+      ok: false,
+      code: 'not_found',
+      message: 'user profile not found',
+    }
+  }
+
+  const { error: authError } = await serviceDb.auth.admin.updateUserById(
+    userId,
+    { password: input.password },
+  )
+  if (authError) {
+    const { error: rollbackError } = await serviceDb
+      .from('user_profiles')
+      .update({ force_password_change: false })
+      .eq('id', userId)
+    if (rollbackError) {
+      console.error(
+        '[admin.password] failed to rollback forced change flag',
+        rollbackError,
+      )
+    }
+    return { ok: false, code: 'error', message: authError.message }
+  }
+
+  return { ok: true }
 }

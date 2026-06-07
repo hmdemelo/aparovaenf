@@ -28,7 +28,16 @@ export async function GET(request: NextRequest) {
     return fail(ErrorCodes.VALIDATION, 'career is required')
   }
 
-  const { status, userId, anonymousSessionId } = await resolveTrialStatus()
+  const {
+    status,
+    userId,
+    anonymousSessionId,
+    passwordChangeRequired,
+  } = await resolveTrialStatus()
+
+  if (passwordChangeRequired) {
+    return fail(ErrorCodes.FORBIDDEN, 'Password change required')
+  }
 
   // Gated: do not reveal another question until the gate is cleared.
   if (!status.canAnswer) {

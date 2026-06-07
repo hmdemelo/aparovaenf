@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
-import { Users } from 'lucide-react'
 import { resolveAdminContext } from '@/features/admin/admin-permissions'
-import { listUsers, resolveAdminUserStatus } from '@/features/admin/admin-service'
+import { listUsers } from '@/features/admin/admin-service'
+import { AdminUsersManager } from '@/features/admin/admin-users-manager'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,47 +22,7 @@ export default async function AdminUsersPage() {
         </h1>
       </div>
 
-      <section>
-        <div className="mb-4 flex items-center gap-2">
-          <Users size={18} className="text-[var(--teal)]" />
-          <h2 className="text-[21px] font-semibold text-[var(--ink)]">
-            Usuários Cadastrados
-          </h2>
-        </div>
-        
-        <div className="overflow-x-auto" data-testid="admin-users">
-          <table className="aprova-table">
-            <thead>
-              <tr>
-                <th>E-mail</th>
-                <th>Perfil</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => {
-                const status = resolveAdminUserStatus(u)
-
-                return (
-                  <tr key={u.id}>
-                    <td className="min-w-52 text-[var(--ink)]">{u.email}</td>
-                    <td>
-                      <span className="rounded-full bg-[#f1efe9] px-2.5 py-1 text-[11px] font-medium text-[var(--muted)]">
-                        {u.role}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${status.className}`}>
-                        {status.label}
-                      </span>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      <AdminUsersManager users={users} />
     </>
   )
 }

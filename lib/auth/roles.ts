@@ -16,6 +16,7 @@ export type CurrentUser = {
   email: string | null
   role: UserRole
   registrationCompleted: boolean
+  forcePasswordChange: boolean
 }
 
 /** Returns the authenticated user with role, or null if not signed in. */
@@ -28,7 +29,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { data: profile } = await supabase
     .from('user_profiles')
-    .select('role, email, registration_completed')
+    .select('role, email, registration_completed, force_password_change')
     .eq('id', user.id)
     .single()
 
@@ -37,6 +38,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     email: profile?.email ?? user.email ?? null,
     role: (profile?.role as UserRole) ?? 'student',
     registrationCompleted: profile?.registration_completed ?? false,
+    forcePasswordChange: profile?.force_password_change ?? false,
   }
 }
 
@@ -63,6 +65,12 @@ export async function requireUser(
   const user = await getCurrentUser()
   if (!user) {
     throw new AuthorizationError('unauthenticated', 'Authentication required')
+  }
+  if (user.forcePasswordChange) {
+    throw new AuthorizationError(
+      'forbidden',
+      'Password change required before continuing',
+    )
   }
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     throw new AuthorizationError(

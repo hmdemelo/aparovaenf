@@ -126,10 +126,10 @@ export function AdminSidebar() {
         <Link
           href="/admin/subjects"
           className={`aprova-nav-item ${isRouteActive('/admin/subjects') ? 'aprova-nav-item-active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
-          title="Assuntos"
+          title="Catálogos"
         >
           <Layers size={18} />
-          {!isCollapsed && <span>Assuntos</span>}
+          {!isCollapsed && <span>Catálogos</span>}
         </Link>
       </nav>
 

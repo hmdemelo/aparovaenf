@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { resolveAuthorContext } from '@/features/authors/author-context'
 import { loadAccountProfile } from '@/features/account/account-service'
 import { AuthorSidebar } from '@/components/author-sidebar'
+import { getCurrentUser } from '@/lib/auth/roles'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,6 +11,11 @@ export default async function AuthorLayout({
 }: {
   children: React.ReactNode
 }) {
+  const user = await getCurrentUser()
+  if (user && user.forcePasswordChange) {
+    redirect('/force-password')
+  }
+
   const ctx = await resolveAuthorContext()
   if (!ctx.ok) redirect('/login?next=/author/questions')
 

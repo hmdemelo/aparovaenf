@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { resolveAdminContext } from '@/features/admin/admin-permissions'
 import { AdminSidebar } from '@/components/admin-sidebar'
+import { getCurrentUser } from '@/lib/auth/roles'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,6 +10,11 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
+  const user = await getCurrentUser()
+  if (user && user.forcePasswordChange) {
+    redirect('/force-password')
+  }
+
   const ctx = await resolveAdminContext()
   if (!ctx.ok) redirect('/login?next=/admin')
 

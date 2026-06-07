@@ -18,6 +18,7 @@ export type AuthorContext =
 export async function resolveAuthorContext(): Promise<AuthorContext> {
   const user = await getCurrentUser()
   if (!user) return { ok: false, code: 'unauthenticated' }
+  if (user.forcePasswordChange) return { ok: false, code: 'forbidden' }
   if (user.role !== 'author' && user.role !== 'admin') {
     return { ok: false, code: 'forbidden' }
   }

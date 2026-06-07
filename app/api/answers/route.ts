@@ -30,7 +30,12 @@ export async function POST(request: NextRequest) {
     return fail(ErrorCodes.VALIDATION, 'question_id and alternative_id are required')
   }
 
-  const { status, userId } = await resolveTrialStatus()
+  const { status, userId, passwordChangeRequired } =
+    await resolveTrialStatus()
+
+  if (passwordChangeRequired) {
+    return fail(ErrorCodes.FORBIDDEN, 'Password change required')
+  }
 
   // Enforce gates before consuming trial.
   if (!status.canAnswer) {

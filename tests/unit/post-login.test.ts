@@ -10,6 +10,17 @@ describe('resolvePostLoginPath', () => {
     ).toBe('/admin')
   })
 
+  it('forces password replacement before honoring any role destination', () => {
+    expect(
+      resolvePostLoginPath({
+        ...base,
+        role: 'admin',
+        forcePasswordChange: true,
+        next: '/admin/users',
+      }),
+    ).toBe('/force-password?next=%2Fadmin%2Fusers')
+  })
+
   it('sends admins to subpages of the admin panel if next points to one', () => {
     expect(
       resolvePostLoginPath({ ...base, role: 'admin', next: '/admin/questions' }),

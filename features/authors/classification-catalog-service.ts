@@ -14,7 +14,7 @@ export type CatalogContext =
 
 export type CatalogServiceResult<T> =
   | { ok: true; data: T }
-  | { ok: false; code: 'error'; errors: string[] }
+  | { ok: false; code: 'error' | 'not_found' | 'conflict'; errors: string[] }
 
 /**
  * Resolve the catalog context allowing both authors and admins,
@@ -23,6 +23,7 @@ export type CatalogServiceResult<T> =
 export async function resolveCatalogContext(): Promise<CatalogContext> {
   const user = await getCurrentUser()
   if (!user) return { ok: false, code: 'unauthenticated' }
+  if (user.forcePasswordChange) return { ok: false, code: 'forbidden' }
   if (user.role !== 'author' && user.role !== 'admin') {
     return { ok: false, code: 'forbidden' }
   }
@@ -441,4 +442,180 @@ export async function createBoard(
   })
 
   return { ok: true, data: { created: true, item: data } }
+}
+
+export async function updateDiscipline(
+  db: Db,
+  id: string,
+  input: { name: string; career_id: string },
+): Promise<CatalogServiceResult<{ id: string; name: string }>> {
+  const name = input.name.trim()
+  const slug = slugify(name)
+  const { data, error } = await db
+    .from('subjects')
+    .update({ name, slug, career_id: input.career_id })
+    .eq('id', id)
+    .select('id, name')
+    .maybeSingle()
+
+  if (error) {
+    return catalogWriteError(error)
+  }
+  if (!data) return catalogNotFound()
+  return { ok: true, data }
+}
+
+export async function deleteDiscipline(
+  db: Db,
+  id: string
+): Promise<CatalogServiceResult<void>> {
+  const { count: questionsCount, error: questionsError } = await db
+    .from('questions')
+    .select('id', { count: 'exact', head: true })
+    .eq('subject_id', id)
+
+  if (questionsError) return catalogDependencyError()
+  if (questionsCount && questionsCount > 0) {
+    return { ok: false, code: 'error', errors: ['Esta disciplina está em uso por questões e não pode ser excluída.'] }
+  }
+
+  const { count: tagsCount, error: tagsError } = await db
+    .from('tags')
+    .select('id', { count: 'exact', head: true })
+    .eq('subject_id', id)
+
+  if (tagsError) return catalogDependencyError()
+  if (tagsCount && tagsCount > 0) {
+    return { ok: false, code: 'error', errors: ['Esta disciplina possui assuntos associados e não pode ser excluída.'] }
+  }
+
+  const { error } = await db.from('subjects').delete().eq('id', id)
+  if (error) {
+    return catalogWriteError(error)
+  }
+  return { ok: true, data: undefined }
+}
+
+export async function updateTopic(
+  db: Db,
+  id: string,
+  input: { name: string; discipline_id: string },
+): Promise<CatalogServiceResult<{ id: string; name: string }>> {
+  const name = input.name.trim()
+  const slug = slugify(name)
+  const { data, error } = await db
+    .from('tags')
+    .update({ name, slug, subject_id: input.discipline_id })
+    .eq('id', id)
+    .select('id, name')
+    .maybeSingle()
+
+  if (error) {
+    return catalogWriteError(error)
+  }
+  if (!data) return catalogNotFound()
+  return { ok: true, data }
+}
+
+export async function deleteTopic(
+  db: Db,
+  id: string
+): Promise<CatalogServiceResult<void>> {
+  const { count: qtCount, error: associationsError } = await db
+    .from('question_tags')
+    .select('question_id', { count: 'exact', head: true })
+    .eq('tag_id', id)
+
+  if (associationsError) return catalogDependencyError()
+  if (qtCount && qtCount > 0) {
+    return { ok: false, code: 'error', errors: ['Este assunto está em uso por questões e não pode ser excluído.'] }
+  }
+
+  const { error } = await db.from('tags').delete().eq('id', id)
+  if (error) {
+    return catalogWriteError(error)
+  }
+  return { ok: true, data: undefined }
+}
+
+export async function updateBoard(
+  db: Db,
+  id: string,
+  input: { name: string }
+): Promise<CatalogServiceResult<{ id: string; name: string }>> {
+  const name = input.name.trim()
+  const slug = slugify(name)
+  const { data, error } = await db
+    .from('boards')
+    .update({ name, slug })
+    .eq('id', id)
+    .select('id, name')
+    .maybeSingle()
+
+  if (error) {
+    return catalogWriteError(error)
+  }
+  if (!data) return catalogNotFound()
+  return { ok: true, data }
+}
+
+export async function deleteBoard(
+  db: Db,
+  id: string
+): Promise<CatalogServiceResult<void>> {
+  const { count: qCount, error: questionsError } = await db
+    .from('questions')
+    .select('id', { count: 'exact', head: true })
+    .eq('board_id', id)
+
+  if (questionsError) return catalogDependencyError()
+  if (qCount && qCount > 0) {
+    return { ok: false, code: 'error', errors: ['Esta banca está em uso por questões e não pode ser excluída.'] }
+  }
+
+  const { error } = await db.from('boards').delete().eq('id', id)
+  if (error) {
+    return catalogWriteError(error)
+  }
+  return { ok: true, data: undefined }
+}
+
+function catalogNotFound<T>(): CatalogServiceResult<T> {
+  return {
+    ok: false,
+    code: 'not_found',
+    errors: ['Item de catálogo não encontrado.'],
+  }
+}
+
+function catalogDependencyError<T>(): CatalogServiceResult<T> {
+  return {
+    ok: false,
+    code: 'error',
+    errors: ['Não foi possível verificar as dependências deste item.'],
+  }
+}
+
+function catalogWriteError<T>(error: {
+  code?: string
+}): CatalogServiceResult<T> {
+  if (error.code === '23505') {
+    return {
+      ok: false,
+      code: 'conflict',
+      errors: ['Já existe um item com este nome no mesmo contexto.'],
+    }
+  }
+  if (error.code === '23503') {
+    return {
+      ok: false,
+      code: 'conflict',
+      errors: ['Este item possui vínculos e não pode ser excluído.'],
+    }
+  }
+  return {
+    ok: false,
+    code: 'error',
+    errors: ['Não foi possível concluir a alteração no catálogo.'],
+  }
 }

@@ -21,6 +21,7 @@ export type PostLoginContext = {
   role: UserRole
   isSubscriber: boolean
   launchCareerSlug: string | null
+  forcePasswordChange?: boolean
   next?: string | null
 }
 
@@ -44,6 +45,11 @@ function launchFeed(slug: string | null): string {
 }
 
 export function resolvePostLoginPath(ctx: PostLoginContext): string {
+  if (ctx.forcePasswordChange) {
+    const next = isSafeNext(ctx.next) ? ctx.next : '/'
+    return `/force-password?next=${encodeURIComponent(next)}`
+  }
+
   if (ctx.role === 'admin') {
     return isSafeNext(ctx.next) && ctx.next.startsWith('/admin') ? ctx.next : '/admin'
   }

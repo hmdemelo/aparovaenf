@@ -19,6 +19,7 @@ export type TrialResolution = {
   status: TrialStatus
   userId: string | null
   anonymousSessionId: string | null
+  passwordChangeRequired: boolean
 }
 
 export async function resolveTrialStatus(): Promise<TrialResolution> {
@@ -26,6 +27,20 @@ export async function resolveTrialStatus(): Promise<TrialResolution> {
   const svc = createSupabaseServiceClient()
 
   if (user) {
+    if (user.forcePasswordChange) {
+      return {
+        status: evaluateTrial({
+          isAuthenticated: true,
+          isSubscriber: false,
+          answeredBeforeSignup: 0,
+          answeredAfterSignup: 0,
+        }),
+        userId: user.id,
+        anonymousSessionId: null,
+        passwordChangeRequired: true,
+      }
+    }
+
     const subscriber = await isSubscriber()
     const answeredAfterSignup = await countAnswersByUser(svc, user.id)
     return {
@@ -37,6 +52,7 @@ export async function resolveTrialStatus(): Promise<TrialResolution> {
       }),
       userId: user.id,
       anonymousSessionId: null,
+      passwordChangeRequired: false,
     }
   }
 
@@ -54,6 +70,7 @@ export async function resolveTrialStatus(): Promise<TrialResolution> {
     }),
     userId: null,
     anonymousSessionId: anonId,
+    passwordChangeRequired: false,
   }
 }
 

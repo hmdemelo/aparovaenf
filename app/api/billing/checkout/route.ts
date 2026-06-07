@@ -32,6 +32,9 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return fail(ErrorCodes.UNAUTHENTICATED, 'Authentication required')
   }
+  if (user.forcePasswordChange) {
+    return fail(ErrorCodes.FORBIDDEN, 'Password change required')
+  }
 
   const env = getServerEnv()
   const db = createSupabaseServiceClient()

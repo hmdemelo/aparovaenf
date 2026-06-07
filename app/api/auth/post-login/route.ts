@@ -33,6 +33,18 @@ export async function GET(request: Request) {
     }
   }
 
+  if (user.forcePasswordChange) {
+    return ok({
+      destination: resolvePostLoginPath({
+        role: user.role,
+        isSubscriber: false,
+        launchCareerSlug: null,
+        forcePasswordChange: true,
+        next,
+      }),
+    })
+  }
+
   let subscriber = false
   let launchCareerSlug: string | null = null
   if (user.role === 'student') {

@@ -17,6 +17,9 @@ export const dynamic = 'force-dynamic'
 export async function GET() {
   const user = await getCurrentUser()
   if (!user) return fail(ErrorCodes.UNAUTHENTICATED, 'Authentication required')
+  if (user.forcePasswordChange) {
+    return fail(ErrorCodes.FORBIDDEN, 'Password change required')
+  }
   const db = await createSupabaseServerClient()
   const favorites = await listFavorites(db, user.id)
   return ok({ favorites })
@@ -25,6 +28,9 @@ export async function GET() {
 // POST /api/favorites — save a favorite (active subscribers only).
 export async function POST(request: NextRequest) {
   const user = await getCurrentUser()
+  if (user?.forcePasswordChange) {
+    return fail(ErrorCodes.FORBIDDEN, 'Password change required')
+  }
 
   let body: unknown
   try {

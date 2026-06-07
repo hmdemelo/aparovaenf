@@ -14,6 +14,10 @@ export default async function StudentLayoutWrapper({
   children: React.ReactNode
 }) {
   const user = await getCurrentUser()
+  if (user && user.forcePasswordChange) {
+    redirect('/force-password')
+  }
+
   if (!user || !user.registrationCompleted) {
     return <>{children}</>
   }

@@ -101,6 +101,16 @@ export const authCallbackQuerySchema = z.object({
 })
 export type AuthCallbackQuery = z.infer<typeof authCallbackQuerySchema>
 
+export const forcePasswordChangeInputSchema = z.object({
+  password: z
+    .string()
+    .min(8, 'A senha deve ter pelo menos 8 caracteres.')
+    .max(72, 'A senha deve ter no máximo 72 caracteres.'),
+})
+export type ForcePasswordChangeInput = z.infer<
+  typeof forcePasswordChangeInputSchema
+>
+
 // --- Feed and answers -----------------------------------------------------
 
 // Lenient UUID/GUID shape (8-4-4-4-12 hex). We intentionally do not enforce the
@@ -251,6 +261,15 @@ export type UpdateAuthorProfileInput = z.infer<
   typeof updateAuthorProfileInputSchema
 >
 
+export const adminQuestionsQuerySchema = z.object({
+  q: z.string().trim().max(160).optional(),
+  status: questionStatusSchema.optional(),
+  subject_id: uuidSchema.optional(),
+  board_id: uuidSchema.optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(30).default(30),
+})
+
 // --- Admin: bulk question import -----------------------------------------
 
 export const bulkImportRowErrorSchema = z.object({
@@ -323,7 +342,7 @@ export type FavoriteInput = z.infer<typeof favoriteInputSchema>
 export const catalogQuerySchema = z.object({
   q: z.string().max(80).optional().nullable(),
   page: z.coerce.number().int().min(1).default(1),
-  page_size: z.coerce.number().int().min(1).max(20).default(20),
+  page_size: z.coerce.number().int().min(1).max(200).default(20),
 })
 export type CatalogQuery = z.infer<typeof catalogQuerySchema>
 

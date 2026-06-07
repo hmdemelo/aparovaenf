@@ -2,6 +2,10 @@
 For additional context about technologies, project structure, scope, and
 implementation order, read:
 
+- `specs/010-admin-management-improvements/spec.md`
+- `specs/010-admin-management-improvements/plan.md`
+- `specs/009-responsive-student-layout/spec.md`
+- `specs/009-responsive-student-layout/plan.md`
 - `specs/008-author-classification-catalogs/spec.md`
 - `specs/008-author-classification-catalogs/plan.md`
 - `specs/007-user-registration-options/spec.md`

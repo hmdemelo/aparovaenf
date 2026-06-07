@@ -194,8 +194,8 @@ export type Database = {
       boards: {
         Row: {
           created_at: string
-          created_by_kind: string
           created_by_author_id: string | null
+          created_by_kind: string
           id: string
           is_priority: boolean
           name: string
@@ -203,8 +203,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by_kind?: string
           created_by_author_id?: string | null
+          created_by_kind?: string
           id?: string
           is_priority?: boolean
           name: string
@@ -212,8 +212,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          created_by_kind?: string
           created_by_author_id?: string | null
+          created_by_kind?: string
           id?: string
           is_priority?: boolean
           name?: string
@@ -226,7 +226,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "author_profiles"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       careers: {
@@ -380,6 +380,36 @@ export type Database = {
           },
         ]
       }
+      question_tags: {
+        Row: {
+          question_id: string
+          tag_id: string
+        }
+        Insert: {
+          question_id: string
+          tag_id: string
+        }
+        Update: {
+          question_id?: string
+          tag_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_tags_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_tags_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questions: {
         Row: {
           annulled: boolean
@@ -475,42 +505,12 @@ export type Database = {
           },
         ]
       }
-      question_tags: {
-        Row: {
-          question_id: string
-          tag_id: string
-        }
-        Insert: {
-          question_id: string
-          tag_id: string
-        }
-        Update: {
-          question_id?: string
-          tag_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "question_tags_question_id_fkey"
-            columns: ["question_id"]
-            isOneToOne: false
-            referencedRelation: "questions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "question_tags_tag_id_fkey"
-            columns: ["tag_id"]
-            isOneToOne: false
-            referencedRelation: "tags"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       subjects: {
         Row: {
           career_id: string
           created_at: string
-          created_by_kind: string
           created_by_author_id: string | null
+          created_by_kind: string
           id: string
           name: string
           slug: string
@@ -518,8 +518,8 @@ export type Database = {
         Insert: {
           career_id: string
           created_at?: string
-          created_by_kind?: string
           created_by_author_id?: string | null
+          created_by_kind?: string
           id?: string
           name: string
           slug: string
@@ -527,8 +527,8 @@ export type Database = {
         Update: {
           career_id?: string
           created_at?: string
-          created_by_kind?: string
           created_by_author_id?: string | null
+          created_by_kind?: string
           id?: string
           name?: string
           slug?: string
@@ -547,7 +547,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "author_profiles"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       subscriptions: {
@@ -603,8 +603,8 @@ export type Database = {
       tags: {
         Row: {
           created_at: string
-          created_by_kind: string
           created_by_author_id: string | null
+          created_by_kind: string
           id: string
           name: string
           slug: string
@@ -612,8 +612,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          created_by_kind?: string
           created_by_author_id?: string | null
+          created_by_kind?: string
           id?: string
           name: string
           slug: string
@@ -621,8 +621,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          created_by_kind?: string
           created_by_author_id?: string | null
+          created_by_kind?: string
           id?: string
           name?: string
           slug?: string
@@ -642,13 +642,14 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "subjects"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       user_profiles: {
         Row: {
           created_at: string
           email: string | null
+          force_password_change: boolean
           id: string
           name: string | null
           registration_completed: boolean
@@ -658,6 +659,7 @@ export type Database = {
         Insert: {
           created_at?: string
           email?: string | null
+          force_password_change?: boolean
           id: string
           name?: string | null
           registration_completed?: boolean
@@ -667,6 +669,7 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string | null
+          force_password_change?: boolean
           id?: string
           name?: string | null
           registration_completed?: boolean
@@ -687,6 +690,8 @@ export type Database = {
         Args: { p_board_id?: string; p_career_id: string; p_exclude?: string[] }
         Returns: string
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       question_difficulty: "facil" | "media" | "dificil"

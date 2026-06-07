@@ -17,6 +17,7 @@ export type AdminContext =
 export async function resolveAdminContext(): Promise<AdminContext> {
   const user = await getCurrentUser()
   if (!user) return { ok: false, code: 'unauthenticated' }
+  if (user.forcePasswordChange) return { ok: false, code: 'forbidden' }
   if (user.role !== 'admin') return { ok: false, code: 'forbidden' }
   const db = await createSupabaseServerClient()
   return { ok: true, db, userId: user.id }
