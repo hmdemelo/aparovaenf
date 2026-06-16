@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { KeyRound, LoaderCircle } from 'lucide-react'
+import { Eye, EyeOff, KeyRound, LoaderCircle } from 'lucide-react'
 import { GoogleAuthButton } from '@/components/google-auth-button'
 import { createSupabaseBrowserClient } from '@/lib/db/browser'
 import { authEmailSchema } from '@/lib/validation/schemas'
@@ -27,6 +27,7 @@ export function LoginForm({
     () => authCallbackErrorMessage(authError) ?? null,
   )
   const [passwordLoading, setPasswordLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -66,32 +67,66 @@ export function LoginForm({
       </div>
 
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-3">
-        <input
-          type="email"
-          required
-          placeholder="E-mail"
-          aria-label="E-mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          data-testid="email"
-          className="aprova-field"
-        />
-
-        <div className="mt-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--hint)]">
-          <KeyRound aria-hidden="true" className="h-3.5 w-3.5" />
-          <span>Senha</span>
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="login-email"
+            className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--hint)]"
+          >
+            E-mail
+          </label>
+          <input
+            id="login-email"
+            type="email"
+            required
+            placeholder="seu@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            data-testid="email"
+            className="aprova-field"
+          />
         </div>
 
-        <input
-          type="password"
-          required
-          placeholder="Senha"
-          aria-label="Senha"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          data-testid="password"
-          className="aprova-field"
-        />
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between">
+            <label
+              htmlFor="login-password"
+              className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--hint)]"
+            >
+              Senha
+            </label>
+            <Link
+              href="/recuperar-senha"
+              className="text-xs font-semibold text-[var(--teal)] hover:underline"
+            >
+              Esqueceu a senha?
+            </Link>
+          </div>
+          <div className="relative">
+            <input
+              id="login-password"
+              type={showPassword ? 'text' : 'password'}
+              required
+              placeholder="Senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              data-testid="password"
+              className="aprova-field pr-11"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              aria-pressed={showPassword}
+              className="absolute inset-y-0 right-0 grid w-11 place-items-center text-[var(--hint)] transition-colors hover:text-[var(--ink)]"
+            >
+              {showPassword ? (
+                <EyeOff aria-hidden="true" className="h-[18px] w-[18px]" />
+              ) : (
+                <Eye aria-hidden="true" className="h-[18px] w-[18px]" />
+              )}
+            </button>
+          </div>
+        </div>
         {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
         <button
           type="submit"
