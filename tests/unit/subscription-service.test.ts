@@ -29,6 +29,7 @@ describe('Stripe subscription synchronization', () => {
         id: 'local-subscription',
         user_id: 'user-1',
         plan: 'monthly',
+        status: 'active',
         provider_customer_id: 'cus_1',
         provider_subscription_id: 'sub_renewing',
       },
@@ -66,6 +67,7 @@ describe('Stripe subscription synchronization', () => {
     expect(result).toMatchObject({
       ok: true,
       activated: true,
+      firstActivation: false,
       subscriptionId: 'local-subscription',
       userId: 'user-1',
       plan: 'monthly',
@@ -79,6 +81,55 @@ describe('Stripe subscription synchronization', () => {
         current_period_end: new Date(1_782_864_000 * 1000).toISOString(),
       }),
     )
+  })
+
+  it('flags the first activation when a pending subscription is paid', async () => {
+    const existing = queryChain({
+      data: {
+        id: 'local-subscription',
+        user_id: 'user-1',
+        plan: 'monthly',
+        status: 'pending',
+        provider_customer_id: 'cus_1',
+        provider_subscription_id: 'sub_new',
+      },
+      error: null,
+    })
+    const expire = queryChain({ data: null, error: null })
+    const update = queryChain({ data: null, error: null })
+    update.eq.mockResolvedValue({ error: null })
+    const from = vi
+      .fn()
+      .mockReturnValueOnce(existing)
+      .mockReturnValueOnce(expire)
+      .mockReturnValueOnce(update)
+    const db = { from }
+
+    const result = await activateSubscriptionFromWebhook(db as never, {
+      id: 'evt_invoice_paid_first',
+      type: 'invoice.paid',
+      data: {
+        object: {
+          id: 'in_1',
+          customer: 'cus_1',
+          parent: {
+            subscription_details: {
+              subscription: 'sub_new',
+              metadata: {},
+            },
+          },
+        },
+      },
+    })
+
+    expect(result).toMatchObject({
+      ok: true,
+      activated: true,
+      firstActivation: true,
+      subscriptionId: 'local-subscription',
+      userId: 'user-1',
+      plan: 'monthly',
+    })
   })
 
   it('does not activate an unpaid completed checkout', async () => {

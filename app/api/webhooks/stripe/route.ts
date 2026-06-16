@@ -10,6 +10,11 @@ import {
 import { ok, fail, ErrorCodes } from '@/lib/api/response'
 import { createSupabaseServiceClient } from '@/lib/db/server'
 import { getServerEnv } from '@/lib/env/server'
+import {
+  sendWelcomeEmail,
+  sendPaymentFailedEmail,
+  sendSubscriptionExpiredEmail,
+} from '@/lib/email/service'
 import Stripe from 'stripe'
 
 export const dynamic = 'force-dynamic'
@@ -88,14 +93,29 @@ export async function POST(request: NextRequest) {
           event_type: eventType,
         },
       })
+      if (activation.firstActivation) {
+        const planLabel = activation.plan === 'annual' ? 'Anual' : 'Mensal'
+        await sendWelcomeEmail(db, activation.userId, planLabel, env.NEXT_PUBLIC_APP_URL)
+      }
     }
   } else if (eventType === 'customer.subscription.deleted') {
     const obj = event.data.object as Stripe.Subscription
+    const { data: subData } = await db
+      .from('subscriptions')
+      .select('user_id')
+      .eq('provider', 'stripe')
+      .eq('provider_subscription_id', obj.id)
+      .maybeSingle()
+
     const cancellation = await cancelSubscriptionFromWebhook(db, obj.id)
     if (!cancellation.ok) {
       await events.markFailed(providerEventId, cancellation.error)
       console.error('[stripe.webhook] processing cancellation failed', cancellation.error)
       return fail(ErrorCodes.INTERNAL, 'Could not process webhook')
+    }
+
+    if (subData?.user_id) {
+      await sendSubscriptionExpiredEmail(db, subData.user_id, env.NEXT_PUBLIC_APP_URL)
     }
   } else if (eventType === 'invoice.payment_failed') {
     const providerSubscriptionId = subscriptionIdFromInvoice(event.data.object)
@@ -106,6 +126,14 @@ export async function POST(request: NextRequest) {
       )
       return fail(ErrorCodes.INTERNAL, 'Could not process webhook')
     }
+
+    const { data: subData } = await db
+      .from('subscriptions')
+      .select('user_id')
+      .eq('provider', 'stripe')
+      .eq('provider_subscription_id', providerSubscriptionId)
+      .maybeSingle()
+
     const pastDue = await markSubscriptionPastDueFromWebhook(
       db,
       providerSubscriptionId,
@@ -114,6 +142,11 @@ export async function POST(request: NextRequest) {
       await events.markFailed(providerEventId, pastDue.error)
       console.error('[stripe.webhook] processing payment failure failed', pastDue.error)
       return fail(ErrorCodes.INTERNAL, 'Could not process webhook')
+    }
+
+    if (subData?.user_id) {
+      const billingUrl = `${env.NEXT_PUBLIC_APP_URL}/assinar`
+      await sendPaymentFailedEmail(db, subData.user_id, billingUrl)
     }
   }
 

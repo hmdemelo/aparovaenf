@@ -93,6 +93,7 @@ describe('POST /api/webhooks/stripe', () => {
     mocks.activateSubscriptionFromWebhook.mockResolvedValue({
       ok: true,
       activated: true,
+      firstActivation: true,
       userId: '00000000-0000-0000-0000-0000000000a4',
       plan: 'annual',
       subscriptionId: '00000000-0000-0000-0000-00000000b111',

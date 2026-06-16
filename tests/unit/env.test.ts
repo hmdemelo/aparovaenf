@@ -6,6 +6,7 @@ const validEnv = {
   NEXT_PUBLIC_SUPABASE_URL: 'https://abc.supabase.co',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon-key-value',
   SUPABASE_SERVICE_ROLE_KEY: 'service-role-key-value',
+  RESEND_API_KEY: 're_test_key',
   STRIPE_SECRET_KEY: 'stripe-key',
   STRIPE_WEBHOOK_SECRET: 'webhook-secret',
   NEXT_PUBLIC_APP_URL: 'http://localhost:3000',

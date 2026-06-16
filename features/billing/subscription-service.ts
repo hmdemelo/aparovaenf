@@ -49,6 +49,7 @@ export type SubscriptionActivationResult =
   | {
       ok: true
       activated: true
+      firstActivation: boolean
       subscriptionId: string
       userId: string
       plan: PlanId
@@ -181,6 +182,9 @@ export async function activateSubscriptionFromWebhook(
 
   const subscriptionId =
     existing.row?.id ?? activation.localSubscriptionId ?? crypto.randomUUID()
+  // A renovação reativa uma linha que já estava `active`; qualquer outro estado
+  // anterior (pending/expired/past_due) ou linha inexistente é ativação inicial.
+  const firstActivation = existing.row?.status !== 'active'
   const expired = await expireOtherActiveSubscriptions(db, userId, subscriptionId)
   if (!expired.ok) return expired
 
@@ -210,6 +214,7 @@ export async function activateSubscriptionFromWebhook(
     return {
       ok: true,
       activated: true,
+      firstActivation,
       subscriptionId: existing.row.id,
       userId,
       plan,
@@ -225,6 +230,7 @@ export async function activateSubscriptionFromWebhook(
   return {
     ok: true,
     activated: true,
+    firstActivation,
     subscriptionId,
     userId,
     plan,
@@ -385,7 +391,7 @@ async function findLocalSubscription(db: Db, id: string) {
   const { data, error } = await db
     .from('subscriptions')
     .select(
-      'id, user_id, plan, provider_customer_id, provider_subscription_id',
+      'id, user_id, plan, status, provider_customer_id, provider_subscription_id',
     )
     .eq('id', id)
     .maybeSingle()
@@ -401,7 +407,7 @@ async function findLocalSubscriptionByProviderId(
   const { data, error } = await db
     .from('subscriptions')
     .select(
-      'id, user_id, plan, provider_customer_id, provider_subscription_id',
+      'id, user_id, plan, status, provider_customer_id, provider_subscription_id',
     )
     .eq('provider', PROVIDER)
     .eq('provider_subscription_id', providerSubscriptionId)

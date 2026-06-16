@@ -4,7 +4,7 @@ import { isSubscriber } from '@/lib/auth/roles'
 import { resolvePostLoginPath } from '@/lib/auth/post-login'
 import { getLaunchCareerSlug } from '@/lib/db/launch-career'
 import { createSupabaseServerClient } from '@/lib/db/server'
-import { authCallbackQuerySchema } from '@/lib/validation/schemas'
+import { authCallbackQuerySchema, type UserRole } from '@/lib/validation/schemas'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -74,7 +74,8 @@ export async function GET(request: Request) {
     .eq('id', user.id)
     .single()
 
-  const role = profile?.role ?? 'student'
+  const rawRole = profile?.role ?? 'student'
+  const role: UserRole = rawRole === 'author' || rawRole === 'admin' ? rawRole : 'student'
   const isGoogle = user.app_metadata?.provider === 'google' || user.app_metadata?.providers?.includes('google')
   let registrationCompleted = profile?.registration_completed ?? false
 
