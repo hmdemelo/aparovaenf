@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/db/server'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
 import { listErrorHistory } from '@/features/student-feed/error-history-service'
+import { RichText } from '@/lib/utils/markdown-renderer'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,11 +43,13 @@ export default async function ErrorsPage() {
                   {e.subject}
                 </span>
               )}
-              <p className="text-sm text-[var(--ink)]">{e.statement}</p>
+              <div className="text-sm text-[var(--ink)]">
+                <RichText text={e.statement} />
+              </div>
               {e.generalComment && (
-                <p className="mt-2 border-l-2 border-[var(--mint-dim)] pl-3 text-xs leading-relaxed text-[var(--muted)]">
-                  {e.generalComment}
-                </p>
+                <div className="mt-2 border-l-2 border-[var(--mint-dim)] pl-3 text-xs leading-relaxed text-[var(--muted)]">
+                  <RichText text={e.generalComment} />
+                </div>
               )}
             </li>
           ))}

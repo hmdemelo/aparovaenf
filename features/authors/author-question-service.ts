@@ -37,6 +37,7 @@ export type QuestionDraftInput = {
   general_comment?: string | null
   alternatives?: AlternativeDraft[]
   topic_ids?: string[]
+  image_path?: string | null
 }
 
 export type ServiceResult<T> =
@@ -161,6 +162,7 @@ function questionRow(authorId: string, input: QuestionDraftInput) {
     source_reference: input.source_reference ?? null,
     statement: input.statement,
     general_comment: input.general_comment ?? null,
+    image_path: input.image_path ?? null,
   }
 }
 
@@ -218,11 +220,27 @@ export async function updateQuestion(
     if (!valResult.ok) return valResult
   }
 
+  // Get old image_path for storage garbage collection
+  const { data: oldQuestion } = await db
+    .from('questions')
+    .select('image_path')
+    .eq('id', questionId)
+    .maybeSingle()
+
   const { error } = await db
     .from('questions')
     .update(questionRow(authorId, input))
     .eq('id', questionId)
   if (error) return { ok: false, code: 'error', errors: [error.message] }
+
+  // Garbage collect the old image if it was replaced or removed
+  if (
+    oldQuestion?.image_path &&
+    input.image_path !== undefined &&
+    oldQuestion.image_path !== input.image_path
+  ) {
+    await db.storage.from('question-images').remove([oldQuestion.image_path])
+  }
 
   if (input.alternatives) {
     const altError = await replaceAlternatives(db, questionId, input.alternatives)
@@ -353,7 +371,7 @@ export async function getAuthorQuestion(
     .from('questions')
     .select(
       `id, statement, general_comment, career_id, subject_id, board_id, difficulty,
-       source_type, source_orgao, source_cargo, source_year, source_reference, status,
+       source_type, source_orgao, source_cargo, source_year, source_reference, status, image_path,
        alternatives(id, label, text, is_correct, alternative_comment, position),
        tags:question_tags(tag:tags(id, name, slug, subject_id))`,
     )

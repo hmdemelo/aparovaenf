@@ -266,7 +266,7 @@ d('author question pipeline (local Supabase)', () => {
     // Retrieve via service
     const question = await getAuthorQuestion(author1, authorId1, result.data.id)
     expect(question).not.toBeNull()
-    const retrievedTags = (question?.tags ?? []).map((t) => (t as { name: string }).name)
+    const retrievedTags = (question?.tags ?? []).map((t: { name: string }) => t.name)
     expect(retrievedTags).toContain('PNI 2026 Integration Test')
     expect(retrievedTags).toContain('Vacina COVID Integration Test')
 

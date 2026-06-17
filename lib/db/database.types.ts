@@ -436,6 +436,7 @@ export type Database = {
           status: Database["public"]["Enums"]["question_status"]
           subject_id: string | null
           updated_at: string
+          image_path: string | null
         }
         Insert: {
           annulled?: boolean
@@ -457,6 +458,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["question_status"]
           subject_id?: string | null
           updated_at?: string
+          image_path?: string | null
         }
         Update: {
           annulled?: boolean
@@ -478,6 +480,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["question_status"]
           subject_id?: string | null
           updated_at?: string
+          image_path?: string | null
         }
         Relationships: [
           {

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/db/server'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
 import { listFavorites } from '@/features/student-feed/favorites-service'
+import { RichText } from '@/lib/utils/markdown-renderer'
 
 export const dynamic = 'force-dynamic'
 
@@ -49,7 +50,9 @@ export default async function FavoritesPage() {
                   {f.subject}
                 </span>
               )}
-              <p className="line-clamp-2 text-sm text-[var(--ink)]">{f.statement}</p>
+              <p className="line-clamp-2 text-sm text-[var(--ink)]">
+                <RichText text={f.statement} />
+              </p>
             </li>
           ))}
         </ul>

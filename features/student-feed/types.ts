@@ -34,6 +34,7 @@ export type FeedQuestionDto = {
   annulled: boolean
   answerKeyChanged: boolean
   alternatives: FeedAlternativeDto[]
+  image_path?: string | null
 }
 
 export type FeedNextResponse = {

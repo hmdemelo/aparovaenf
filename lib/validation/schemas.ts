@@ -179,6 +179,7 @@ export const questionInputSchema = z.object({
   statement: z.string().min(1, 'statement is required'),
   general_comment: z.string().optional(),
   alternatives: z.array(alternativeInputSchema).optional(),
+  image_path: z.string().optional().nullable(),
 })
 export type QuestionInput = z.infer<typeof questionInputSchema>
 
@@ -211,6 +212,7 @@ export const authorQuestionInputSchema = z.object({
   general_comment: z.string().optional().nullable(),
   alternatives: z.array(authorAlternativeSchema).optional(),
   topic_ids: z.array(uuidSchema).max(20).optional(),
+  image_path: z.string().optional().nullable(),
 })
 export type AuthorQuestionInput = z.infer<typeof authorQuestionInputSchema>
 

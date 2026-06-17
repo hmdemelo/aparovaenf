@@ -4,6 +4,7 @@ import { CheckCircle2, XCircle } from 'lucide-react'
 import { createSupabaseServerClient } from '@/lib/db/server'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
 import { listAnswerHistory } from '@/features/account/answer-history-service'
+import { RichText } from '@/lib/utils/markdown-renderer'
 
 export const dynamic = 'force-dynamic'
 
@@ -65,7 +66,7 @@ export default async function HistoryPage() {
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="line-clamp-2 text-sm text-[var(--ink)]">
-                      {item.statement}
+                      <RichText text={item.statement} />
                     </p>
                     <p className="mt-1 text-xs text-[var(--muted)]">
                       {dateFormatter.format(new Date(item.answeredAt))}

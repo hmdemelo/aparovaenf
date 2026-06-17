@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, X, Search } from 'lucide-react'
+import { AlertTriangle, X, Search, Bold, Italic, Underline, Strikethrough, Image as ImageIcon } from 'lucide-react'
 import {
   AlternativesEditor,
   labelForIndex,
@@ -10,6 +10,8 @@ import {
 } from './alternatives-editor'
 import type { Difficulty, SourceType } from '@/lib/validation/schemas'
 import { ClassificationCatalogDialog } from './classification-catalog-dialog'
+import { compressToWebP } from '@/lib/utils/image-compression'
+import { createSupabaseBrowserClient } from '@/lib/db/browser'
 
 type Option = { id: string; name: string }
 type SubjectOption = Option & { career_id: string }
@@ -29,6 +31,7 @@ export type EditorInitial = {
   general_comment: string | null
   alternatives: EditableAlternative[]
   tags?: { id: string; name: string; slug: string; subject_id: string | null }[]
+  image_path?: string | null
 }
 
 type Props = {
@@ -87,6 +90,108 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
   const [showClassificationWarning, setShowClassificationWarning] = useState(Boolean(initial))
   const [pendingCareerSwap, setPendingCareerSwap] = useState<string | null>(null)
 
+  // Text refs for selection formatting
+  const statementRef = useRef<HTMLTextAreaElement>(null)
+  const commentRef = useRef<HTMLTextAreaElement>(null)
+
+  // Image states
+  const [imagePath, setImagePath] = useState<string | null>(initial?.image_path ?? null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    initial?.image_path
+      ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/question-images/${initial.image_path}`
+      : null
+  )
+  const [isImageDeleted, setIsImageDeleted] = useState(false)
+
+  // Helper to wrap selected text in markdown characters
+  function insertFormatting(
+    textareaRef: React.RefObject<HTMLTextAreaElement | null>,
+    setValue: (val: string) => void,
+    prefix: string,
+    suffix = prefix
+  ) {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const value = textarea.value
+    const selection = value.substring(start, end)
+    const wrapped = prefix + selection + suffix
+    const newValue = value.substring(0, start) + wrapped + value.substring(end)
+
+    setValue(newValue)
+    setIsDirty(true)
+
+    // Re-focus and set selection
+    setTimeout(() => {
+      textarea.focus()
+      const newCursorStart = start + prefix.length
+      const newCursorEnd = end + prefix.length
+      textarea.setSelectionRange(newCursorStart, newCursorEnd)
+    }, 0)
+  }
+
+  // Image handlers
+  const handleImageChange = async (file: File) => {
+    try {
+      const compressedBlob = await compressToWebP(file)
+      const previewUrl = URL.createObjectURL(compressedBlob)
+      setImagePreview(previewUrl)
+      const compressedFile = new File([compressedBlob], `image_${Date.now()}.webp`, {
+        type: 'image/webp'
+      })
+      setImageFile(compressedFile)
+      setIsDirty(true)
+      setIsImageDeleted(false)
+    } catch (err) {
+      console.error('Failed to compress image:', err)
+      setErrors((prev) => [...prev, 'Falha ao processar e comprimir a imagem.'])
+    }
+  }
+
+  const handleImageRemove = () => {
+    setImageFile(null)
+    setImagePreview(null)
+    setIsImageDeleted(true)
+    setIsDirty(true)
+  }
+
+  async function handleImageStorageOperations(qId: string): Promise<string | null | undefined> {
+    if (!isImageDeleted && !imageFile) {
+      return imagePath
+    }
+
+    const supabase = createSupabaseBrowserClient()
+
+    if (isImageDeleted) {
+      if (imagePath) {
+        await supabase.storage.from('question-images').remove([imagePath])
+      }
+      setImagePath(null)
+      return null
+    }
+
+    if (imageFile) {
+      if (imagePath) {
+        await supabase.storage.from('question-images').remove([imagePath])
+      }
+      const filePath = `questions/${qId}/${Date.now()}.webp`
+      const { error: uploadError } = await supabase.storage
+        .from('question-images')
+        .upload(filePath, imageFile, { upsert: true })
+      if (uploadError) {
+        throw uploadError
+      }
+      setImageFile(null)
+      setImagePath(filePath)
+      return filePath
+    }
+
+    return imagePath
+  }
+
   useEffect(() => {
     if (!isDirty) return
 
@@ -106,7 +211,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
   const [isCatalogOpen, setIsCatalogOpen] = useState(false)
   const [catalogTab, setCatalogTab] = useState<'disciplines' | 'topics' | 'boards'>('disciplines')
 
-  function buildPayload() {
+  function buildPayload(currentImagePath?: string | null) {
     return {
       career_id: careerId || null,
       subject_id: subjectId || null,
@@ -126,6 +231,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
         alternative_comment: a.alternative_comment || null,
       })),
       topic_ids: tags.map((t) => t.id),
+      image_path: currentImagePath !== undefined ? currentImagePath : imagePath,
     }
   }
 
@@ -137,25 +243,67 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
 
   // Persist (create or update) and return the question id, or null on failure.
   async function save(): Promise<string | null> {
-    const payload = buildPayload()
-    const res = questionId
-      ? await fetch(`/api/author/questions/${questionId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-      : await fetch('/api/author/questions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-    const json: ApiEnvelope<{ id: string }> = await res.json()
-    if (!json.success) {
-      setErrors([json.error.message])
+    setErrors([])
+    try {
+      const currentId = questionId
+      let nextImagePath = imagePath
+
+      // If updating an existing question, perform storage operations first
+      if (currentId) {
+        const resultPath = await handleImageStorageOperations(currentId)
+        if (resultPath !== undefined) {
+          nextImagePath = resultPath
+        }
+      }
+
+      const payload = buildPayload(nextImagePath)
+      const res = currentId
+        ? await fetch(`/api/author/questions/${currentId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+        : await fetch('/api/author/questions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+
+      const json: ApiEnvelope<{ id: string }> = await res.json()
+      if (!json.success) {
+        setErrors([json.error.message])
+        return null
+      }
+
+      const newId = json.data.id
+
+      // If we just created the question (POST) and have an image to upload:
+      if (!currentId && (imageFile || isImageDeleted)) {
+        const resultPath = await handleImageStorageOperations(newId)
+        if (resultPath !== undefined) {
+          // Send PATCH to associate the uploaded image path with the new question
+          const patchPayload = buildPayload(resultPath)
+          const patchRes = await fetch(`/api/author/questions/${newId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(patchPayload),
+          })
+          const patchJson: ApiEnvelope<{ id: string }> = await patchRes.json()
+          if (!patchJson.success) {
+            setErrors([patchJson.error.message])
+            return null
+          }
+        }
+      }
+
+      setQuestionId(newId)
+      setIsImageDeleted(false)
+      return newId
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao salvar a questão'
+      setErrors([msg])
       return null
     }
-    setQuestionId(json.data.id)
-    return json.data.id
   }
 
   async function onSaveDraft() {
@@ -333,14 +481,50 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
         </label>
       </div>
 
-      <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between text-sm font-semibold text-[var(--ink)]">
           <span>Enunciado</span>
           <span className="text-xs font-normal text-[var(--muted)]" data-testid="statement-char-count">
             {statement.length} caracteres
           </span>
         </div>
+        {/* Formatting Toolbar for Statement */}
+        <div className="flex gap-1 mb-1 border-b border-[var(--line)] pb-1" data-testid="statement-formatting-toolbar">
+          <button
+            type="button"
+            onClick={() => insertFormatting(statementRef, setStatement, '**')}
+            title="Negrito"
+            className="p-1.5 hover:bg-[var(--surface-hover)] rounded text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+          >
+            <Bold size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => insertFormatting(statementRef, setStatement, '*')}
+            title="Itálico"
+            className="p-1.5 hover:bg-[var(--surface-hover)] rounded text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+          >
+            <Italic size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => insertFormatting(statementRef, setStatement, '<u>', '</u>')}
+            title="Sublinhado"
+            className="p-1.5 hover:bg-[var(--surface-hover)] rounded text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+          >
+            <Underline size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => insertFormatting(statementRef, setStatement, '~~')}
+            title="Riscado"
+            className="p-1.5 hover:bg-[var(--surface-hover)] rounded text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+          >
+            <Strikethrough size={16} />
+          </button>
+        </div>
         <textarea
+          ref={statementRef}
           value={statement}
           onChange={(e) => {
             setStatement(e.target.value)
@@ -350,7 +534,45 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
           data-testid="statement"
           className="aprova-field"
         />
-      </label>
+      </div>
+
+      {/* Upload de Imagem */}
+      <div className="flex flex-col gap-2 text-sm font-semibold text-[var(--ink)]" data-testid="statement-image-upload">
+        <span>Imagem do Enunciado (opcional)</span>
+        {imagePreview ? (
+          <div className="relative w-fit rounded-[var(--radius-sm)] border border-[var(--line)] p-2 bg-white">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imagePreview}
+              alt="Preview do enunciado"
+              className="max-h-[200px] rounded-[var(--radius-sm)] object-contain"
+            />
+            <button
+              type="button"
+              onClick={handleImageRemove}
+              className="absolute -top-2 -right-2 p-1 bg-[var(--danger)] hover:bg-[var(--danger)]/90 text-white rounded-full transition shadow-md cursor-pointer"
+              title="Remover imagem"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <label className="flex flex-col items-center justify-center border-2 border-dashed border-[var(--line-2)] rounded-[var(--radius-sm)] bg-[var(--paper)] py-6 px-4 hover:border-[var(--teal)] transition-colors cursor-pointer text-center font-normal text-[var(--muted)]">
+            <ImageIcon size={24} className="mb-2 text-[var(--muted)]" />
+            <span className="text-sm font-semibold text-[var(--ink)]">Selecione uma imagem</span>
+            <span className="text-xs">Clique ou arraste e solte para buscar (PNG, JPG, WebP)</span>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleImageChange(file)
+              }}
+              className="hidden"
+            />
+          </label>
+        )}
+      </div>
 
       <AlternativesEditor
         alternatives={alternatives}
@@ -408,14 +630,50 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
         )}
       </div>
 
-      <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center justify-between text-sm font-semibold text-[var(--ink)]">
           <span>Comentário geral (obrigatório para publicar)</span>
           <span className="text-xs font-normal text-[var(--muted)]" data-testid="comment-char-count">
             {(generalComment || '').length} caracteres
           </span>
         </div>
+        {/* Formatting Toolbar for General Comment */}
+        <div className="flex gap-1 mb-1 border-b border-[var(--line)] pb-1" data-testid="comment-formatting-toolbar">
+          <button
+            type="button"
+            onClick={() => insertFormatting(commentRef, setGeneralComment, '**')}
+            title="Negrito"
+            className="p-1.5 hover:bg-[var(--surface-hover)] rounded text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+          >
+            <Bold size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => insertFormatting(commentRef, setGeneralComment, '*')}
+            title="Itálico"
+            className="p-1.5 hover:bg-[var(--surface-hover)] rounded text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+          >
+            <Italic size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => insertFormatting(commentRef, setGeneralComment, '<u>', '</u>')}
+            title="Sublinhado"
+            className="p-1.5 hover:bg-[var(--surface-hover)] rounded text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+          >
+            <Underline size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={() => insertFormatting(commentRef, setGeneralComment, '~~')}
+            title="Riscado"
+            className="p-1.5 hover:bg-[var(--surface-hover)] rounded text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+          >
+            <Strikethrough size={16} />
+          </button>
+        </div>
         <textarea
+          ref={commentRef}
           value={generalComment}
           onChange={(e) => {
             setGeneralComment(e.target.value)
@@ -425,7 +683,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
           data-testid="general-comment"
           className="aprova-field"
         />
-      </label>
+      </div>
 
       {errors.length > 0 && (
         <ul

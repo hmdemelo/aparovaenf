@@ -39,6 +39,7 @@ export type FeedQuestion = {
   annulled: boolean
   answerKeyChanged: boolean
   alternatives: FeedAlternative[]
+  image_path: string | null
 }
 
 export type GradingResult = {
@@ -163,7 +164,7 @@ export async function getNextQuestion(
     .from('questions')
     .select(
       `id, statement, difficulty, source_type, source_orgao, source_cargo,
-       source_year, source_reference, annulled, answer_key_changed,
+       source_year, source_reference, annulled, answer_key_changed, image_path,
        career:careers!inner(id, name, slug),
        subject:subjects(name),
        board:boards(name),
@@ -205,6 +206,7 @@ export async function getNextQuestion(
         position: a.position,
       }))
       .sort((a, b) => a.position - b.position),
+    image_path: data.image_path,
   }
 }
 

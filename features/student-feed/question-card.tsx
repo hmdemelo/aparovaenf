@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { Bookmark, Check, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Bookmark, Check, X, ZoomIn } from 'lucide-react'
 import type { AnswerResponse, FeedQuestionDto } from './types'
+import { RichText } from '@/lib/utils/markdown-renderer'
 
 const DIFFICULTY_LABEL: Record<FeedQuestionDto['difficulty'], string> = {
   facil: 'Fácil',
@@ -35,6 +36,22 @@ export function QuestionCard({
 }: QuestionCardProps) {
   const [selected, setSelected] = useState<string | null>(null)
   const answered = feedback !== null
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
+
+  useEffect(() => {
+    if (!isLightboxOpen) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsLightboxOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isLightboxOpen])
 
   function altState(alternativeId: string): 'correct' | 'wrong' | 'idle' | 'chosen' {
     if (!answered) return selected === alternativeId ? 'chosen' : 'idle'
@@ -113,56 +130,111 @@ export function QuestionCard({
         </p>
       )}
 
-      <p className="font-display text-[21px] font-semibold leading-[1.25] text-[var(--ink)]">
-        {question.statement}
-      </p>
+      {/* Grid container if image is present */}
+      <div className={question.image_path ? 'grid gap-6 md:grid-cols-2' : 'flex flex-col gap-5'}>
+        {question.image_path && (
+          <div className="flex flex-col gap-2">
+            <div
+              className="relative overflow-hidden rounded-[18px] border border-[color:var(--line)] bg-white p-2 cursor-zoom-in group transition hover:border-[var(--teal)]"
+              onClick={() => setIsLightboxOpen(true)}
+              data-testid="question-image-container"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/question-images/${question.image_path}`}
+                alt="Imagem da questão"
+                className="max-h-[220px] md:max-h-[380px] w-full object-contain rounded-[12px] transition group-hover:scale-[1.01]"
+              />
+              <div className="absolute bottom-3 right-3 rounded-full bg-black/60 p-1.5 text-white opacity-0 group-hover:opacity-100 transition duration-200">
+                <ZoomIn size={16} />
+              </div>
+            </div>
+          </div>
+        )}
 
-      <ul className="flex flex-col gap-3">
-        {question.alternatives.map((alt) => {
-          const state = altState(alt.id)
-          return (
-            <li key={alt.id}>
-              <button
-                type="button"
-                data-testid="alternative"
-                disabled={answered || submitting}
-                aria-pressed={selected === alt.id}
-                onClick={() => setSelected(alt.id)}
-                className={`group flex w-full items-start gap-4 rounded-[20px] border-[1.5px] px-4 py-4 text-left text-[15.5px] shadow-sm transition active:scale-[0.98] disabled:cursor-default disabled:active:scale-100 ${altClasses[state]}`}
-              >
-                <span
-                  className={`aprova-option-letter ${
-                    state === 'correct' || state === 'chosen'
-                      ? 'border-[var(--teal)] bg-[rgba(160,243,212,0.38)] text-[var(--teal)]'
-                      : state === 'wrong'
-                        ? 'border-[var(--danger)] bg-[var(--danger-bg)] text-[var(--danger)]'
-                        : 'text-[var(--muted)] group-hover:text-[var(--teal)]'
-                  }`}
-                >
-                  {alt.label}
-                </span>
-                <span className="flex-1 leading-relaxed">{alt.text}</span>
-                {state === 'correct' && (
-                  <Check size={18} className="mt-0.5 shrink-0 text-[var(--teal)]" />
-                )}
-                {state === 'wrong' && (
-                  <X size={18} className="mt-0.5 shrink-0 text-[var(--danger)]" />
-                )}
-              </button>
-            </li>
-          )
-        })}
-      </ul>
+        <div className="flex flex-col gap-5">
+          <div className="font-display text-[21px] font-semibold leading-[1.25] text-[var(--ink)]">
+            <RichText text={question.statement} />
+          </div>
 
-      {!answered && (
-        <button
-          type="button"
-          disabled={!selected || submitting}
-          onClick={() => selected && onAnswer(selected)}
-          className="mt-1 rounded-[18px] bg-[var(--teal)] px-4 py-[16px] font-semibold text-white shadow-[0_16px_30px_-22px_rgba(0,84,64,0.9)] transition hover:bg-[var(--teal-mid)] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[var(--hint)]"
+          <ul className="flex flex-col gap-3">
+            {question.alternatives.map((alt) => {
+              const state = altState(alt.id)
+              return (
+                <li key={alt.id}>
+                  <button
+                    type="button"
+                    data-testid="alternative"
+                    disabled={answered || submitting}
+                    aria-pressed={selected === alt.id}
+                    onClick={() => setSelected(alt.id)}
+                    className={`group flex w-full items-start gap-4 rounded-[20px] border-[1.5px] px-4 py-4 text-left text-[15.5px] shadow-sm transition active:scale-[0.98] disabled:cursor-default disabled:active:scale-100 ${altClasses[state]}`}
+                  >
+                    <span
+                      className={`aprova-option-letter ${
+                        state === 'correct' || state === 'chosen'
+                          ? 'border-[var(--teal)] bg-[rgba(160,243,212,0.38)] text-[var(--teal)]'
+                          : state === 'wrong'
+                            ? 'border-[var(--danger)] bg-[var(--danger-bg)] text-[var(--danger)]'
+                            : 'text-[var(--muted)] group-hover:text-[var(--teal)]'
+                      }`}
+                    >
+                      {alt.label}
+                    </span>
+                    <span className="flex-1 leading-relaxed">{alt.text}</span>
+                    {state === 'correct' && (
+                      <Check size={18} className="mt-0.5 shrink-0 text-[var(--teal)]" />
+                    )}
+                    {state === 'wrong' && (
+                      <X size={18} className="mt-0.5 shrink-0 text-[var(--danger)]" />
+                    )}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+
+          {!answered && (
+            <button
+              type="button"
+              disabled={!selected || submitting}
+              onClick={() => selected && onAnswer(selected)}
+              className="mt-1 rounded-[18px] bg-[var(--teal)] px-4 py-[16px] font-semibold text-white shadow-[0_16px_30px_-22px_rgba(0,84,64,0.9)] transition hover:bg-[var(--teal-mid)] active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[var(--hint)]"
+            >
+              {submitting ? 'Enviando...' : 'Responder'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {isLightboxOpen && question.image_path && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-4 transition-opacity duration-300 animate-fade-in"
+          onClick={() => setIsLightboxOpen(false)}
+          data-testid="image-lightbox"
         >
-          {submitting ? 'Enviando...' : 'Responder'}
-        </button>
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={() => setIsLightboxOpen(false)}
+            className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition cursor-pointer"
+            aria-label="Fechar zoom"
+          >
+            <X size={24} />
+          </button>
+          
+          {/* Lightbox Image */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/question-images/${question.image_path}`}
+            alt="Imagem ampliada da questão"
+            className="max-h-[90vh] max-w-[95vw] object-contain rounded-lg shadow-2xl transition-transform duration-300 hover:scale-105"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <span className="mt-4 text-xs text-white/60 select-none">
+            Pressione Esc ou clique fora para fechar.
+          </span>
+        </div>
       )}
     </div>
   )
