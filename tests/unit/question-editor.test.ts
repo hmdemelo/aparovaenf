@@ -123,4 +123,27 @@ describe('QuestionEditor incomplete imported drafts', () => {
       )
     })
   })
+
+  it('allows clicking an alternative to mark it as correct', async () => {
+    const user = userEvent.setup()
+    render(
+      createElement(QuestionEditor, {
+        careers: [{ id: 'career-1', name: 'Enfermeiro(a)' }],
+        subjects: [],
+        boards: [],
+      }),
+    )
+
+    const radio0 = screen.getByTestId('correct-0') as HTMLInputElement
+    const radio1 = screen.getByTestId('correct-1') as HTMLInputElement
+
+    expect(radio0.checked).toBe(true)
+    expect(radio1.checked).toBe(false)
+
+    // Click the label of the second radio or the radio itself
+    await user.click(radio1)
+
+    expect(radio0.checked).toBe(false)
+    expect(radio1.checked).toBe(true)
+  })
 })

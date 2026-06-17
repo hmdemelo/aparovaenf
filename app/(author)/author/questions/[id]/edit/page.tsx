@@ -46,6 +46,7 @@ export default async function EditQuestionPage({
     general_comment: question.general_comment,
     alternatives,
     tags: question.tags ?? [],
+    image_path: question.image_path,
   }
 
   return (
