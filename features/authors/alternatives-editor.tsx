@@ -59,24 +59,27 @@ export function AlternativesEditor({ alternatives, onChange }: Props) {
         >
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer select-none text-[var(--muted)]">
-              <input
-                type="radio"
-                name="correct-alternative"
-                checked={alt.is_correct}
-                onChange={() => setCorrect(index)}
-                data-testid={`correct-${index}`}
-                className="sr-only"
-              />
-              <span
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                  alt.is_correct
-                    ? 'border-[var(--teal)] bg-[var(--teal)] text-white'
-                    : 'border-[var(--line)] bg-white hover:border-[color:var(--muted)]'
-                }`}
-              >
-                {alt.is_correct && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                )}
+              <span className="relative inline-flex h-5 w-5 items-center justify-center">
+                <input
+                  type="radio"
+                  name="correct-alternative"
+                  checked={alt.is_correct}
+                  onChange={() => setCorrect(index)}
+                  data-testid={`correct-${index}`}
+                  className="absolute inset-0 m-0 cursor-pointer appearance-none opacity-0"
+                />
+                <span
+                  aria-hidden="true"
+                  className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                    alt.is_correct
+                      ? 'border-[var(--teal)] bg-[var(--teal)] text-white'
+                      : 'border-[var(--line)] bg-white hover:border-[color:var(--muted)]'
+                  }`}
+                >
+                  {alt.is_correct && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                  )}
+                </span>
               </span>
               <span className={alt.is_correct ? 'text-[var(--teal)] font-bold' : ''}>
                 {labelForIndex(index)}
