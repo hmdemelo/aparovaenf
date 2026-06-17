@@ -77,7 +77,30 @@ describe('POST /api/webhooks/stripe', () => {
       STRIPE_WEBHOOK_SECRET: WEBHOOK_SECRET,
       NEXT_PUBLIC_APP_URL: 'https://aprovaenf.test',
     })
-    mocks.createSupabaseServiceClient.mockReturnValue({ db: true })
+    const mockQueryChain = {
+      maybeSingle: vi.fn().mockImplementation(() => {
+        return Promise.resolve({
+          data: {
+            user_id: '00000000-0000-0000-0000-0000000000a4',
+            email: 'aluno@aprovaenf.local',
+            name: 'Aluno',
+          },
+          error: null,
+        })
+      }),
+      eq: vi.fn().mockImplementation(function() {
+        return mockQueryChain
+      }),
+      select: vi.fn().mockImplementation(function() {
+        return mockQueryChain
+      }),
+    }
+    const mockDb = {
+      from: vi.fn().mockImplementation(() => {
+        return mockQueryChain
+      }),
+    }
+    mocks.createSupabaseServiceClient.mockReturnValue(mockDb)
     mocks.createPaymentEventRepository.mockReturnValue({
       recordReceived: mocks.recordReceived,
       markProcessed: mocks.markProcessed,

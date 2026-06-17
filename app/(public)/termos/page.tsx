@@ -16,28 +16,36 @@ export default function TermosPage() {
         </h1>
       <div className="flex flex-col gap-4 text-sm leading-relaxed text-[var(--muted)]">
         <p>
-          O aprovaenf é uma plataforma de estudo por questões comentadas para
-          concursos da área da saúde. Ao usar a plataforma, você concorda com
-          estes termos.
+          O <strong>aprovaenf</strong> é uma plataforma web responsiva de estudos com foco em questões comentadas para concursos públicos da área de saúde (enfermagem e técnicos em enfermagem). Ao acessar e utilizar o nosso serviço, você concorda em cumprir e vincular-se aos seguintes termos.
         </p>
-        <h2 className="text-base font-semibold text-[var(--ink)]">Conta e acesso</h2>
+
+        <h2 className="text-base font-semibold text-[var(--ink)]">1. Teste Gratuito (Trial) e Cadastro</h2>
+        <ul className="list-disc pl-5 flex flex-col gap-2">
+          <li><strong>Visitantes Anônimos:</strong> Podem responder até 2 questões gratuitamente na página inicial sem necessidade de cadastro.</li>
+          <li><strong>Usuários Cadastrados:</strong> Após as 2 primeiras questões, é necessário criar uma conta gratuita para responder mais 3 questões adicionais (totalizando o limite de 5 questões gratuitas no trial).</li>
+          <li><strong>Bloqueio de Acesso:</strong> Ao atingir o limite de 5 questões respondidas no trial, o feed de questões será bloqueado e o usuário perderá o acesso às questões resolvidas e ao histórico até que adquira uma assinatura ativa.</li>
+        </ul>
+
+        <h2 className="text-base font-semibold text-[var(--ink)]">2. Planos e Assinaturas (Stripe)</h2>
         <p>
-          Você pode responder questões gratuitas antes do cadastro. Após o limite
-          gratuito, é necessário assinar um plano para continuar.
+          Para obter acesso ilimitado ao banco de questões, histórico de erros e sistema de favoritos, oferecemos duas modalidades de assinatura recorrente: <strong>Mensal (R$ 29,90/mês)</strong> e <strong>Anual (R$ 287,00/ano)</strong>.
         </p>
-        <h2 className="text-base font-semibold text-[var(--ink)]">Conteúdo</h2>
+        <ul className="list-disc pl-5 flex flex-col gap-2">
+          <li><strong>Forma de Pagamento:</strong> O faturamento é realizado exclusivamente via cartão de crédito recorrente. Outras formas de pagamento (como PIX ou parcelamento no boleto) não são comercializadas neste fluxo.</li>
+          <li><strong>Renovação Automática:</strong> As assinaturas são renovadas automaticamente ao final de cada período de faturamento, a menos que o cancelamento seja solicitado pelo usuário antes da data de renovação.</li>
+          <li><strong>Cancelamento:</strong> O cancelamento cessa a renovação automática para o ciclo seguinte. O acesso do aluno permanecerá ativo até o final do período de faturamento já pago.</li>
+        </ul>
+
+        <h2 className="text-base font-semibold text-[var(--ink)]">3. Conteúdo das Questões e Propriedade Intelectual</h2>
+        <ul className="list-disc pl-5 flex flex-col gap-2">
+          <li><strong>Autoria e Comentários:</strong> As questões podem ser autorais (elaboradas por nossos especialistas parceiros) ou oriundas de provas anteriores de concursos oficiais. Todos os comentários de especialistas são protegidos por direitos autorais pertencentes aos respectivos autores e ao aprovaenf.</li>
+          <li><strong>Dados de Concursos Oficiais:</strong> As questões de concursos mantêm a indicação do órgão, cargo, banca e ano correspondentes quando essas informações estiverem disponíveis na base pública original.</li>
+        </ul>
+
+        <h2 className="text-base font-semibold text-[var(--ink)]">4. Isenção de Responsabilidade</h2>
         <p>
-          As questões podem ser autorais ou de provas anteriores. Questões de
-          provas oficiais mantêm a indicação de banca, cargo, ano e órgão quando
-          disponíveis.
-        </p>
-        <h2 className="text-base font-semibold text-[var(--ink)]">Assinaturas</h2>
-        <p>
-          Os planos mensal e anual dão acesso ilimitado às questões, favoritos e
-          histórico de erros. O pagamento é processado por provedor externo.
-        </p>
-        <p className="text-xs text-[var(--hint)]">
-          Este é um texto inicial e poderá ser atualizado.
+          O aprovaenf é uma ferramenta educacional de suporte à preparação para concursos públicos. Nós nos esforçamos para fornecer comentários precisos e atualizados, contudo:
+          <strong> Não garantimos a aprovação ou classificação do aluno em nenhum concurso público, nem nos responsabilizamos por alterações tardias em gabaritos oficiais promovidos por bancas organizadoras.</strong>
         </p>
       </div>
       </section>

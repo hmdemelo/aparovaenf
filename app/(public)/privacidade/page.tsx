@@ -16,29 +16,47 @@ export default function PrivacidadePage() {
         </h1>
       <div className="flex flex-col gap-4 text-sm leading-relaxed text-[var(--muted)]">
         <p>
-          Respeitamos a sua privacidade. Esta política descreve, de forma
-          inicial, como os seus dados são tratados no aprovaenf.
+          No <strong>aprovaenf</strong>, valorizamos a transparência e a segurança dos seus dados. Esta política descreve como coletamos, usamos e protegemos suas informações de acordo com as leis vigentes, incluindo a Lei Geral de Proteção de Dados (LGPD).
         </p>
-        <h2 className="text-base font-semibold text-[var(--ink)]">Dados coletados</h2>
+
+        <h2 className="text-base font-semibold text-[var(--ink)]">1. Informações Coletadas</h2>
+        <ul className="list-disc pl-5 flex flex-col gap-2">
+          <li>
+            <strong>Dados de Cadastro:</strong> Nome completo, endereço de e-mail e credenciais de login geradas ao criar sua conta.
+          </li>
+          <li>
+            <strong>Histórico de Estudo:</strong> Registro de questões respondidas, alternativas selecionadas, tempo de resposta, taxa de acerto/erro e questões favoritadas. Esses dados são essenciais para gerar suas métricas de desempenho e histórico de erros.
+          </li>
+          <li>
+            <strong>Sessão de Visitante:</strong> Identificadores de sessão temporários armazenados localmente no seu dispositivo para controlar o limite de 2 questões gratuitas antes da criação da conta.
+          </li>
+        </ul>
+
+        <h2 className="text-base font-semibold text-[var(--ink)]">2. Uso e Finalidade dos Dados</h2>
         <p>
-          Coletamos os dados de cadastro (nome e e-mail), o seu histórico de
-          respostas e eventos de uso necessários para operar a plataforma e
-          melhorar a experiência de estudo.
+          Utilizamos seus dados estritamente para:
         </p>
-        <h2 className="text-base font-semibold text-[var(--ink)]">Uso dos dados</h2>
+        <ul className="list-disc pl-5 flex flex-col gap-2">
+          <li>Operar a plataforma de estudos, gerenciar seu trial de 5 questões e sua assinatura ativa.</li>
+          <li>Fornecer a funcionalidade de histórico de erros e salvamento de questões favoritas.</li>
+          <li>Disparar comunicações e-mails transacionais (como e-mail de boas-vindas, alertas de vencimento ou falhas de pagamento) através do provedor <strong>Resend</strong>.</li>
+          <li>Garantir a segurança da plataforma e prevenir fraudes nos limites de acesso.</li>
+        </ul>
+
+        <h2 className="text-base font-semibold text-[var(--ink)]">3. Processamento de Pagamentos e Cartões</h2>
         <p>
-          Usamos os dados para liberar o acesso, registrar o seu progresso,
-          processar assinaturas e entender o funil de uso do produto. Não
-          vendemos seus dados.
+          Para o processamento de assinaturas recorrentes (planos mensal e anual), utilizamos o gateway de pagamentos parceiro <strong>Stripe</strong>. 
+          <strong> Os seus dados de cartão de crédito nunca transitam nem são armazenados em nossos servidores.</strong> Todo o processamento de pagamento ocorre em ambiente criptografado e seguro gerenciado pela própria Stripe.
         </p>
-        <h2 className="text-base font-semibold text-[var(--ink)]">Segurança</h2>
+
+        <h2 className="text-base font-semibold text-[var(--ink)]">4. Compartilhamento e Armazenamento</h2>
         <p>
-          O acesso aos dados é protegido por autenticação e por políticas de
-          segurança no banco de dados. Pagamentos são processados por provedor
-          externo especializado.
+          Seus dados são armazenados de forma segura utilizando a infraestrutura do <strong>Supabase</strong>. Não comercializamos suas informações com terceiros em nenhuma hipótese. Os dados são compartilhados apenas com os parceiros operacionais indispensáveis citados nesta política (Supabase, Stripe e Resend).
         </p>
-        <p className="text-xs text-[var(--hint)]">
-          Este é um texto inicial e poderá ser atualizado.
+
+        <h2 className="text-base font-semibold text-[var(--ink)]">5. Seus Direitos (LGPD)</h2>
+        <p>
+          Como titular dos dados, você pode exercer seus direitos garantidos pela LGPD, tais como confirmar a existência do tratamento, acessar seus dados coletados, corrigir informações desatualizadas ou incompletas, e solicitar a exclusão definitiva de sua conta enviando uma solicitação ao nosso suporte.
         </p>
       </div>
       </section>

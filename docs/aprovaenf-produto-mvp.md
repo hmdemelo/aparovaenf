@@ -286,7 +286,7 @@ O produto tera dois tipos de plano:
 - Mensal
 - Anual
 
-O pagamento sera integrado via **Abacate Pay**.
+O pagamento sera integrado via **Stripe**.
 
 ## 12. Landing page
 
@@ -496,7 +496,7 @@ Campos iniciais:
 - Plano
 - Status
 - Periodicidade
-- ID externo no Abacate Pay
+- ID externo no Stripe (Customer/Subscription ID)
 - Data de inicio
 - Data de fim ou renovacao
 
@@ -519,7 +519,7 @@ Campos iniciais:
 - Comentario opcional por alternativa
 - Salvar favoritos para assinantes
 - Bloqueio apos fim do trial
-- Assinatura mensal ou anual via Abacate Pay
+- Assinatura mensal ou anual via Stripe
 - Historico de erros para assinantes
 
 ### 17.2 Autor
@@ -563,8 +563,8 @@ Campos iniciais:
 - Planos: mensal e anual
 - Preco mensal recomendado: R$ 29,90
 - Preco anual recomendado: R$ 287,00
-- Pagamento: Abacate Pay
-- Parcelamento anual: permitido pelo Abacate Pay
+- Pagamento: Stripe
+- Cobrança recorrente: assinaturas recorrentes por cartão via Stripe
 - Trial: 2 questoes antes do cadastro + 3 depois do cadastro
 - Trial vinculado apenas a conta
 - Sem assinatura, o aluno nao revisa as 5 questoes gratuitas apos o fim do trial

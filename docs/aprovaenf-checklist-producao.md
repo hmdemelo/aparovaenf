@@ -32,8 +32,8 @@ Colocar no ar uma versao web responsiva do aprovaenf em que:
 - [x] Definir desconto anual recomendado: aproximadamente 20% em relacao ao plano mensal.
 - [x] Definir que os valores do prototipo eram placeholders e serao substituidos pelos valores consolidados.
 - [x] Definir comunicacao comercial do anual: equivalente a R$ 23,92 por mes, cobrado anualmente.
-- [x] Definir regra comercial da assinatura anual: oferecer pagamento integral e parcelado pelo Abacate Pay.
-- [x] Validar que o Abacate Pay permitira parcelamento anual.
+- [x] Definir regra comercial da assinatura anual: oferecer plano mensal e anual recorrente pelo Stripe.
+- [x] Validar cobrança do anual recorrente no Stripe.
 - [x] Confirmar valor anual final: R$ 287,00.
 - [x] Definir carreiras do lancamento:
   - [x] Enfermagem
@@ -146,9 +146,8 @@ Colocar no ar uma versao web responsiva do aprovaenf em que:
   - [x] Aluno
   - [x] Autor
   - [x] Administrador
-- [x] Definir integracao de pagamentos: Abacate Pay via endpoints server-side e webhooks idempotentes.
-- [x] Definir email transacional do MVP: Supabase Auth para cadastro, verificacao e recuperacao de senha.
-- [x] Adiar ferramenta dedicada de email, como Resend, ate haver necessidade de emails de produto.
+- [x] Definir integracao de pagamentos: Stripe via endpoints server-side e webhooks idempotentes.
+- [x] Definir email transacional do MVP: Supabase Auth para cadastro/login e Resend para notificações de pagamento.
 - [x] Escolher logs e monitoramento inicial:
   - [x] Vercel Observability
   - [x] Vercel Runtime Logs
@@ -272,15 +271,15 @@ Colocar no ar uma versao web responsiva do aprovaenf em que:
 - [ ] Modelar favoritos.
 - [ ] Modelar historico de erros.
 - [ ] Modelar trials anonimos antes do cadastro.
-- [ ] Modelar trial por conta apos cadastro.
-- [ ] Modelar planos.
-- [ ] Modelar assinaturas.
-- [ ] Modelar pagamentos.
-- [ ] Modelar eventos de webhook do Abacate Pay.
-- [ ] Modelar metricas agregadas por questao.
-- [ ] Reservar campos/estrutura para IA futura sem implementar a IA agora.
-- [ ] Criar migrations iniciais.
-- [ ] Criar seeds de desenvolvimento.
+- [x] Modelar trial por conta apos cadastro.
+- [x] Modelar planos.
+- [x] Modelar assinaturas.
+- [x] Modelar pagamentos.
+- [x] Modelar eventos de webhook do Stripe.
+- [x] Modelar metricas agregadas por questao.
+- [x] Reservar campos/estrutura para IA futura sem implementar a IA agora.
+- [x] Criar migrations iniciais.
+- [x] Criar seeds de desenvolvimento.
 
 ## 6. Autenticacao e permissoes
 
@@ -349,31 +348,31 @@ Colocar no ar uma versao web responsiva do aprovaenf em que:
 
 ## 9. Trial, paywall e assinatura
 
-- [ ] Implementar contador de 5 questoes gratuitas totais.
-- [ ] Permitir 2 respostas sem cadastro.
-- [ ] Permitir mais 3 respostas apos cadastro.
-- [ ] Bloquear feed ao terminar trial.
-- [ ] Exibir paywall.
-- [ ] Exibir plano mensal.
-- [ ] Exibir plano anual.
-- [ ] Integrar checkout do Abacate Pay.
-- [ ] Criar assinatura no sistema apos confirmacao de pagamento.
-- [ ] Implementar webhook de pagamento aprovado.
-- [ ] Implementar webhook de pagamento recusado.
-- [ ] Implementar webhook de assinatura cancelada.
-- [ ] Implementar webhook de assinatura vencida/inadimplente, se disponivel.
-- [ ] Tornar webhooks idempotentes.
-- [ ] Salvar IDs externos do Abacate Pay.
-- [ ] Atualizar status de assinatura sem depender apenas do retorno do checkout.
-- [ ] Liberar feed ilimitado para assinantes ativos.
-- [ ] Bloquear recursos pagos para usuarios sem assinatura ativa.
-- [ ] Bloquear revisao das 5 questoes gratuitas para usuarios sem assinatura.
-- [ ] Criar tela de sucesso apos pagamento.
-- [ ] Criar tela de erro/cancelamento de pagamento.
-- [ ] Testar fluxo mensal.
-- [ ] Testar fluxo anual.
-- [ ] Testar cancelamento.
-- [ ] Testar pagamento recusado.
+- [x] Implementar contador de 5 questoes gratuitas totais.
+- [x] Permitir 2 respostas sem cadastro.
+- [x] Permitir mais 3 respostas apos cadastro.
+- [x] Bloquear feed ao terminar trial.
+- [x] Exibir paywall.
+- [x] Exibir plano mensal.
+- [x] Exibir plano anual.
+- [x] Integrar checkout do Stripe.
+- [x] Criar assinatura no sistema apos confirmacao de pagamento.
+- [x] Implementar webhook de pagamento aprovado.
+- [x] Implementar webhook de pagamento recusado.
+- [x] Implementar webhook de assinatura cancelada.
+- [x] Implementar webhook de assinatura vencida/inadimplente, se disponivel.
+- [x] Tornar webhooks idempotentes.
+- [x] Salvar IDs externos do Stripe.
+- [x] Atualizar status de assinatura sem depender apenas do retorno do checkout.
+- [x] Liberar feed ilimitado para assinantes ativos.
+- [x] Bloquear recursos pagos para usuarios sem assinatura ativa.
+- [x] Bloquear revisao das 5 questoes gratuitas para usuarios sem assinatura.
+- [x] Criar tela de sucesso apos pagamento.
+- [x] Criar tela de erro/cancelamento de pagamento.
+- [x] Testar fluxo mensal.
+- [x] Testar fluxo anual.
+- [x] Testar cancelamento.
+- [x] Testar pagamento recusado.
 
 ## 10. Favoritos e historico de erros
 
@@ -472,7 +471,7 @@ O arquivo `docs/bulk-question-import.md` descreve uma importacao com roles `ADMI
 - [x] Despublicar questao problematica.
 - [ ] Listar assinaturas.
 - [ ] Ver status do pagamento.
-- [ ] Ver ID externo do Abacate Pay.
+- [ ] Ver ID externo do Stripe.
 - [x] Acompanhar funil do trial.
 - [ ] Acompanhar metricas gerais:
   - [ ] Alunos totais
@@ -543,7 +542,7 @@ O arquivo `docs/bulk-question-import.md` descreve uma importacao com roles `ADMI
 - [ ] Testar paywall apos 5 questoes.
 - [ ] Testar assinatura mensal.
 - [ ] Testar assinatura anual.
-- [ ] Testar webhook do Abacate Pay.
+- [x] Testar webhook do Stripe.
 - [ ] Testar usuario assinante acessando feed.
 - [ ] Testar usuario sem assinatura bloqueado.
 - [ ] Testar favoritar e desfavoritar como assinante.
