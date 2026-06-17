@@ -4,6 +4,7 @@ import { resolveAuthorContext } from '@/features/authors/author-context'
 import { getAuthorQuestion } from '@/features/authors/author-question-service'
 import { loadClassificationOptions } from '@/features/authors/classification-options'
 import { QuestionEditor, type EditorInitial } from '@/features/authors/question-editor'
+import { safeUUID } from '@/lib/utils/uuid'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +25,7 @@ export default async function EditQuestionPage({
   const alternatives = [...(question.alternatives ?? [])]
     .sort((a, b) => a.position - b.position)
     .map((a) => ({
-      id: crypto.randomUUID(),
+      id: safeUUID(),
       text: a.text,
       is_correct: a.is_correct,
       alternative_comment: a.alternative_comment ?? '',

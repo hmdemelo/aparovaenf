@@ -42,10 +42,6 @@ type Props = {
   initial?: EditorInitial
 }
 
-type ApiEnvelope<T> =
-  | { success: true; data: T }
-  | { success: false; error: { code: string; message: string } }
-
 const DIFFICULTIES: { value: Difficulty; label: string }[] = [
   { value: 'facil', label: 'Fácil' },
   { value: 'media', label: 'Média' },
@@ -270,13 +266,32 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
             body: JSON.stringify(payload),
           })
 
-      const json: ApiEnvelope<{ id: string }> = await res.json()
-      if (!json.success) {
-        setErrors([json.error.message])
+      let json: unknown
+      try {
+        json = await res.json()
+      } catch {
+        setErrors([`Erro ao processar resposta do servidor (${res.status})`])
         return null
       }
 
-      const newId = json.data.id
+      if (!res.ok || typeof json !== 'object' || json === null) {
+        setErrors(['Erro interno no servidor'])
+        return null
+      }
+
+      const envelope = json as { success?: boolean; error?: { message?: string }; message?: string; data?: { id?: string } }
+
+      if (envelope.success === false) {
+        const errorMsg = envelope.error?.message || envelope.message || 'Erro interno no servidor'
+        setErrors([errorMsg])
+        return null
+      }
+
+      const newId = envelope.data?.id
+      if (!newId) {
+        setErrors(['Resposta inválida do servidor'])
+        return null
+      }
 
       // If we just created the question (POST) and have an image to upload:
       if (!currentId && (imageFile || isImageDeleted)) {
@@ -289,9 +304,21 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(patchPayload),
           })
-          const patchJson: ApiEnvelope<{ id: string }> = await patchRes.json()
-          if (!patchJson.success) {
-            setErrors([patchJson.error.message])
+          let patchJson: unknown
+          try {
+            patchJson = await patchRes.json()
+          } catch {
+            setErrors([`Erro ao salvar imagem (${patchRes.status})`])
+            return null
+          }
+          if (!patchRes.ok || typeof patchJson !== 'object' || patchJson === null) {
+            setErrors(['Erro ao salvar imagem'])
+            return null
+          }
+          const patchEnvelope = patchJson as { success?: boolean; error?: { message?: string }; message?: string }
+          if (patchEnvelope.success === false) {
+            const errorMsg = patchEnvelope.error?.message || patchEnvelope.message || 'Erro ao associar imagem'
+            setErrors([errorMsg])
             return null
           }
         }
@@ -333,13 +360,37 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
       setBusy(false)
       return
     }
-    const res = await fetch(`/api/author/questions/${id}/publish`, { method: 'POST' })
-    const json: ApiEnvelope<{ id: string }> = await res.json()
-    setBusy(false)
-    if (!json.success) {
-      setErrors(json.error.message.split('; '))
+
+    let res: Response
+    try {
+      res = await fetch(`/api/author/questions/${id}/publish`, { method: 'POST' })
+    } catch {
+      setErrors(['Erro de conexão ao tentar publicar a questão'])
+      setBusy(false)
       return
     }
+
+    let json: unknown
+    try {
+      json = await res.json()
+    } catch {
+      setErrors([`Erro de processamento ao publicar a questão (${res.status})`])
+      setBusy(false)
+      return
+    }
+
+    setBusy(false)
+    if (!res.ok || typeof json !== 'object' || json === null) {
+      setErrors(['Erro ao publicar a questão'])
+      return
+    }
+    const publishEnvelope = json as { success?: boolean; error?: { message?: string }; message?: string }
+    if (publishEnvelope.success === false) {
+      const errorMsg = publishEnvelope.error?.message || publishEnvelope.message || 'Erro ao publicar a questão'
+      setErrors((errorMsg || '').split('; '))
+      return
+    }
+
     setIsDirty(false)
     router.push('/author/questions')
     router.refresh()

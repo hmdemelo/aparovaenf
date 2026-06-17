@@ -3,9 +3,14 @@
  * Works on both server and client (including non-secure HTTP contexts).
  */
 export function safeUUID(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID()
+  try {
+    if (typeof crypto !== 'undefined' && crypto && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID()
+    }
+  } catch {
+    // Catch SecurityError or restrictions in sandboxed iframes
   }
+  
   // Fallback UUID v4 generator
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0
