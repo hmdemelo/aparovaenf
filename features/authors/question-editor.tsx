@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { AlertTriangle, X } from 'lucide-react'
+import { AlertTriangle, X, Search } from 'lucide-react'
 import {
   AlternativesEditor,
   labelForIndex,
@@ -66,10 +66,13 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
   const [statement, setStatement] = useState(initial?.statement ?? '')
   const [generalComment, setGeneralComment] = useState(initial?.general_comment ?? '')
   const [alternatives, setAlternatives] = useState<EditableAlternative[]>(
-    initial?.alternatives ?? [
+    (initial?.alternatives ?? [
       { text: '', is_correct: true, alternative_comment: '' },
       { text: '', is_correct: false, alternative_comment: '' },
-    ],
+    ]).map((alt) => ({
+      ...alt,
+      id: alt.id || crypto.randomUUID(),
+    }))
   )
   
   // Assuntos (Topics) list
@@ -80,6 +83,24 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
   const [errors, setErrors] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
   const [savedMsg, setSavedMsg] = useState<string | null>(null)
+  const [isDirty, setIsDirty] = useState(false)
+  const [showClassificationWarning, setShowClassificationWarning] = useState(Boolean(initial))
+  const [pendingCareerSwap, setPendingCareerSwap] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isDirty) return
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+      return ''
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [isDirty])
 
   // Catalog Dialog States
   const [isCatalogOpen, setIsCatalogOpen] = useState(false)
@@ -143,13 +164,21 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
     setSavedMsg(null)
     const id = await save()
     setBusy(false)
-    if (id) setSavedMsg('Rascunho salvo.')
+    if (id) {
+      setSavedMsg('Rascunho salvo.')
+      setIsDirty(false)
+    }
   }
 
   async function onPublish() {
     setBusy(true)
     setErrors([])
     setSavedMsg(null)
+    if (pendingClassification.length > 0) {
+      setShowClassificationWarning(true)
+      setBusy(false)
+      return
+    }
     const id = await save()
     if (!id) {
       setBusy(false)
@@ -162,13 +191,46 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
       setErrors(json.error.message.split('; '))
       return
     }
+    setIsDirty(false)
     router.push('/author/questions')
     router.refresh()
   }
 
   return (
     <div className="flex flex-col gap-4" data-testid="question-editor">
-      {pendingClassification.length > 0 && (
+      {pendingCareerSwap && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-[var(--paper)] rounded-[var(--radius-sm)] border border-[var(--line)] max-w-md w-full p-6 shadow-lg flex flex-col gap-4">
+            <h3 className="text-lg font-semibold text-[var(--ink)]">Alterar Carreira?</h3>
+            <p className="text-sm text-[var(--muted)]">
+              Alterar a carreira limpará a disciplina e os assuntos selecionados. Deseja continuar?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setPendingCareerSwap(null)}
+                className="aprova-button aprova-button-ghost px-4 py-2 text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCareerId(pendingCareerSwap)
+                  setSubjectId('')
+                  setTags([])
+                  setIsDirty(true)
+                  setPendingCareerSwap(null)
+                }}
+                className="aprova-button bg-[var(--danger)] hover:bg-[var(--danger)]/90 text-white px-4 py-2 text-sm border-none"
+              >
+                Sim, alterar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showClassificationWarning && pendingClassification.length > 0 && (
         <div
           className="flex items-start gap-2 rounded-[var(--radius-sm)] bg-[var(--warn-bg)] px-3 py-2 text-sm text-[var(--warn)]"
           data-testid="pending-classification"
@@ -180,7 +242,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
           </span>
         </div>
       )}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
           Carreira
           <select
@@ -188,14 +250,11 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
             onChange={(e) => {
               const nextVal = e.target.value
               if (subjectId || tags.length > 0) {
-                const confirmClear = window.confirm(
-                  'Alterar a carreira limpará a disciplina e os assuntos selecionados. Deseja continuar?'
-                )
-                if (!confirmClear) return
+                setPendingCareerSwap(nextVal)
+              } else {
+                setCareerId(nextVal)
+                setIsDirty(true)
               }
-              setCareerId(nextVal)
-              setSubjectId('')
-              setTags([])
             }}
             data-testid="career"
             className="aprova-field"
@@ -212,36 +271,55 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
         {/* Disciplina Selector */}
         <div className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
           <span>Disciplina</span>
-          <div className="flex gap-2">
-            <div
-              className="aprova-field flex-1 flex items-center justify-between min-h-[38px] bg-[var(--paper)] py-1.5 px-3 border border-[var(--line)] rounded-[var(--radius-sm)]"
+          <button
+            type="button"
+            onClick={() => {
+              setCatalogTab('disciplines')
+              setIsCatalogOpen(true)
+            }}
+            data-testid="discipline-catalog"
+            className="aprova-field w-full flex items-center justify-between min-h-[38px] bg-[var(--paper)] py-1.5 px-3 border border-[var(--line)] rounded-[var(--radius-sm)] cursor-pointer hover:border-[var(--teal)] transition-colors text-left font-normal"
+          >
+            <span
+              className={subjectId ? 'text-[var(--ink)] font-normal' : 'text-[var(--muted)] font-normal'}
               data-testid="subject-value"
             >
-              <span className={subjectId ? 'text-[var(--ink)] font-normal' : 'text-[var(--muted)] font-normal'}>
-                {subjectOptions.find((s) => s.id === subjectId)?.name ?? 'Nenhuma selecionada'}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setCatalogTab('disciplines')
-                setIsCatalogOpen(true)
-              }}
-              data-testid="discipline-catalog"
-              className="aprova-button px-3"
+              {subjectOptions.find((s) => s.id === subjectId)?.name ?? 'Nenhuma selecionada'}
+            </span>
+            <Search size={16} className="text-[var(--muted)] shrink-0" />
+          </button>
+        </div>
+
+        {/* Banca Selector */}
+        <div className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
+          <span>Banca (opcional)</span>
+          <button
+            type="button"
+            onClick={() => {
+              setCatalogTab('boards')
+              setIsCatalogOpen(true)
+            }}
+            data-testid="board-catalog"
+            className="aprova-field w-full flex items-center justify-between min-h-[38px] bg-[var(--paper)] py-1.5 px-3 border border-[var(--line)] rounded-[var(--radius-sm)] cursor-pointer hover:border-[var(--teal)] transition-colors text-left font-normal"
+          >
+            <span
+              className={boardId ? 'text-[var(--ink)] font-normal' : 'text-[var(--muted)] font-normal'}
+              data-testid="board-value"
             >
-              Buscar
-            </button>
-          </div>
+              {boardOptions.find((b) => b.id === boardId)?.name ?? 'Nenhuma selecionada'}
+            </span>
+            <Search size={16} className="text-[var(--muted)] shrink-0" />
+          </button>
         </div>
 
         <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
           Dificuldade
           <select
             value={difficulty}
-            onChange={(e) =>
+            onChange={(e) => {
               setDifficulty(e.target.value ? (e.target.value as Difficulty) : '')
-            }
+              setIsDirty(true)
+            }}
             data-testid="difficulty"
             className="aprova-field"
           >
@@ -255,44 +333,32 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
         </label>
       </div>
 
-      {/* Banca Selector */}
-      <div className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)] sm:w-1/2">
-        <span>Banca (opcional)</span>
-        <div className="flex gap-2">
-          <div
-            className="aprova-field flex-1 flex items-center justify-between min-h-[38px] bg-[var(--paper)] py-1.5 px-3 border border-[var(--line)] rounded-[var(--radius-sm)]"
-            data-testid="board-value"
-          >
-            <span className={boardId ? 'text-[var(--ink)] font-normal' : 'text-[var(--muted)] font-normal'}>
-              {boardOptions.find((b) => b.id === boardId)?.name ?? 'Nenhuma selecionada'}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setCatalogTab('boards')
-              setIsCatalogOpen(true)
-            }}
-            data-testid="board-catalog"
-            className="aprova-button px-3"
-          >
-            Buscar
-          </button>
-        </div>
-      </div>
-
       <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
-        Enunciado
+        <div className="flex items-center justify-between">
+          <span>Enunciado</span>
+          <span className="text-xs font-normal text-[var(--muted)]" data-testid="statement-char-count">
+            {statement.length} caracteres
+          </span>
+        </div>
         <textarea
           value={statement}
-          onChange={(e) => setStatement(e.target.value)}
-          rows={4}
+          onChange={(e) => {
+            setStatement(e.target.value)
+            setIsDirty(true)
+          }}
+          rows={8}
           data-testid="statement"
           className="aprova-field"
         />
       </label>
 
-      <AlternativesEditor alternatives={alternatives} onChange={setAlternatives} />
+      <AlternativesEditor
+        alternatives={alternatives}
+        onChange={(next) => {
+          setAlternatives(next)
+          setIsDirty(true)
+        }}
+      />
 
       {/* Assuntos (Topics) Selector & Chips */}
       <div className="flex flex-col gap-2 text-sm font-semibold text-[var(--ink)]">
@@ -300,21 +366,22 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
           <span>Assuntos</span>
           <button
             type="button"
+            disabled={!subjectId}
             onClick={() => {
-              if (!subjectId) {
-                alert('Selecione uma disciplina antes de gerenciar os assuntos.')
-                return
-              }
               setCatalogTab('topics')
               setIsCatalogOpen(true)
             }}
             data-testid="topics-catalog"
-            className="text-xs font-bold text-[var(--teal)] underline hover:opacity-80 disabled:opacity-50 cursor-pointer"
+            className="text-xs font-bold text-[var(--teal)] underline hover:opacity-80 disabled:opacity-50 disabled:text-[var(--muted)] disabled:no-underline cursor-pointer disabled:cursor-not-allowed"
           >
             Gerenciar Assuntos
           </button>
         </div>
-        {tags.length > 0 ? (
+        {!subjectId ? (
+          <span className="text-xs font-normal text-[var(--muted)]">
+            Selecione uma disciplina primeiro para liberar a seleção de assuntos.
+          </span>
+        ) : tags.length > 0 ? (
           <ul className="flex flex-wrap gap-2" data-testid="tag-chips">
             {tags.map((t) => (
               <li
@@ -326,6 +393,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
                   type="button"
                   onClick={() => {
                     setTags(tags.filter((item) => item.id !== t.id))
+                    setIsDirty(true)
                   }}
                   aria-label={`Remover assunto ${t.name}`}
                   className="text-[var(--muted)] transition hover:text-[var(--danger)] cursor-pointer"
@@ -341,10 +409,18 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
       </div>
 
       <label className="flex flex-col gap-1 text-sm font-semibold text-[var(--ink)]">
-        Comentário geral (obrigatório para publicar)
+        <div className="flex items-center justify-between">
+          <span>Comentário geral (obrigatório para publicar)</span>
+          <span className="text-xs font-normal text-[var(--muted)]" data-testid="comment-char-count">
+            {(generalComment || '').length} caracteres
+          </span>
+        </div>
         <textarea
           value={generalComment}
-          onChange={(e) => setGeneralComment(e.target.value)}
+          onChange={(e) => {
+            setGeneralComment(e.target.value)
+            setIsDirty(true)
+          }}
           rows={3}
           data-testid="general-comment"
           className="aprova-field"
@@ -363,7 +439,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
       )}
       {savedMsg && <p className="text-sm text-[var(--teal)]">{savedMsg}</p>}
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={onSaveDraft}
@@ -382,6 +458,12 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
         >
           Publicar
         </button>
+        {isDirty && (
+          <span className="text-xs text-[var(--warn)] flex items-center gap-1.5 font-medium animate-pulse" data-testid="unsaved-changes-indicator">
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--warn)]" />
+            Alterações não salvas
+          </span>
+        )}
       </div>
 
       {/* Shared Catalog Management Dialog */}
@@ -397,14 +479,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
         }
         onSelectDiscipline={(discipline) => {
           if (subjectId && subjectId !== discipline.id) {
-            const hasIncompatible = tags.some((t) => t.subject_id !== discipline.id)
-            if (hasIncompatible) {
-              const confirmClear = window.confirm(
-                'A alteração de disciplina removerá os assuntos que não pertencem a ela. Deseja continuar?'
-              )
-              if (!confirmClear) return false
-              setTags(tags.filter((t) => t.subject_id === discipline.id))
-            }
+            setTags(tags.filter((t) => t.subject_id === discipline.id))
           }
           setSubjectOptions((previous) =>
             previous.some((subject) => subject.id === discipline.id)
@@ -412,6 +487,7 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
               : [...previous, { ...discipline, career_id: careerId }],
           )
           setSubjectId(discipline.id)
+          setIsDirty(true)
           return true
         }}
         onSelectBoard={(board) => {
@@ -419,11 +495,13 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
             prev.some((b) => b.id === board.id) ? prev : [...prev, board],
           )
           setBoardId(board.id)
+          setIsDirty(true)
         }}
         selectedTopicIds={tags.map((t) => t.id)}
         selectedTopics={tags}
         onConfirmTopics={(_topicIds, topics) => {
           setTags(topics)
+          setIsDirty(true)
         }}
       />
     </div>

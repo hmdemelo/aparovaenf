@@ -3,6 +3,7 @@
 import { Plus, Trash2 } from 'lucide-react'
 
 export type EditableAlternative = {
+  id?: string
   text: string
   is_correct: boolean
   alternative_comment: string
@@ -35,7 +36,7 @@ export function AlternativesEditor({ alternatives, onChange }: Props) {
   function add() {
     onChange([
       ...alternatives,
-      { text: '', is_correct: false, alternative_comment: '' },
+      { id: crypto.randomUUID(), text: '', is_correct: false, alternative_comment: '' },
     ])
   }
 
@@ -48,20 +49,37 @@ export function AlternativesEditor({ alternatives, onChange }: Props) {
       <p className="text-sm font-semibold text-[var(--ink)]">Alternativas</p>
       {alternatives.map((alt, index) => (
         <div
-          key={index}
-          className="flex flex-col gap-3 rounded-[18px] border border-[color:var(--line)] bg-white/72 p-3"
+          key={alt.id}
+          className={`flex flex-col gap-3 rounded-[18px] border p-3 transition-all ${
+            alt.is_correct
+              ? 'border-[var(--teal)] bg-[rgba(160,243,212,0.1)] shadow-sm'
+              : 'border-[color:var(--line)] bg-white/72 hover:border-[color:var(--muted)]'
+          }`}
         >
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-sm font-semibold text-[var(--muted)]">
+            <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer select-none text-[var(--muted)]">
               <input
                 type="radio"
                 name="correct-alternative"
                 checked={alt.is_correct}
                 onChange={() => setCorrect(index)}
                 data-testid={`correct-${index}`}
-                className="accent-[var(--teal)]"
+                className="sr-only"
               />
-              {labelForIndex(index)}
+              <span
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                  alt.is_correct
+                    ? 'border-[var(--teal)] bg-[var(--teal)] text-white'
+                    : 'border-[var(--line)] bg-white hover:border-[color:var(--muted)]'
+                }`}
+              >
+                {alt.is_correct && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                )}
+              </span>
+              <span className={alt.is_correct ? 'text-[var(--teal)] font-bold' : ''}>
+                {labelForIndex(index)}
+              </span>
             </label>
             <input
               type="text"

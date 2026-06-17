@@ -24,6 +24,7 @@ export default async function EditQuestionPage({
   const alternatives = [...(question.alternatives ?? [])]
     .sort((a, b) => a.position - b.position)
     .map((a) => ({
+      id: crypto.randomUUID(),
       text: a.text,
       is_correct: a.is_correct,
       alternative_comment: a.alternative_comment ?? '',
