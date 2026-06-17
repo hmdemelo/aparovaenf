@@ -5,6 +5,7 @@ import { Search, ShieldAlert, Users } from 'lucide-react'
 import type { AdminUserRow } from './admin-service'
 import { resolveAdminUserStatus } from './admin-service'
 import { ChangePasswordDialog } from './change-password-dialog'
+import { DeleteUserDialog } from './delete-user-dialog'
 
 const PAGE_SIZE = 25
 
@@ -161,10 +162,16 @@ export function AdminUsersManager({ users }: { users: AdminUserRow[] }) {
                     )}
                   </td>
                   <td>
-                    <ChangePasswordDialog
-                      userId={user.id}
-                      userEmail={user.email ?? ''}
-                    />
+                    <div className="flex items-center gap-2">
+                      <ChangePasswordDialog
+                        userId={user.id}
+                        userEmail={user.email ?? ''}
+                      />
+                      <DeleteUserDialog
+                        userId={user.id}
+                        userEmail={user.email ?? ''}
+                      />
+                    </div>
                   </td>
                 </tr>
               )

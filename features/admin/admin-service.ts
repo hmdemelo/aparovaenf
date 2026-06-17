@@ -459,6 +459,243 @@ export async function updateAuthorProfile(
   }
 }
 
+// =========================================================================
+// Deletion
+// =========================================================================
+
+/** Subscription statuses that still bill the customer at Stripe. */
+const BILLABLE_SUBSCRIPTION_STATUSES = ['active', 'past_due'] as const
+
+export type DeleteUserResult =
+  | { ok: true }
+  | {
+      ok: false
+      code: 'active_subscription' | 'has_questions' | 'not_found' | 'error'
+      message: string
+    }
+
+/**
+ * Delete a user end-to-end. Requires the SERVICE-ROLE client.
+ *
+ * Guards before touching anything:
+ * - Blocks while a billable Stripe subscription (active/past_due) exists, so the
+ *   account is not removed under the recurring charge. The admin must cancel at
+ *   Stripe first.
+ * - Blocks authors who still own questions; those go through deleteAuthor, which
+ *   can reassign or remove the questions deliberately.
+ *
+ * The actual removal goes through the Auth Admin API; the auth.users ->
+ * user_profiles cascade then clears the profile and everything below it.
+ */
+export async function deleteUser(
+  serviceDb: Db,
+  userId: string,
+): Promise<DeleteUserResult> {
+  const { data: profile, error: profileError } = await serviceDb
+    .from('user_profiles')
+    .select('id')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (profileError) {
+    return { ok: false, code: 'error', message: profileError.message }
+  }
+  if (!profile) {
+    return { ok: false, code: 'not_found', message: 'user profile not found' }
+  }
+
+  const { data: billable, error: subscriptionError } = await serviceDb
+    .from('subscriptions')
+    .select('id')
+    .eq('user_id', userId)
+    .in('status', [...BILLABLE_SUBSCRIPTION_STATUSES])
+    .limit(1)
+    .maybeSingle()
+
+  if (subscriptionError) {
+    return { ok: false, code: 'error', message: subscriptionError.message }
+  }
+  if (billable) {
+    return {
+      ok: false,
+      code: 'active_subscription',
+      message:
+        'O usuário possui uma assinatura ativa no Stripe. Cancele a assinatura no Stripe antes de deletar para evitar cobranças indevidas.',
+    }
+  }
+
+  const { data: author, error: authorError } = await serviceDb
+    .from('author_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (authorError) {
+    return { ok: false, code: 'error', message: authorError.message }
+  }
+  if (author) {
+    const { count, error: questionsError } = await serviceDb
+      .from('questions')
+      .select('id', { count: 'exact', head: true })
+      .eq('author_id', author.id)
+
+    if (questionsError) {
+      return { ok: false, code: 'error', message: questionsError.message }
+    }
+    if ((count ?? 0) > 0) {
+      return {
+        ok: false,
+        code: 'has_questions',
+        message:
+          'Este usuário é um autor com questões cadastradas. Use a exclusão de autor para reatribuir ou remover as questões.',
+      }
+    }
+  }
+
+  const { error: deleteError } = await serviceDb.auth.admin.deleteUser(userId)
+  if (deleteError) {
+    return { ok: false, code: 'error', message: deleteError.message }
+  }
+
+  return { ok: true }
+}
+
+export type DeleteAuthorResult =
+  | { ok: true }
+  | {
+      ok: false
+      code:
+        | 'active_subscription'
+        | 'has_questions'
+        | 'invalid_transfer'
+        | 'not_found'
+        | 'error'
+      message: string
+    }
+
+export type DeleteAuthorInput = {
+  /** When set, questions are reassigned to this author before deletion. */
+  transferToAuthorId?: string
+  /** When true, the author's questions (and their data) are removed. */
+  deleteQuestions?: boolean
+}
+
+/**
+ * Delete an author. Requires the SERVICE-ROLE client.
+ *
+ * Order of operations:
+ * 1. Block if the author's account still carries a billable subscription.
+ * 2. If transferToAuthorId is given, reassign questions to that author (the
+ *    questions and all student history stay intact).
+ * 3. Run the transactional RPC, which removes the author profile and — when
+ *    deleteQuestions is true — the questions, alternatives, answer attempts and
+ *    favorites attached to them, all in a single atomic statement.
+ * 4. Delete the auth user (cascade clears user_profiles; author_profiles is
+ *    already gone from the RPC).
+ */
+export async function deleteAuthor(
+  serviceDb: Db,
+  authorId: string,
+  input: DeleteAuthorInput = {},
+): Promise<DeleteAuthorResult> {
+  const { data: author, error: authorError } = await serviceDb
+    .from('author_profiles')
+    .select('id, user_id')
+    .eq('id', authorId)
+    .maybeSingle()
+
+  if (authorError) {
+    return { ok: false, code: 'error', message: authorError.message }
+  }
+  if (!author) {
+    return { ok: false, code: 'not_found', message: 'author not found' }
+  }
+
+  const { data: billable, error: subscriptionError } = await serviceDb
+    .from('subscriptions')
+    .select('id')
+    .eq('user_id', author.user_id)
+    .in('status', [...BILLABLE_SUBSCRIPTION_STATUSES])
+    .limit(1)
+    .maybeSingle()
+
+  if (subscriptionError) {
+    return { ok: false, code: 'error', message: subscriptionError.message }
+  }
+  if (billable) {
+    return {
+      ok: false,
+      code: 'active_subscription',
+      message:
+        'O autor possui uma assinatura ativa no Stripe. Cancele a assinatura no Stripe antes de deletar para evitar cobranças indevidas.',
+    }
+  }
+
+  if (input.transferToAuthorId) {
+    if (input.transferToAuthorId === authorId) {
+      return {
+        ok: false,
+        code: 'invalid_transfer',
+        message: 'Não é possível reatribuir as questões para o próprio autor.',
+      }
+    }
+
+    const { data: target, error: targetError } = await serviceDb
+      .from('author_profiles')
+      .select('id')
+      .eq('id', input.transferToAuthorId)
+      .maybeSingle()
+
+    if (targetError) {
+      return { ok: false, code: 'error', message: targetError.message }
+    }
+    if (!target) {
+      return {
+        ok: false,
+        code: 'invalid_transfer',
+        message: 'Autor de destino não encontrado.',
+      }
+    }
+
+    const { error: transferError } = await serviceDb
+      .from('questions')
+      .update({ author_id: input.transferToAuthorId })
+      .eq('author_id', authorId)
+
+    if (transferError) {
+      return { ok: false, code: 'error', message: transferError.message }
+    }
+  }
+
+  const { error: rpcError } = await serviceDb.rpc('delete_author_cascade', {
+    p_author_id: authorId,
+    p_delete_questions: input.deleteQuestions ?? false,
+  })
+
+  if (rpcError) {
+    // 23503 is raised by the RPC when the author still owns questions and the
+    // caller did not opt into deleting or reassigning them.
+    if (rpcError.code === '23503') {
+      return {
+        ok: false,
+        code: 'has_questions',
+        message:
+          'O autor ainda possui questões. Reatribua-as a outro autor ou confirme a exclusão das questões.',
+      }
+    }
+    return { ok: false, code: 'error', message: rpcError.message }
+  }
+
+  const { error: deleteError } = await serviceDb.auth.admin.deleteUser(
+    author.user_id,
+  )
+  if (deleteError) {
+    return { ok: false, code: 'error', message: deleteError.message }
+  }
+
+  return { ok: true }
+}
+
 export type ChangePasswordResult =
   | { ok: true }
   | { ok: false; code: 'not_found' | 'error'; message: string }

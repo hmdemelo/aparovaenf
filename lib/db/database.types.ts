@@ -689,6 +689,10 @@ export type Database = {
     }
     Functions: {
       current_author_id: { Args: never; Returns: string }
+      delete_author_cascade: {
+        Args: { p_author_id: string; p_delete_questions?: boolean }
+        Returns: undefined
+      }
       is_admin: { Args: never; Returns: boolean }
       is_subscriber: { Args: never; Returns: boolean }
       next_feed_question: {

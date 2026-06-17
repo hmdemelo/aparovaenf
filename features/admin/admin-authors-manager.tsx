@@ -3,9 +3,10 @@
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, FileUp, PencilLine, Plus, Save, X } from 'lucide-react'
+import { Eye, EyeOff, FileUp, PencilLine, Plus, Save, Trash2, X } from 'lucide-react'
 import { CreateAuthorForm } from './create-author-form'
 import { BulkQuestionImportDialog } from './bulk-question-import-dialog'
+import { DeleteAuthorDialog } from './delete-author-dialog'
 import type { AdminAuthorRow } from './admin-service'
 
 type ApiEnvelope<T> =
@@ -185,6 +186,7 @@ export function AdminAuthorsManager({ authors }: { authors: AdminAuthorRow[] }) 
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<AdminAuthorRow | null>(null)
   const [importing, setImporting] = useState<AdminAuthorRow | null>(null)
+  const [deleting, setDeleting] = useState<AdminAuthorRow | null>(null)
 
   return (
     <>
@@ -259,6 +261,15 @@ export function AdminAuthorsManager({ authors }: { authors: AdminAuthorRow[] }) 
                   <FileUp size={14} />
                   Importar
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setDeleting(author)}
+                  className="inline-flex items-center gap-1 rounded-full border border-red-200 px-3 py-1 font-semibold text-red-600 transition hover:bg-red-50"
+                  data-testid="open-delete-author"
+                >
+                  <Trash2 size={14} />
+                  Deletar
+                </button>
               </div>
             </li>
           ))}
@@ -298,6 +309,20 @@ export function AdminAuthorsManager({ authors }: { authors: AdminAuthorRow[] }) 
             }}
             onClose={() => setImporting(null)}
             onImported={() => router.refresh()}
+          />
+        </AuthorDialog>
+      )}
+
+      {deleting && (
+        <AuthorDialog
+          title="Deletar autor"
+          description={deleting.email ?? 'Perfil do autor'}
+          onClose={() => setDeleting(null)}
+        >
+          <DeleteAuthorDialog
+            author={deleting}
+            otherAuthors={authors.filter((a) => a.id !== deleting.id)}
+            onClose={() => setDeleting(null)}
           />
         </AuthorDialog>
       )}
