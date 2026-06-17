@@ -12,6 +12,7 @@ import type { Difficulty, SourceType } from '@/lib/validation/schemas'
 import { ClassificationCatalogDialog } from './classification-catalog-dialog'
 import { compressToWebP } from '@/lib/utils/image-compression'
 import { createSupabaseBrowserClient } from '@/lib/db/browser'
+import { safeUUID } from '@/lib/utils/uuid'
 
 type Option = { id: string; name: string }
 type SubjectOption = Option & { career_id: string }
@@ -68,13 +69,13 @@ export function QuestionEditor({ careers, subjects, boards, initial }: Props) {
   )
   const [statement, setStatement] = useState(initial?.statement ?? '')
   const [generalComment, setGeneralComment] = useState(initial?.general_comment ?? '')
-  const [alternatives, setAlternatives] = useState<EditableAlternative[]>(
+  const [alternatives, setAlternatives] = useState<EditableAlternative[]>(() =>
     (initial?.alternatives ?? [
       { text: '', is_correct: true, alternative_comment: '' },
       { text: '', is_correct: false, alternative_comment: '' },
     ]).map((alt) => ({
       ...alt,
-      id: alt.id || crypto.randomUUID(),
+      id: alt.id || safeUUID(),
     }))
   )
   

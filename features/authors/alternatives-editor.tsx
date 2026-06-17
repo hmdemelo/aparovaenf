@@ -1,6 +1,7 @@
 'use client'
 
 import { Plus, Trash2 } from 'lucide-react'
+import { safeUUID } from '@/lib/utils/uuid'
 
 export type EditableAlternative = {
   id?: string
@@ -36,7 +37,7 @@ export function AlternativesEditor({ alternatives, onChange }: Props) {
   function add() {
     onChange([
       ...alternatives,
-      { id: crypto.randomUUID(), text: '', is_correct: false, alternative_comment: '' },
+      { id: safeUUID(), text: '', is_correct: false, alternative_comment: '' },
     ])
   }
 
