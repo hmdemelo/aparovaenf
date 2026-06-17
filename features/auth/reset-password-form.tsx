@@ -9,6 +9,21 @@ import { forcePasswordChangeInputSchema } from '@/lib/validation/schemas'
 
 type Status = 'verifying' | 'ready' | 'invalid'
 
+/** Maps Supabase updateUser errors to user-facing Portuguese messages. */
+function resetPasswordErrorMessage(error: { code?: string; message?: string }): string {
+  switch (error.code) {
+    case 'same_password':
+      return 'A nova senha precisa ser diferente da senha atual.'
+    case 'weak_password':
+      return 'Senha muito fraca. Use ao menos 8 caracteres com letras e números.'
+    case 'session_not_found':
+    case 'session_expired':
+      return 'Sua sessão de recuperação expirou. Solicite um novo link.'
+    default:
+      return 'Não foi possível atualizar a senha. Solicite um novo link e tente novamente.'
+  }
+}
+
 /** Sets a new password using the recovery session from the reset email link. */
 export function ResetPasswordForm() {
   const router = useRouter()
@@ -62,7 +77,7 @@ export function ResetPasswordForm() {
     const supabase = createSupabaseBrowserClient()
     const { error } = await supabase.auth.updateUser({ password: parsed.data.password })
     if (error) {
-      setError('Não foi possível atualizar a senha. O link pode ter expirado.')
+      setError(resetPasswordErrorMessage(error))
       setLoading(false)
       return
     }
