@@ -5,6 +5,7 @@ import { getAuthorQuestion } from '@/features/authors/author-question-service'
 import { loadClassificationOptions } from '@/features/authors/classification-options'
 import { QuestionEditor, type EditorInitial } from '@/features/authors/question-editor'
 import { safeUUID } from '@/lib/utils/uuid'
+import { shortQuestionId } from '@/lib/utils/short-question-id'
 
 export const dynamic = 'force-dynamic'
 
@@ -56,7 +57,13 @@ export default async function EditQuestionPage({
           ← Voltar
         </Link>
         <h1 className="font-display mt-2 text-[28px] font-semibold text-[var(--ink)]">
-          Editar questão
+          Editar questão{' '}
+          <span className="text-[var(--muted)]">
+            · ID{' '}
+            <span className="font-mono text-[0.7em] tracking-wide">
+              {shortQuestionId(question.id)}
+            </span>
+          </span>
         </h1>
       </div>
       <QuestionEditor

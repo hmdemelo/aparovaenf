@@ -7,6 +7,7 @@ import {
   listAuthorQuestions,
 } from '@/features/authors/author-question-service'
 import { createSupabaseServiceClient } from '@/lib/db/server'
+import { shortQuestionId } from '@/lib/utils/short-question-id'
 
 export const dynamic = 'force-dynamic'
 
@@ -106,6 +107,7 @@ export default async function AuthorQuestionsPage() {
           <table className="aprova-table">
             <thead>
               <tr>
+                <th>ID</th>
                 <th>Enunciado</th>
                 <th>Assunto</th>
                 <th>Status</th>
@@ -119,6 +121,9 @@ export default async function AuthorQuestionsPage() {
 
                 return (
                   <tr key={q.id}>
+                    <td className="whitespace-nowrap font-mono text-xs text-[var(--muted)]">
+                      {shortQuestionId(q.id)}
+                    </td>
                     <td className="min-w-72 max-w-[520px]">
                       <Link
                         href={`/author/questions/${q.id}/edit`}

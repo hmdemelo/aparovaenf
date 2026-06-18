@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/db/server'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
 import { listErrorHistory } from '@/features/student-feed/error-history-service'
 import { RichText } from '@/lib/utils/markdown-renderer'
+import { shortQuestionId } from '@/lib/utils/short-question-id'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,12 +39,13 @@ export default async function ErrorsPage() {
               key={e.questionId}
               className="rounded-[18px] border border-[color:var(--line)] bg-white/82 p-4"
             >
-              {e.subject && (
-                <span className="text-xs font-semibold text-[var(--muted)]">
-                  {e.subject}
+              <div className="flex flex-wrap items-center gap-x-2 text-xs font-semibold text-[var(--muted)]">
+                <span className="font-mono text-[var(--hint)]">
+                  ID {shortQuestionId(e.questionId)}
                 </span>
-              )}
-              <div className="text-sm text-[var(--ink)]">
+                {e.subject && <span>· {e.subject}</span>}
+              </div>
+              <div className="mt-1 text-sm text-[var(--ink)]">
                 <RichText text={e.statement} />
               </div>
               {e.generalComment && (

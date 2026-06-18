@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/db/server'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
 import { listFavorites } from '@/features/student-feed/favorites-service'
 import { RichText } from '@/lib/utils/markdown-renderer'
+import { shortQuestionId } from '@/lib/utils/short-question-id'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,12 +46,13 @@ export default async function FavoritesPage() {
               key={f.questionId}
               className="rounded-[18px] border border-[color:var(--line)] bg-white/82 px-4 py-3"
             >
-              {f.subject && (
-                <span className="text-xs font-semibold text-[var(--muted)]">
-                  {f.subject}
+              <div className="flex flex-wrap items-center gap-x-2 text-xs font-semibold text-[var(--muted)]">
+                <span className="font-mono text-[var(--hint)]">
+                  ID {shortQuestionId(f.questionId)}
                 </span>
-              )}
-              <p className="line-clamp-2 text-sm text-[var(--ink)]">
+                {f.subject && <span>· {f.subject}</span>}
+              </div>
+              <p className="mt-1 line-clamp-2 text-sm text-[var(--ink)]">
                 <RichText text={f.statement} />
               </p>
             </li>

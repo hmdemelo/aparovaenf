@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Bookmark, Check, X, ZoomIn } from 'lucide-react'
 import type { AnswerResponse, FeedQuestionDto } from './types'
 import { RichText } from '@/lib/utils/markdown-renderer'
+import { shortQuestionId } from '@/lib/utils/short-question-id'
 
 const DIFFICULTY_LABEL: Record<FeedQuestionDto['difficulty'], string> = {
   facil: 'Fácil',
@@ -79,6 +80,9 @@ export function QuestionCard({
             {[question.subject?.name, question.board?.name]
               .filter(Boolean)
               .join(' · ') || 'Questão'}
+            <span className="ml-1.5 font-mono font-medium text-[var(--hint)]">
+              · ID {shortQuestionId(question.id)}
+            </span>
           </p>
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {question.subject && (

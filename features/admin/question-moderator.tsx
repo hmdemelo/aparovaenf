@@ -10,6 +10,7 @@ import {
   BookOpen,
   Search,
 } from 'lucide-react'
+import { shortQuestionId } from '@/lib/utils/short-question-id'
 
 type SubjectOption = {
   id: string
@@ -367,6 +368,7 @@ export function QuestionModerator({
             <table className="aprova-table">
               <thead>
                 <tr>
+                  <th>ID</th>
                   <th onClick={() => handleSort('statement')} className="cursor-pointer select-none">
                     <div className="flex items-center">
                       Enunciado {renderSortIcon('statement')}
@@ -403,6 +405,9 @@ export function QuestionModerator({
               <tbody>
                 {sortedQuestions.map((q) => (
                   <tr key={q.id}>
+                    <td className="whitespace-nowrap font-mono text-xs text-[var(--muted)]">
+                      {shortQuestionId(q.id)}
+                    </td>
                     <td className="min-w-72 max-w-[360px]">
                       <p className="line-clamp-1 text-[var(--ink)]">
                         {q.statement}
