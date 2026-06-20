@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database, Json } from '@/lib/db/database.types'
+import { safeUUID } from '@/lib/utils/uuid'
 import type {
   BulkImportRowError,
   BulkImportRowWarning,
@@ -191,32 +192,54 @@ export async function importBulkQuestionsForAuthor(
   const createdQuestionIds: string[] = []
   const parsedFailedLines = new Set(input.parseErrors.map((error) => error.line))
 
+  const questionsToInsert: Database['public']['Tables']['questions']['Insert'][] = []
+  const alternativesToInsert: Database['public']['Tables']['alternatives']['Insert'][] = []
+  const rowToQuestionIdMap = new Map<number, string>()
+
   for (const row of input.rows) {
     const resolved = resolveRowCatalogs(row, catalogs)
     warnings.push(...resolved.warnings)
 
-    const { data: question, error: questionError } = await db
-      .from('questions')
-      .insert({
-        author_id: isPool ? null : input.authorId,
-        career_id: resolved.career?.id ?? null,
-        subject_id: resolved.subject?.id ?? null,
-        board_id: resolved.board?.id ?? null,
-        difficulty: row.difficulty,
-        source_type: row.sourceType,
-        source_orgao: row.sourceOrgao,
-        source_cargo: row.sourceCargo,
-        source_year: row.sourceYear,
-        source_reference: row.sourceReference,
-        statement: row.statement,
-        general_comment: row.generalComment,
-        status: 'draft',
-      })
-      .select('id')
-      .single()
+    const questionId = safeUUID()
+    rowToQuestionIdMap.set(row.line, questionId)
 
-    if (questionError || !question) {
-      if (questionError && isOutdatedClassificationSchema(questionError)) {
+    questionsToInsert.push({
+      id: questionId,
+      author_id: isPool ? null : input.authorId,
+      career_id: resolved.career?.id ?? null,
+      subject_id: resolved.subject?.id ?? null,
+      board_id: resolved.board?.id ?? null,
+      difficulty: row.difficulty,
+      source_type: row.sourceType,
+      source_orgao: row.sourceOrgao,
+      source_cargo: row.sourceCargo,
+      source_year: row.sourceYear,
+      source_reference: row.sourceReference,
+      statement: row.statement,
+      general_comment: row.generalComment,
+      status: 'draft',
+    })
+
+    row.alternatives.forEach((alternative, index) => {
+      alternativesToInsert.push({
+        question_id: questionId,
+        label: alternative.label,
+        text: alternative.text,
+        is_correct: row.correctLabel === alternative.label,
+        alternative_comment: alternative.alternativeComment,
+        position: index,
+      })
+    })
+  }
+
+  if (questionsToInsert.length > 0) {
+    const { error: questionError } = await db
+      .from('questions')
+      .insert(questionsToInsert)
+      .select('id')
+
+    if (questionError) {
+      if (isOutdatedClassificationSchema(questionError)) {
         console.error('Bulk import blocked by outdated questions schema', {
           code: questionError.code,
           authorId: input.authorId,
@@ -228,48 +251,52 @@ export async function importBulkQuestionsForAuthor(
             'O banco de dados ainda não está preparado para importar rascunhos sem classificação.',
         }
       }
-      if (questionError) {
-        console.error('Failed to create imported question', {
-          code: questionError.code,
-          line: row.line,
-          authorId: input.authorId,
-        })
-      }
-      errors.push({
-        line: row.line,
-        field: 'question',
-        message: 'Não foi possível criar a questão.',
-      })
-      continue
-    }
 
-    const questionId = question.id
-    const { error: alternativesError } = await db.from('alternatives').insert(
-      row.alternatives.map((alternative, index) => ({
-        question_id: questionId,
-        label: alternative.label,
-        text: alternative.text,
-        is_correct: row.correctLabel === alternative.label,
-        alternative_comment: alternative.alternativeComment,
-        position: index,
-      })),
-    )
-
-    if (alternativesError) {
-      console.error('Failed to create imported question alternatives', {
-        code: alternativesError.code,
-        line: row.line,
+      console.error('Failed to batch insert questions', {
+        code: questionError.code,
+        message: questionError.message,
         authorId: input.authorId,
       })
-      errors.push({
-        line: row.line,
-        field: 'alternatives',
-        message: 'Não foi possível salvar as alternativas da questão.',
-      })
-      continue
-    }
 
-    createdQuestionIds.push(questionId)
+      for (const row of input.rows) {
+        errors.push({
+          line: row.line,
+          field: 'question',
+          message: 'Não foi possível criar a questão (erro no lote).',
+        })
+      }
+    } else {
+      if (alternativesToInsert.length > 0) {
+        const { error: alternativesError } = await db
+          .from('alternatives')
+          .insert(alternativesToInsert)
+
+        if (alternativesError) {
+          console.error('Failed to batch insert alternatives', {
+            code: alternativesError.code,
+            message: alternativesError.message,
+            authorId: input.authorId,
+          })
+
+          const insertedIds = Array.from(rowToQuestionIdMap.values())
+          if (insertedIds.length > 0) {
+            await db.from('questions').delete().in('id', insertedIds)
+          }
+
+          for (const row of input.rows) {
+            errors.push({
+              line: row.line,
+              field: 'alternatives',
+              message: 'Não foi possível salvar as alternativas da questão (erro no lote).',
+            })
+          }
+        } else {
+          createdQuestionIds.push(...Array.from(rowToQuestionIdMap.values()))
+        }
+      } else {
+        createdQuestionIds.push(...Array.from(rowToQuestionIdMap.values()))
+      }
+    }
   }
 
   const failedLines = new Set(errors.map((error) => error.line))

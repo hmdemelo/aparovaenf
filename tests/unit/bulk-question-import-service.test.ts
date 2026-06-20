@@ -92,6 +92,8 @@ function createDb(options?: {
           ) ?? null
         return { data, error: null }
       }),
+      delete: vi.fn(() => builder),
+      in: vi.fn(() => builder),
       single: vi.fn(async () => {
         if (state.table === 'questions' && options?.questionInsertError) {
           return { data: null, error: options.questionInsertError }
@@ -99,8 +101,12 @@ function createDb(options?: {
         const rows = inserts[state.table] ?? []
         return { data: rows.at(-1) ?? null, error: null }
       }),
-      then(resolve: (value: { data: unknown[]; error: null }) => void) {
-        const rows = (tables.get(state.table) ?? []) as Record<string, unknown>[]
+      then(resolve: (value: { data: unknown[]; error: unknown }) => void) {
+        if (state.table === 'questions' && options?.questionInsertError) {
+          resolve({ data: [], error: options.questionInsertError })
+          return
+        }
+        const rows = (inserts[state.table] ?? tables.get(state.table) ?? []) as Record<string, unknown>[]
         resolve({ data: rows, error: null })
       },
     }
