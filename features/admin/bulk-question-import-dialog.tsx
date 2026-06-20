@@ -55,13 +55,14 @@ export function BulkQuestionImportDialog({
     formData.set('file', file)
 
     try {
-      const response = await fetch(
-        `/api/admin/authors/${author.id}/questions/bulk-import`,
-        {
-          method: 'POST',
-          body: formData,
-        },
-      )
+      const url =
+        author.id === 'pool'
+          ? '/api/admin/questions/bulk-import-pool'
+          : `/api/admin/authors/${author.id}/questions/bulk-import`
+      const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      })
       const json: ApiEnvelope<ImportResult> = await response.json()
       if (!json.success) {
         setError(json.error.message)
@@ -98,6 +99,9 @@ export function BulkQuestionImportDialog({
           Carreira, disciplina, dificuldade e banca podem ficar vazias no
           rascunho.
         </p>
+        <p className="mt-2 text-xs font-semibold text-[var(--danger)]">
+          ⚠️ Atenção: Não importe questões que possuam imagens ou figuras. Elas devem ser cadastradas manualmente pelo autor diretamente no painel.
+        </p>
         <a
           href="/api/admin/questions/bulk-template"
           download
@@ -113,7 +117,9 @@ export function BulkQuestionImportDialog({
           {file ? file.name : 'Selecionar CSV'}
         </span>
         <span className="text-[var(--muted)]">
-          As questões entram como rascunhos do autor.
+          {author.id === 'pool'
+            ? 'As questões entram como rascunhos no pool geral.'
+            : 'As questões entram como rascunhos do autor.'}
         </span>
         <input
           type="file"

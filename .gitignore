@@ -62,3 +62,9 @@ yarn-error.log*
 
 # Backups e dumps de produção (nunca versionar — contêm dados de usuários)
 backups/
+
+# Dumps e relatórios de revisão temporários
+questoes_export.json
+revisao_questoes_export.md
+revisao_questoes_export_com_ids.csv
+

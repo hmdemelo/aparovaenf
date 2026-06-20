@@ -185,7 +185,11 @@ export function AdminAuthorsManager({ authors }: { authors: AdminAuthorRow[] }) 
   const router = useRouter()
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<AdminAuthorRow | null>(null)
-  const [importing, setImporting] = useState<AdminAuthorRow | null>(null)
+  const [importing, setImporting] = useState<
+    | AdminAuthorRow
+    | { id: string; displayName: string; email?: string | null }
+    | null
+  >(null)
   const [deleting, setDeleting] = useState<AdminAuthorRow | null>(null)
 
   return (
@@ -199,15 +203,28 @@ export function AdminAuthorsManager({ authors }: { authors: AdminAuthorRow[] }) 
             Autores
           </h1>
         </div>
-        <button
-          type="button"
-          onClick={() => setCreating(true)}
-          className="aprova-button text-sm"
-          data-testid="open-create-author"
-        >
-          <Plus size={17} />
-          Novo autor
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() =>
+              setImporting({ id: 'pool', displayName: 'Pool de Questões' })
+            }
+            className="aprova-button aprova-button-ghost text-sm"
+            data-testid="open-import-pool"
+          >
+            <FileUp size={17} />
+            Importar para o Pool
+          </button>
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="aprova-button text-sm"
+            data-testid="open-create-author"
+          >
+            <Plus size={17} />
+            Novo autor
+          </button>
+        </div>
       </div>
 
       <section>
@@ -299,7 +316,7 @@ export function AdminAuthorsManager({ authors }: { authors: AdminAuthorRow[] }) 
       {importing && (
         <AuthorDialog
           title="Importar questões"
-          description={importing.email ?? 'Rascunhos para edicao do autor'}
+          description={importing.email ?? 'Rascunhos para o pool geral'}
           onClose={() => setImporting(null)}
         >
           <BulkQuestionImportDialog

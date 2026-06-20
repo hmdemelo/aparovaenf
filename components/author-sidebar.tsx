@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BarChart3, BookOpen, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { BarChart3, BookOpen, ChevronLeft, ChevronRight, Database, Plus } from 'lucide-react'
 import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { AccountDialog } from '@/features/account/account-dialog'
 import { LogoutButton } from '@/components/logout-button'
@@ -96,6 +96,14 @@ export function AuthorSidebar({ account }: { account: AccountProfile }) {
         >
           <BookOpen size={18} />
           {!isCollapsed && <span>Questões</span>}
+        </Link>
+        <Link
+          href="/author/questions/pool"
+          className={`aprova-nav-item ${pathname === '/author/questions/pool' ? 'aprova-nav-item-active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
+          title="Banco de Questões"
+        >
+          <Database size={18} />
+          {!isCollapsed && <span>Banco de Questões</span>}
         </Link>
         <Link
           href="/author/questions/new"

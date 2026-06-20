@@ -419,7 +419,7 @@ export type Database = {
         Row: {
           annulled: boolean
           answer_key_changed: boolean
-          author_id: string
+          author_id: string | null
           board_id: string | null
           career_id: string | null
           created_at: string
@@ -441,7 +441,7 @@ export type Database = {
         Insert: {
           annulled?: boolean
           answer_key_changed?: boolean
-          author_id: string
+          author_id?: string | null
           board_id?: string | null
           career_id?: string | null
           created_at?: string
@@ -463,7 +463,7 @@ export type Database = {
         Update: {
           annulled?: boolean
           answer_key_changed?: boolean
-          author_id?: string
+          author_id?: string | null
           board_id?: string | null
           career_id?: string | null
           created_at?: string

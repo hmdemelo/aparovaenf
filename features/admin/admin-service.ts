@@ -327,6 +327,7 @@ export async function listAuthors(db: Db): Promise<AdminAuthorRow[]> {
 
   const publishedByAuthor = new Map<string, number>()
   for (const q of questions ?? []) {
+    if (!q.author_id) continue
     publishedByAuthor.set(q.author_id, (publishedByAuthor.get(q.author_id) ?? 0) + 1)
   }
 

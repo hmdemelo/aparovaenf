@@ -24,7 +24,7 @@ export async function getAuthorProfileId(
   return data?.id ?? null
 }
 
-/** True when the given author profile owns the question. */
+/** True when the given author profile owns the question (or it is in the public pool). */
 export async function authorOwnsQuestion(
   db: Db,
   authorId: string,
@@ -32,9 +32,9 @@ export async function authorOwnsQuestion(
 ): Promise<boolean> {
   const { data } = await db
     .from('questions')
-    .select('id')
+    .select('id, author_id')
     .eq('id', questionId)
-    .eq('author_id', authorId)
     .maybeSingle()
-  return data !== null
+  if (!data) return false
+  return data.author_id === authorId || data.author_id === null
 }

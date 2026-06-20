@@ -169,17 +169,20 @@ export async function importBulkQuestionsForAuthor(
   db: BulkQuestionImportDb,
   input: BulkQuestionImportInput,
 ): Promise<BulkQuestionImportResult> {
-  const { data: author, error: authorError } = await db
-    .from('author_profiles')
-    .select('id')
-    .eq('id', input.authorId)
-    .maybeSingle()
+  const isPool = input.authorId === 'pool'
+  if (!isPool) {
+    const { data: author, error: authorError } = await db
+      .from('author_profiles')
+      .select('id')
+      .eq('id', input.authorId)
+      .maybeSingle()
 
-  if (authorError) {
-    return { ok: false, code: 'error', message: authorError.message }
-  }
-  if (!author) {
-    return { ok: false, code: 'not_found', message: 'Autor nao encontrado.' }
+    if (authorError) {
+      return { ok: false, code: 'error', message: authorError.message }
+    }
+    if (!author) {
+      return { ok: false, code: 'not_found', message: 'Autor nao encontrado.' }
+    }
   }
 
   const catalogs = await loadCatalogs(db)
@@ -195,7 +198,7 @@ export async function importBulkQuestionsForAuthor(
     const { data: question, error: questionError } = await db
       .from('questions')
       .insert({
-        author_id: input.authorId,
+        author_id: isPool ? null : input.authorId,
         career_id: resolved.career?.id ?? null,
         subject_id: resolved.subject?.id ?? null,
         board_id: resolved.board?.id ?? null,

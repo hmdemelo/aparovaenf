@@ -52,6 +52,11 @@ docs/template-importacao-questoes.csv
 - Limite: 500 linhas de dados por arquivo
 - Tamanho maximo: 5 MB
 
+### Restriçoes Criticas de Conteudo
+
+- **Sem Imagens/Figuras**: **NAO** prepare nem inclua questoes que contenham imagens, fotos, ilustraçoes ou esquemas visuais no arquivo CSV. Essas questoes devem ser puladas no processo de preparo automatizado e cadastradas uma a uma manualmente pelo autor na plataforma.
+- **Caracteres Especiais e Formataçao**: Certifique-se de que o encoding seja UTF-8 para evitar corrompimento de acentuaçao. Nao use quebras de linha complexas ou tags HTML dentro dos campos.
+
 Colunas principais:
 
 | Coluna | Obrigatorio | Observacao |

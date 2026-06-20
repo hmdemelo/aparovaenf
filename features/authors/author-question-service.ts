@@ -148,7 +148,7 @@ async function syncQuestionTags(
   return joinError?.message ?? null
 }
 
-function questionRow(authorId: string, input: QuestionDraftInput) {
+function questionRow(authorId: string | null, input: QuestionDraftInput) {
   return {
     author_id: authorId,
     career_id: input.career_id ?? null,
@@ -220,16 +220,18 @@ export async function updateQuestion(
     if (!valResult.ok) return valResult
   }
 
-  // Get old image_path for storage garbage collection
+  // Get old image_path for storage garbage collection and old author_id
   const { data: oldQuestion } = await db
     .from('questions')
-    .select('image_path')
+    .select('image_path, author_id')
     .eq('id', questionId)
     .maybeSingle()
 
+  const targetAuthorId = oldQuestion ? oldQuestion.author_id : authorId
+
   const { error } = await db
     .from('questions')
-    .update(questionRow(authorId, input))
+    .update(questionRow(targetAuthorId, input))
     .eq('id', questionId)
   if (error) return { ok: false, code: 'error', errors: [error.message] }
 
@@ -344,7 +346,11 @@ export async function publishQuestion(
 
   const { error } = await db
     .from('questions')
-    .update({ status: 'published', published_at: new Date().toISOString() })
+    .update({ 
+      status: 'published', 
+      author_id: authorId, // Assign ownership when publishing from the pool
+      published_at: new Date().toISOString() 
+    })
     .eq('id', questionId)
   if (error) return { ok: false, code: 'error', errors: [error.message] }
 
@@ -362,6 +368,51 @@ export async function listAuthorQuestions(db: Db, authorId: string) {
   return data ?? []
 }
 
+export async function listPoolQuestions(db: Db) {
+  const { data } = await db
+    .from('questions')
+    .select(
+      'id, statement, status, difficulty, created_at, published_at, subject:subjects(name)',
+    )
+    .is('author_id', null)
+    .eq('status', 'draft')
+    .order('created_at', { ascending: false })
+  return data ?? []
+}
+
+export async function claimQuestion(
+  db: Db,
+  authorId: string,
+  questionId: string,
+): Promise<ServiceResult<{ id: string }>> {
+  const { data: question } = await db
+    .from('questions')
+    .select('author_id, status')
+    .eq('id', questionId)
+    .maybeSingle()
+
+  if (!question) {
+    return { ok: false, code: 'not_found', errors: ['Questão não encontrada.'] }
+  }
+  if (question.status !== 'draft' || question.author_id !== null) {
+    return {
+      ok: false,
+      code: 'forbidden',
+      errors: ['Esta questão não está no pool ou já foi reivindicada.'],
+    }
+  }
+
+  const { error } = await db
+    .from('questions')
+    .update({ author_id: authorId })
+    .eq('id', questionId)
+
+  if (error) {
+    return { ok: false, code: 'error', errors: [error.message] }
+  }
+  return { ok: true, data: { id: questionId } }
+}
+
 export async function getAuthorQuestion(
   db: Db,
   authorId: string,
@@ -370,16 +421,16 @@ export async function getAuthorQuestion(
   const { data } = await db
     .from('questions')
     .select(
-      `id, statement, general_comment, career_id, subject_id, board_id, difficulty,
+      `id, author_id, statement, general_comment, career_id, subject_id, board_id, difficulty,
        source_type, source_orgao, source_cargo, source_year, source_reference, status, image_path,
        alternatives(id, label, text, is_correct, alternative_comment, position),
        tags:question_tags(tag:tags(id, name, slug, subject_id))`,
     )
     .eq('id', questionId)
-    .eq('author_id', authorId)
     .maybeSingle()
 
   if (!data) return null
+  if (data.author_id !== authorId && data.author_id !== null) return null
 
   type QuestionTagRow = { tag: { id: string; name: string; slug: string; subject_id: string | null } | null }
   const formattedTags = ((data.tags ?? []) as QuestionTagRow[])

@@ -82,6 +82,20 @@ DROP POLICY IF EXISTS delete_favorites_own ON public.favorites;
 -- 6. Recriar Políticas RLS Single-tenant Originais (Questions, Answer Attempts, Favorites)
 -- =========================================================================
 -- Questions
+DROP POLICY IF EXISTS "published questions are public; authors and admins see own/all" ON public.questions;
+DROP POLICY IF EXISTS "authors create their own questions" ON public.questions;
+DROP POLICY IF EXISTS "authors edit own questions; admins edit any" ON public.questions;
+
+-- Answer Attempts
+DROP POLICY IF EXISTS "users read own answer attempts; admins read all" ON public.answer_attempts;
+DROP POLICY IF EXISTS "users insert own answer attempts" ON public.answer_attempts;
+
+-- Favorites
+DROP POLICY IF EXISTS "users read own favorites" ON public.favorites;
+DROP POLICY IF EXISTS "subscribers insert own favorites" ON public.favorites;
+DROP POLICY IF EXISTS "users delete own favorites" ON public.favorites;
+
+-- Questions
 CREATE POLICY "published questions are public; authors and admins see own/all"
   ON public.questions FOR SELECT
   USING (
@@ -124,6 +138,9 @@ CREATE POLICY "users delete own favorites"
 -- =========================================================================
 -- 7. Recriar Tabelas de Assinatura (Stripe Billing Integration)
 -- =========================================================================
+DROP TABLE IF EXISTS public.subscriptions CASCADE;
+DROP TABLE IF EXISTS public.payment_events CASCADE;
+
 CREATE TABLE public.subscriptions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.user_profiles (id) ON DELETE CASCADE,
