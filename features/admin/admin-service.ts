@@ -292,6 +292,71 @@ export async function unpublishQuestion(
   return { ok: true }
 }
 
+export type DeleteQuestionResult =
+  | { ok: true }
+  | {
+      ok: false
+      code: 'not_found' | 'published' | 'has_answers' | 'error'
+      message: string
+    }
+
+/**
+ * Delete a question that is awaiting review (pool draft or any non-published
+ * question). Published questions are never deleted here — they must be
+ * unpublished first. Blocked when students have already answered it, so their
+ * history is never silently wiped.
+ */
+export async function deleteQuestion(
+  db: Db,
+  questionId: string,
+): Promise<DeleteQuestionResult> {
+  const { data: question, error: loadError } = await db
+    .from('questions')
+    .select('id, status, image_path')
+    .eq('id', questionId)
+    .maybeSingle()
+
+  if (loadError) return { ok: false, code: 'error', message: loadError.message }
+  if (!question) return { ok: false, code: 'not_found', message: 'question not found' }
+
+  if (question.status === 'published') {
+    return {
+      ok: false,
+      code: 'published',
+      message:
+        'Não é possível apagar uma questão publicada. Despublique-a primeiro.',
+    }
+  }
+
+  const { count: answerCount, error: countError } = await db
+    .from('answer_attempts')
+    .select('id', { count: 'exact', head: true })
+    .eq('question_id', questionId)
+
+  if (countError) return { ok: false, code: 'error', message: countError.message }
+  if ((answerCount ?? 0) > 0) {
+    return {
+      ok: false,
+      code: 'has_answers',
+      message:
+        'Esta questão já recebeu respostas de alunos e não pode ser apagada.',
+    }
+  }
+
+  const { error: deleteError } = await db
+    .from('questions')
+    .delete()
+    .eq('id', questionId)
+
+  if (deleteError) return { ok: false, code: 'error', message: deleteError.message }
+
+  if (question.image_path) {
+    await db.storage.from('question-images').remove([question.image_path])
+  }
+
+  return { ok: true }
+}
+
 // =========================================================================
 // Authors
 // =========================================================================

@@ -104,6 +104,8 @@ export function QuestionModerator({
   // UI States
   const [loading, setLoading] = useState(false)
   const [unpublishingId, setUnpublishingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
@@ -213,6 +215,31 @@ export function QuestionModerator({
       setError(err instanceof Error ? err.message : 'Erro ao despublicar.')
     } finally {
       setUnpublishingId(null)
+    }
+  }
+
+  // Delete a non-published question (pool draft awaiting review)
+  const handleDelete = async (questionId: string) => {
+    setDeletingId(questionId)
+    setError(null)
+    setSuccess(null)
+    try {
+      const res = await fetch(`/api/admin/questions/${questionId}`, {
+        method: 'DELETE',
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        throw new Error(json.error?.message ?? 'Erro ao apagar a questão.')
+      }
+
+      setQuestions((prev) => prev.filter((q) => q.id !== questionId))
+      setPagination((prev) => ({ ...prev, total: Math.max(prev.total - 1, 0) }))
+      setSuccess('Questão apagada com sucesso!')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao apagar a questão.')
+    } finally {
+      setDeletingId(null)
+      setConfirmDeleteId(null)
     }
   }
 
@@ -445,8 +472,36 @@ export function QuestionModerator({
                         >
                           {unpublishingId === q.id ? 'Despublicando...' : 'Despublicar'}
                         </button>
+                      ) : confirmDeleteId === q.id ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-[var(--muted)]">Confirmar?</span>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(q.id)}
+                            disabled={deletingId === q.id}
+                            data-testid={`confirm-delete-${q.id}`}
+                            className="rounded-lg bg-[var(--danger-bg)] px-3 py-1 text-xs font-semibold text-[var(--danger)] transition hover:opacity-90 disabled:opacity-50"
+                          >
+                            {deletingId === q.id ? 'Apagando...' : 'Apagar'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteId(null)}
+                            disabled={deletingId === q.id}
+                            className="rounded-lg border border-[color:var(--line-2)] px-3 py-1 text-xs font-medium text-[var(--muted)] transition hover:bg-[var(--surface-paper)] disabled:opacity-50"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
                       ) : (
-                        <span className="text-xs text-[var(--hint)] font-semibold">-</span>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(q.id)}
+                          data-testid={`delete-${q.id}`}
+                          className="rounded-lg border border-[color:var(--line)] px-3 py-1 text-xs font-medium text-[var(--danger)] transition hover:border-[color:var(--danger)] hover:bg-[var(--danger-bg)]"
+                        >
+                          Deletar
+                        </button>
                       )}
                     </td>
                   </tr>

@@ -3,6 +3,7 @@ import { ok, fail, ErrorCodes } from '@/lib/api/response'
 import { authorQuestionInputSchema } from '@/lib/validation/schemas'
 import { resolveAuthorContext } from '@/features/authors/author-context'
 import {
+  deleteAuthorQuestion,
   getAuthorQuestion,
   updateQuestion,
 } from '@/features/authors/author-question-service'
@@ -54,6 +55,26 @@ export async function PATCH(
       return fail(ErrorCodes.FORBIDDEN, 'You cannot edit this question')
     }
     return fail(ErrorCodes.INTERNAL, result.errors.join('; '))
+  }
+  return ok(result.data)
+}
+
+// DELETE /api/author/questions/:id — remove an owned, not-yet-published question.
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const ctx = await resolveAuthorContext()
+  if (!ctx.ok) return authFail(ctx.code)
+  const { id } = await params
+
+  const result = await deleteAuthorQuestion(ctx.db, ctx.authorId, id)
+  if (!result.ok) {
+    const message = result.errors.join('; ')
+    if (result.code === 'not_found') return fail(ErrorCodes.NOT_FOUND, message)
+    if (result.code === 'forbidden') return fail(ErrorCodes.FORBIDDEN, message)
+    if (result.code === 'validation') return fail(ErrorCodes.VALIDATION, message)
+    return fail(ErrorCodes.INTERNAL, message)
   }
   return ok(result.data)
 }

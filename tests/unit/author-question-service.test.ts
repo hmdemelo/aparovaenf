@@ -1,5 +1,58 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createDraftQuestion } from '@/features/authors/author-question-service'
+import {
+  createDraftQuestion,
+  deleteAuthorQuestion,
+} from '@/features/authors/author-question-service'
+
+type QuestionRow = {
+  id: string
+  author_id: string | null
+  status: string
+  image_path: string | null
+}
+
+function buildDeleteDb(options: {
+  question: QuestionRow | null
+  answerCount?: number
+  storageRemove?: ReturnType<typeof vi.fn>
+  deleteSpy?: ReturnType<typeof vi.fn>
+}) {
+  const deleteSpy =
+    options.deleteSpy ??
+    vi.fn(() => ({ eq: vi.fn().mockResolvedValue({ error: null }) }))
+
+  return {
+    from: vi.fn((table: string) => {
+      if (table === 'questions') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              maybeSingle: vi
+                .fn()
+                .mockResolvedValue({ data: options.question, error: null }),
+            })),
+          })),
+          delete: deleteSpy,
+        }
+      }
+      if (table === 'answer_attempts') {
+        return {
+          select: vi.fn(() => ({
+            eq: vi
+              .fn()
+              .mockResolvedValue({ count: options.answerCount ?? 0, error: null }),
+          })),
+        }
+      }
+      throw new Error(`Unexpected table: ${table}`)
+    }),
+    storage: {
+      from: vi.fn(() => ({
+        remove: options.storageRemove ?? vi.fn().mockResolvedValue({ error: null }),
+      })),
+    },
+  }
+}
 
 describe('author-question-service topic validation', () => {
   it('saves an unclassified draft when topic_ids is empty', async () => {
@@ -73,5 +126,73 @@ describe('author-question-service topic validation', () => {
       expect(result.code).toBe('validation')
     }
     expect(questionInsert).not.toHaveBeenCalled()
+  })
+})
+
+describe('deleteAuthorQuestion', () => {
+  it('deletes an owned draft and removes its image', async () => {
+    const eqSpy = vi.fn().mockResolvedValue({ error: null })
+    const deleteSpy = vi.fn(() => ({ eq: eqSpy }))
+    const storageRemove = vi.fn().mockResolvedValue({ error: null })
+    const db = buildDeleteDb({
+      question: {
+        id: 'q-1',
+        author_id: 'author-1',
+        status: 'draft',
+        image_path: 'author-1/img.png',
+      },
+      answerCount: 0,
+      deleteSpy,
+      storageRemove,
+    })
+
+    const result = await deleteAuthorQuestion(db as never, 'author-1', 'q-1')
+
+    expect(result).toEqual({ ok: true, data: { id: 'q-1' } })
+    expect(deleteSpy).toHaveBeenCalledOnce()
+    expect(storageRemove).toHaveBeenCalledWith(['author-1/img.png'])
+  })
+
+  it('returns not_found when the question does not exist', async () => {
+    const db = buildDeleteDb({ question: null })
+    const result = await deleteAuthorQuestion(db as never, 'author-1', 'q-x')
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.code).toBe('not_found')
+  })
+
+  it('forbids deleting a question owned by another author', async () => {
+    const db = buildDeleteDb({
+      question: { id: 'q-1', author_id: 'author-2', status: 'draft', image_path: null },
+    })
+    const result = await deleteAuthorQuestion(db as never, 'author-1', 'q-1')
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.code).toBe('forbidden')
+  })
+
+  it('forbids deleting a published question', async () => {
+    const db = buildDeleteDb({
+      question: {
+        id: 'q-1',
+        author_id: 'author-1',
+        status: 'published',
+        image_path: null,
+      },
+    })
+    const result = await deleteAuthorQuestion(db as never, 'author-1', 'q-1')
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.code).toBe('forbidden')
+  })
+
+  it('blocks deletion when the question already has answers', async () => {
+    const deleteSpy = vi.fn()
+    const db = buildDeleteDb({
+      question: { id: 'q-1', author_id: 'author-1', status: 'draft', image_path: null },
+      answerCount: 3,
+      deleteSpy,
+    })
+    const result = await deleteAuthorQuestion(db as never, 'author-1', 'q-1')
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.code).toBe('validation')
+    expect(deleteSpy).not.toHaveBeenCalled()
   })
 })

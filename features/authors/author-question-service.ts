@@ -357,6 +357,54 @@ export async function publishQuestion(
   return { ok: true, data: { id: questionId } }
 }
 
+export async function deleteAuthorQuestion(
+  db: Db,
+  authorId: string,
+  questionId: string,
+): Promise<ServiceResult<{ id: string }>> {
+  const { data: question } = await db
+    .from('questions')
+    .select('id, author_id, status, image_path')
+    .eq('id', questionId)
+    .maybeSingle()
+
+  if (!question) {
+    return { ok: false, code: 'not_found', errors: ['Questão não encontrada.'] }
+  }
+  if (question.author_id !== authorId) {
+    return { ok: false, code: 'forbidden', errors: ['Esta questão não pertence a você.'] }
+  }
+  if (question.status === 'published') {
+    return {
+      ok: false,
+      code: 'forbidden',
+      errors: ['Não é possível apagar uma questão já publicada. Despublique-a primeiro.'],
+    }
+  }
+
+  const { count: answerCount } = await db
+    .from('answer_attempts')
+    .select('id', { count: 'exact', head: true })
+    .eq('question_id', questionId)
+
+  if ((answerCount ?? 0) > 0) {
+    return {
+      ok: false,
+      code: 'validation',
+      errors: ['Esta questão já recebeu respostas de alunos e não pode ser apagada.'],
+    }
+  }
+
+  const { error } = await db.from('questions').delete().eq('id', questionId)
+  if (error) return { ok: false, code: 'error', errors: [error.message] }
+
+  if (question.image_path) {
+    await db.storage.from('question-images').remove([question.image_path])
+  }
+
+  return { ok: true, data: { id: questionId } }
+}
+
 export async function listAuthorQuestions(db: Db, authorId: string) {
   const { data } = await db
     .from('questions')

@@ -8,6 +8,7 @@ import {
 } from '@/features/authors/author-question-service'
 import { createSupabaseServiceClient } from '@/lib/db/server'
 import { shortQuestionId } from '@/lib/utils/short-question-id'
+import { DeleteAuthorQuestionButton } from '@/features/authors/delete-author-question-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -111,6 +112,7 @@ export default async function AuthorQuestionsPage() {
                 <th>Enunciado</th>
                 <th>Assunto</th>
                 <th>Status</th>
+                <th className="text-right">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -137,6 +139,15 @@ export default async function AuthorQuestionsPage() {
                     </td>
                     <td>
                       <StatusBadge status={q.status} />
+                    </td>
+                    <td className="text-right">
+                      {q.status === 'published' ? (
+                        <span className="text-xs text-[var(--hint)] font-semibold">
+                          -
+                        </span>
+                      ) : (
+                        <DeleteAuthorQuestionButton questionId={q.id} />
+                      )}
                     </td>
                   </tr>
                 )
