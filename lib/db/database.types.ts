@@ -658,6 +658,7 @@ export type Database = {
           created_at: string
           email: string | null
           force_password_change: boolean
+          free_access: boolean
           id: string
           name: string | null
           registration_completed: boolean
@@ -668,6 +669,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           force_password_change?: boolean
+          free_access?: boolean
           id: string
           name?: string | null
           registration_completed?: boolean
@@ -678,6 +680,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           force_password_change?: boolean
+          free_access?: boolean
           id?: string
           name?: string | null
           registration_completed?: boolean

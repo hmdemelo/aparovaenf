@@ -6,6 +6,7 @@ import type { AdminUserRow } from './admin-service'
 import { resolveAdminUserStatus } from './admin-service'
 import { ChangePasswordDialog } from './change-password-dialog'
 import { DeleteUserDialog } from './delete-user-dialog'
+import { FreeAccessToggle } from './free-access-toggle'
 
 const PAGE_SIZE = 25
 
@@ -37,6 +38,7 @@ export function AdminUsersManager({ users }: { users: AdminUserRow[] }) {
         (accessFilter === 'free' &&
           user.registrationCompleted &&
           !user.subscriptionStatus) ||
+        (accessFilter === 'comped' && user.freeAccess) ||
         (accessFilter === 'incomplete' && !user.registrationCompleted) ||
         (accessFilter === 'password' && user.forcePasswordChange)
 
@@ -90,6 +92,7 @@ export function AdminUsersManager({ users }: { users: AdminUserRow[] }) {
             <option value="active">Assinaturas ativas</option>
             <option value="attention">Cobranças com atenção</option>
             <option value="free">Cadastros gratuitos</option>
+            <option value="comped">Acesso liberado (teste)</option>
             <option value="incomplete">Cadastros incompletos</option>
             <option value="password">Troca de senha pendente</option>
           </select>
@@ -162,7 +165,13 @@ export function AdminUsersManager({ users }: { users: AdminUserRow[] }) {
                     )}
                   </td>
                   <td>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {user.role === 'student' && (
+                        <FreeAccessToggle
+                          userId={user.id}
+                          freeAccess={user.freeAccess}
+                        />
+                      )}
                       <ChangePasswordDialog
                         userId={user.id}
                         userEmail={user.email ?? ''}

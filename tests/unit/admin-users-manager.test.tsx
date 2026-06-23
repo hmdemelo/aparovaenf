@@ -20,6 +20,7 @@ const users = [
     registrationCompleted: true,
     forcePasswordChange: false,
     answeredCount: 18,
+    freeAccess: false,
   },
   {
     id: 'user-2',
@@ -33,6 +34,7 @@ const users = [
     registrationCompleted: true,
     forcePasswordChange: true,
     answeredCount: 1,
+    freeAccess: false,
   },
 ]
 

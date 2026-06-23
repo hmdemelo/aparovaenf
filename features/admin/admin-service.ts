@@ -24,12 +24,14 @@ export type AdminUserRow = {
   registrationCompleted: boolean
   forcePasswordChange: boolean
   answeredCount: number
+  freeAccess: boolean
 }
 
 export type AdminUserStatus = {
   label:
     | 'cadastro não concluído'
     | 'cadastro free'
+    | 'acesso liberado (teste)'
     | 'assinatura ativa'
     | 'pagamento pendente'
     | 'pagamento em atraso'
@@ -41,11 +43,21 @@ export type AdminUserStatus = {
 export function resolveAdminUserStatus(input: {
   registrationCompleted: boolean
   subscriptionStatus: string | null
+  freeAccess?: boolean
 }): AdminUserStatus {
   if (!input.registrationCompleted) {
     return {
       label: 'cadastro não concluído',
       className: 'bg-amber-50 text-amber-700 border border-amber-200/60',
+    }
+  }
+
+  // Admin-granted free access overrides paywall states (but a real active
+  // subscription still shows as such for billing clarity).
+  if (input.freeAccess && input.subscriptionStatus !== 'active') {
+    return {
+      label: 'acesso liberado (teste)',
+      className: 'bg-violet-50 text-violet-700 border border-violet-200/60',
     }
   }
 
@@ -100,7 +112,7 @@ export async function listUsers(db: Db): Promise<AdminUserRow[]> {
     db
       .from('user_profiles')
       .select(
-        'id, name, email, role, created_at, registration_completed, force_password_change',
+        'id, name, email, role, created_at, registration_completed, force_password_change, free_access',
       )
       .order('created_at', { ascending: false }),
     db
@@ -161,8 +173,36 @@ export async function listUsers(db: Db): Promise<AdminUserRow[]> {
       registrationCompleted: u.registration_completed,
       forcePasswordChange: u.force_password_change,
       answeredCount: answeredByUser.get(u.id) ?? 0,
+      freeAccess: u.free_access ?? false,
     }
   })
+}
+
+export type SetFreeAccessResult =
+  | { ok: true; freeAccess: boolean }
+  | { ok: false; code: 'not_found' | 'error'; message: string }
+
+/**
+ * Toggle admin-granted free access for a user. When enabled, the server treats
+ * the user as a subscriber across every access gate (see isSubscriber).
+ */
+export async function setUserFreeAccess(
+  db: Db,
+  userId: string,
+  freeAccess: boolean,
+): Promise<SetFreeAccessResult> {
+  const { data, error } = await db
+    .from('user_profiles')
+    .update({ free_access: freeAccess })
+    .eq('id', userId)
+    .select('id')
+    .maybeSingle()
+
+  if (error) return { ok: false, code: 'error', message: error.message }
+  if (!data) {
+    return { ok: false, code: 'not_found', message: 'Usuário não encontrado' }
+  }
+  return { ok: true, freeAccess }
 }
 
 export type AdminQuestionRow = {

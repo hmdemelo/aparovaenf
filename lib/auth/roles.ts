@@ -17,6 +17,7 @@ export type CurrentUser = {
   role: UserRole
   registrationCompleted: boolean
   forcePasswordChange: boolean
+  freeAccess: boolean
 }
 
 /** Returns the authenticated user with role, or null if not signed in. */
@@ -29,7 +30,9 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 
   const { data: profile } = await supabase
     .from('user_profiles')
-    .select('role, email, registration_completed, force_password_change')
+    .select(
+      'role, email, registration_completed, force_password_change, free_access',
+    )
     .eq('id', user.id)
     .single()
 
@@ -39,6 +42,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     role: (profile?.role as UserRole) ?? 'student',
     registrationCompleted: profile?.registration_completed ?? false,
     forcePasswordChange: profile?.force_password_change ?? false,
+    freeAccess: profile?.free_access ?? false,
   }
 }
 
@@ -85,6 +89,9 @@ export async function requireUser(
 export async function isSubscriber(): Promise<boolean> {
   const user = await getCurrentUser()
   if (!user) return false
+
+  // Admin-granted free access bypasses the subscription requirement entirely.
+  if (user.freeAccess) return true
 
   const supabase = await createSupabaseServerClient()
   const { data } = await supabase
