@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { History, KeyRound, Save, UserCircle, X } from 'lucide-react'
 import { createSupabaseBrowserClient } from '@/lib/db/browser'
+import { useScrollLock } from '@/lib/hooks/use-scroll-lock'
 import type { AccountProfile } from './account-service'
 
 type ApiEnvelope<T> =
@@ -40,6 +41,8 @@ export function AccountDialog({
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
+
+  useScrollLock(open)
 
   async function saveProfile(event: React.FormEvent) {
     event.preventDefault()
@@ -166,7 +169,7 @@ export function AccountDialog({
             role="dialog"
             aria-modal="true"
             aria-labelledby="account-title"
-            className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[20px] border border-[color:var(--line)] bg-white shadow-[0_30px_60px_-32px_rgba(20,43,38,0.4)]"
+            className="max-h-[92vh] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-[20px] border border-[color:var(--line)] bg-white shadow-[0_30px_60px_-32px_rgba(20,43,38,0.4)]"
             data-testid="account-dialog"
           >
             <div className="sticky top-0 flex items-center justify-between border-b border-[color:var(--line)] bg-white px-5 py-4">

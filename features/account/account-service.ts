@@ -43,7 +43,7 @@ export async function loadAccountProfile(
     await Promise.all([
       db
         .from('user_profiles')
-        .select('email, name')
+        .select('email, name, free_access')
         .eq('id', userId)
         .maybeSingle(),
       db
@@ -62,9 +62,9 @@ export async function loadAccountProfile(
     displayName: author?.display_name ?? fallbackName,
     shortBio: author?.short_bio ?? '',
     instagram: author?.instagram ?? '',
-    isPayingOrExPaying: evaluatePayingOrExPaying(
-      (subscriptions ?? []).map((s) => s.status),
-    ),
+    isPayingOrExPaying:
+      profile?.free_access === true ||
+      evaluatePayingOrExPaying((subscriptions ?? []).map((s) => s.status)),
   }
 }
 

@@ -7,6 +7,7 @@ import { BookOpen, Heart, XCircle } from 'lucide-react'
 import { StudentSidebar } from './student-sidebar'
 import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { AccountDialog } from '@/features/account/account-dialog'
+import { useHideOnScroll } from '@/lib/hooks/use-hide-on-scroll'
 import type { AccountProfile } from '@/features/account/account-service'
 
 export function StudentLayout({
@@ -27,6 +28,7 @@ export function StudentLayout({
     ? `/feed?career=${currentCareerSlug}`
     : '/feed'
   const isFeedPage = pathname.startsWith('/feed')
+  const headerVisible = useHideOnScroll()
 
   const isActive = (path: string) => {
     if (path === '/feed') {
@@ -44,7 +46,9 @@ export function StudentLayout({
 
       <div className="flex min-w-0 flex-1 flex-col md:h-full md:min-h-0 md:overflow-hidden">
         <header
-          className="aprova-appbar sticky top-0 z-40 md:hidden"
+          className={`aprova-appbar sticky top-0 z-40 transition-transform duration-300 ease-out md:hidden ${
+            headerVisible ? 'translate-y-0' : '-translate-y-full'
+          }`}
           data-testid="student-mobile-header"
         >
           <div className="flex h-14 items-center justify-between gap-3 px-4">
