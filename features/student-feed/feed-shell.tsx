@@ -1,11 +1,12 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { SlidersHorizontal, X } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { ArrowUp, SlidersHorizontal, X } from 'lucide-react'
 import { QuestionCard } from './question-card'
 import { AnswerFeedback } from './answer-feedback'
 import { SignupGate } from '@/features/trial/signup-gate'
 import { Paywall } from '@/features/billing/paywall'
+import { usePullToAdvance } from '@/lib/hooks/use-pull-to-advance'
 import type { FeedFilterOptions } from './feed-filter-options'
 import type { AnswerResponse, FeedNextResponse, FeedQuestionDto } from './types'
 
@@ -19,8 +20,9 @@ type Gate = 'none' | 'signup' | 'paywall'
  * Orchestrates the trial learning loop: fetch question -> answer -> feedback ->
  * next, surfacing the signup gate or paywall when the trial limits are hit.
  *
- * Navigation: a "Próxima" button (desktop) plus vertical swipe (mobile/tablet),
- * both calling advance().
+ * Navigation: a "Próxima questão" button after the feedback, plus an
+ * Instagram-style pull-up at the bottom of the page (mobile/tablet), both
+ * calling advance().
  */
 export function FeedShell({
   careerSlug,
@@ -159,17 +161,10 @@ export function FeedShell({
     }
   }
 
-  // Vertical swipe-to-next on touch devices, active only after feedback shows.
-  const touchStartY = useRef<number | null>(null)
-  function onTouchStart(e: React.TouchEvent) {
-    touchStartY.current = e.touches[0].clientY
-  }
-  function onTouchEnd(e: React.TouchEvent) {
-    if (touchStartY.current === null || !feedback) return
-    const delta = touchStartY.current - e.changedTouches[0].clientY
-    if (delta > 60) advance() // swipe up
-    touchStartY.current = null
-  }
+  // Instagram-style pull-up-to-next: only fires when the reader is already at
+  // the bottom of the page and keeps dragging up, so it never hijacks the
+  // normal scroll used to read the comment. Active only after feedback shows.
+  const pull = usePullToAdvance(advance, feedback !== null)
 
   function toggleTag(id: string) {
     setTagIds((prev) =>
@@ -186,11 +181,7 @@ export function FeedShell({
       filterOptions.tags.length > 0)
 
   return (
-    <div
-      className="w-full min-h-full py-4 md:py-8"
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-    >
+    <div className="w-full min-h-full py-4 md:py-8">
       <main className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-4 sm:py-6">
         {hasFilterOptions && filterOptions && (
           <section data-testid="feed-filters">
@@ -352,9 +343,26 @@ export function FeedShell({
             {feedback && (
               <div className="mt-6">
                 <AnswerFeedback feedback={feedback} onNext={advance} />
-                <p className="mt-3 text-center text-xs text-[var(--hint)]">
-                  Deslize para cima para a próxima
-                </p>
+                <div
+                  className="mt-3 flex flex-col items-center justify-center gap-1 overflow-hidden text-xs text-[var(--hint)] transition-[height] md:hidden"
+                  style={{ height: 28 + pull.pullDistance }}
+                  aria-hidden="true"
+                  data-testid="pull-to-advance"
+                >
+                  <ArrowUp
+                    size={16}
+                    className={`transition-transform duration-200 ${
+                      pull.ready
+                        ? '-translate-y-0.5 text-[var(--teal)]'
+                        : 'text-[var(--hint)]'
+                    }`}
+                  />
+                  <span className={pull.ready ? 'text-[var(--teal)]' : ''}>
+                    {pull.ready
+                      ? 'Solte para a próxima'
+                      : 'Puxe para cima para a próxima'}
+                  </span>
+                </div>
               </div>
             )}
           </article>
