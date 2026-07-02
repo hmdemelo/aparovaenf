@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   activateSubscriptionFromWebhook: vi.fn(),
   cancelSubscriptionFromWebhook: vi.fn(),
   markSubscriptionPastDueFromWebhook: vi.fn(),
+  syncSubscriptionFromUpdatedEvent: vi.fn(),
   track: vi.fn(),
 }))
 
@@ -31,6 +32,7 @@ vi.mock('@/features/billing/subscription-service', () => ({
   activateSubscriptionFromWebhook: mocks.activateSubscriptionFromWebhook,
   cancelSubscriptionFromWebhook: mocks.cancelSubscriptionFromWebhook,
   markSubscriptionPastDueFromWebhook: mocks.markSubscriptionPastDueFromWebhook,
+  syncSubscriptionFromUpdatedEvent: mocks.syncSubscriptionFromUpdatedEvent,
 }))
 
 vi.mock('@/features/analytics/product-events-server', () => ({
@@ -123,6 +125,7 @@ describe('POST /api/webhooks/stripe', () => {
     })
     mocks.cancelSubscriptionFromWebhook.mockResolvedValue({ ok: true })
     mocks.markSubscriptionPastDueFromWebhook.mockResolvedValue({ ok: true })
+    mocks.syncSubscriptionFromUpdatedEvent.mockResolvedValue({ ok: true })
     mocks.track.mockResolvedValue({ ok: true })
   })
 
@@ -274,6 +277,30 @@ describe('POST /api/webhooks/stripe', () => {
     })
     expect(mocks.cancelSubscriptionFromWebhook).toHaveBeenCalledWith(expect.anything(), 'sub_deleted_123')
     expect(mocks.markProcessed).toHaveBeenCalledWith('evt_deleted_1')
+  })
+
+  it('syncs subscription state when Stripe sends customer.subscription.updated', async () => {
+    const payload = {
+      id: 'evt_sub_updated_1',
+      type: 'customer.subscription.updated',
+      data: {
+        object: {
+          id: 'sub_updated_123',
+          object: 'subscription',
+          status: 'active',
+        },
+      },
+    }
+    const { POST } = await import('@/app/api/webhooks/stripe/route')
+
+    const response = await POST(signedWebhookRequest(payload))
+
+    expect(response.status).toBe(200)
+    expect(mocks.syncSubscriptionFromUpdatedEvent).toHaveBeenCalledWith(
+      expect.anything(),
+      payload,
+    )
+    expect(mocks.markProcessed).toHaveBeenCalledWith('evt_sub_updated_1')
   })
 
   it('marks a subscription past due when a recurring invoice payment fails', async () => {

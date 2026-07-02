@@ -6,6 +6,7 @@ import {
   activateSubscriptionFromWebhook,
   cancelSubscriptionFromWebhook,
   markSubscriptionPastDueFromWebhook,
+  syncSubscriptionFromUpdatedEvent,
 } from '@/features/billing/subscription-service'
 import { ok, fail, ErrorCodes } from '@/lib/api/response'
 import { createSupabaseServiceClient } from '@/lib/db/server'
@@ -116,6 +117,13 @@ export async function POST(request: NextRequest) {
 
     if (subData?.user_id) {
       await sendSubscriptionExpiredEmail(db, subData.user_id, env.NEXT_PUBLIC_APP_URL)
+    }
+  } else if (eventType === 'customer.subscription.updated') {
+    const sync = await syncSubscriptionFromUpdatedEvent(db, event)
+    if (!sync.ok) {
+      await events.markFailed(providerEventId, sync.error)
+      console.error('[stripe.webhook] processing subscription update failed', sync.error)
+      return fail(ErrorCodes.INTERNAL, 'Could not process webhook')
     }
   } else if (eventType === 'invoice.payment_failed') {
     const providerSubscriptionId = subscriptionIdFromInvoice(event.data.object)

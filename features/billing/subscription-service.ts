@@ -127,6 +127,23 @@ export async function createStripeCheckout(
   }
 }
 
+export async function createStripeBillingPortalSession(input: {
+  env: Pick<ServerEnv, 'STRIPE_SECRET_KEY' | 'NEXT_PUBLIC_APP_URL'>
+  customerId: string
+}): Promise<{ portalUrl: string }> {
+  const stripe = new Stripe(input.env.STRIPE_SECRET_KEY)
+  const session = await stripe.billingPortal.sessions.create({
+    customer: input.customerId,
+    return_url: `${withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)}/feed`,
+  })
+
+  if (!session.url) {
+    throw new Error('Stripe Billing Portal session URL was not generated')
+  }
+
+  return { portalUrl: session.url }
+}
+
 export async function cancelSubscriptionFromWebhook(
   db: Db,
   providerSubscriptionId: string,
@@ -152,6 +169,52 @@ export async function markSubscriptionPastDueFromWebhook(
     .eq('provider', PROVIDER)
     .eq('provider_subscription_id', providerSubscriptionId)
     .eq('status', 'active')
+
+  if (error) return { ok: false, error: error.message }
+  return { ok: true }
+}
+
+/**
+ * Keeps the local row in sync with `customer.subscription.updated`.
+ * Activation stays exclusive to checkout.session.completed/invoice.paid, so
+ * this only touches rows that already left the pending state.
+ */
+export async function syncSubscriptionFromUpdatedEvent(
+  db: Db,
+  payload: unknown,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const obj = asRecord(asRecord(asRecord(payload).data).object)
+  const providerSubscriptionId = asString(obj.id)
+  if (!providerSubscriptionId) {
+    return {
+      ok: false,
+      error: 'missing Stripe subscription id on updated subscription',
+    }
+  }
+
+  const status = asString(obj.status)
+  if (status === 'past_due') {
+    return markSubscriptionPastDueFromWebhook(db, providerSubscriptionId)
+  }
+  if (status === 'unpaid' || status === 'canceled' || status === 'incomplete_expired') {
+    return cancelSubscriptionFromWebhook(db, providerSubscriptionId)
+  }
+  if (status !== 'active' && status !== 'trialing') {
+    return { ok: true }
+  }
+
+  const period = periodFromSubscriptionItems(obj)
+  const { error } = await db
+    .from('subscriptions')
+    .update({
+      status: 'active',
+      ...(period.start && period.end
+        ? { current_period_start: period.start, current_period_end: period.end }
+        : {}),
+    })
+    .eq('provider', PROVIDER)
+    .eq('provider_subscription_id', providerSubscriptionId)
+    .in('status', ['active', 'past_due'])
 
   if (error) return { ok: false, error: error.message }
   return { ok: true }
@@ -360,17 +423,10 @@ function extractSubscriptionActivation(payload: unknown):
 
   const plan = planFromValue(metadata.plan)
 
-  // Handle current period timestamps if present (Stripe provides seconds)
-  const periodStartSec =
-    asNumber(obj.period_start) ?? asNumber(obj.current_period_start)
-  const periodEndSec =
-    asNumber(obj.period_end) ?? asNumber(obj.current_period_end)
-  const periodStart = periodStartSec
-    ? new Date(periodStartSec * 1000).toISOString()
-    : null
-  const periodEnd = periodEndSec
-    ? new Date(periodEndSec * 1000).toISOString()
-    : null
+  const period =
+    eventType === 'invoice.paid'
+      ? periodFromInvoiceLines(obj)
+      : periodFromObjectTimestamps(obj)
 
   return {
     ok: true,
@@ -382,8 +438,77 @@ function extractSubscriptionActivation(payload: unknown):
     providerSubscriptionId:
       stripeObjectId(obj.subscription) ??
       stripeObjectId(subscriptionDetails.subscription),
-    periodStart,
-    periodEnd,
+    periodStart: period.start,
+    periodEnd: period.end,
+  }
+}
+
+type ExtractedPeriod = { start: string | null; end: string | null }
+
+/**
+ * Invoice-level period_start/period_end describe the usage period (the cycle
+ * that was just billed), not the period being paid for — at renewal they can
+ * both equal "now", which would immediately expire the subscriber. The paid
+ * billing period lives on the invoice line items.
+ */
+function periodFromInvoiceLines(obj: Record<string, unknown>): ExtractedPeriod {
+  const lines = asRecord(obj.lines)
+  const data = Array.isArray(lines.data) ? lines.data : []
+
+  let best: { startSec: number; endSec: number } | null = null
+  for (const line of data) {
+    const period = asRecord(asRecord(line).period)
+    const startSec = asNumber(period.start)
+    const endSec = asNumber(period.end)
+    if (startSec === null || endSec === null || endSec <= startSec) continue
+    if (!best || endSec > best.endSec) best = { startSec, endSec }
+  }
+
+  if (!best) return { start: null, end: null }
+  return {
+    start: new Date(best.startSec * 1000).toISOString(),
+    end: new Date(best.endSec * 1000).toISOString(),
+  }
+}
+
+/**
+ * Since the 2025 Stripe API versions, current_period_start/end live on the
+ * subscription items instead of the subscription root. Check both.
+ */
+function periodFromSubscriptionItems(
+  obj: Record<string, unknown>,
+): ExtractedPeriod {
+  const rootPeriod = periodFromObjectTimestamps(obj)
+  if (rootPeriod.start && rootPeriod.end) return rootPeriod
+
+  const items = asRecord(obj.items)
+  const data = Array.isArray(items.data) ? items.data : []
+
+  let best: { startSec: number; endSec: number } | null = null
+  for (const item of data) {
+    const record = asRecord(item)
+    const startSec = asNumber(record.current_period_start)
+    const endSec = asNumber(record.current_period_end)
+    if (startSec === null || endSec === null || endSec <= startSec) continue
+    if (!best || endSec > best.endSec) best = { startSec, endSec }
+  }
+
+  if (!best) return { start: null, end: null }
+  return {
+    start: new Date(best.startSec * 1000).toISOString(),
+    end: new Date(best.endSec * 1000).toISOString(),
+  }
+}
+
+function periodFromObjectTimestamps(
+  obj: Record<string, unknown>,
+): ExtractedPeriod {
+  const startSec =
+    asNumber(obj.period_start) ?? asNumber(obj.current_period_start)
+  const endSec = asNumber(obj.period_end) ?? asNumber(obj.current_period_end)
+  return {
+    start: startSec ? new Date(startSec * 1000).toISOString() : null,
+    end: endSec ? new Date(endSec * 1000).toISOString() : null,
   }
 }
 

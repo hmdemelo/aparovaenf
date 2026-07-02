@@ -100,6 +100,7 @@ export async function isSubscriber(): Promise<boolean> {
     .eq('user_id', user.id)
     .eq('status', 'active')
     .order('current_period_end', { ascending: false, nullsFirst: false })
+    .limit(1)
     .maybeSingle()
 
   return evaluateSubscriptionAccess({
