@@ -3,9 +3,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => {
   const insert = vi.fn()
+  const gte = vi.fn()
+  const countChain = {
+    eq: vi.fn(),
+    gte,
+  }
+  countChain.eq.mockReturnValue(countChain)
+  const select = vi.fn(() => countChain)
   return {
     insert,
-    from: vi.fn(() => ({ insert })),
+    gte,
+    select,
+    from: vi.fn(() => ({ insert, select })),
     getCurrentUser: vi.fn(),
     getServerEnv: vi.fn(),
     createSupabaseServiceClient: vi.fn(),
@@ -75,6 +84,7 @@ describe('POST /api/billing/checkout', () => {
     })
     mocks.createSupabaseServiceClient.mockReturnValue({ from: mocks.from })
     mocks.insert.mockResolvedValue({ error: null })
+    mocks.gte.mockResolvedValue({ count: 0, error: null })
     mocks.track.mockResolvedValue({ ok: true })
     mockStripeCreate.mockResolvedValue({
       id: 'cs_test_annual',
@@ -205,6 +215,35 @@ describe('POST /api/billing/checkout', () => {
     })
     expect(mockStripeCreate).not.toHaveBeenCalled()
     expect(mocks.insert).not.toHaveBeenCalled()
+  })
+
+  it('rate limits checkout creation after too many recent pending attempts', async () => {
+    mocks.gte.mockResolvedValue({ count: 5, error: null })
+    const { POST } = await import('@/app/api/billing/checkout/route')
+
+    const response = await POST(request({ plan: 'monthly' }))
+    const json = await response.json()
+
+    expect(response.status).toBe(429)
+    expect(json).toMatchObject({
+      success: false,
+      error: { code: 'rate_limited' },
+    })
+    expect(mockStripeCreate).not.toHaveBeenCalled()
+    expect(mocks.insert).not.toHaveBeenCalled()
+  })
+
+  it('does not block checkout when the rate limit check itself fails', async () => {
+    mocks.gte.mockResolvedValue({
+      count: null,
+      error: { message: 'count unavailable' },
+    })
+    const { POST } = await import('@/app/api/billing/checkout/route')
+
+    const response = await POST(request({ plan: 'monthly' }))
+
+    expect(response.status).toBe(201)
+    expect(mockStripeCreate).toHaveBeenCalledTimes(1)
   })
 
   it('rejects invalid plans', async () => {

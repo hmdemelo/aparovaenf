@@ -15,6 +15,11 @@ import { checkoutInputSchema } from '@/lib/validation/schemas'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
+// Each checkout attempt inserts a pending subscription row, so counting the
+// recent ones works as a durable per-user rate limit without extra infra.
+const CHECKOUT_MAX_PENDING_PER_WINDOW = 5
+const CHECKOUT_RATE_WINDOW_MS = 10 * 60 * 1000
+
 export async function POST(request: NextRequest) {
   let body: unknown
   try {
@@ -38,6 +43,29 @@ export async function POST(request: NextRequest) {
 
   const env = getServerEnv()
   const db = createSupabaseServiceClient()
+
+  const windowStart = new Date(
+    Date.now() - CHECKOUT_RATE_WINDOW_MS,
+  ).toISOString()
+  const recent = await db
+    .from('subscriptions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .eq('status', 'pending')
+    .gte('created_at', windowStart)
+  if (recent.error) {
+    // Fail open: a broken counter must not block a paying customer.
+    console.error(
+      '[billing.checkout] rate limit check failed',
+      recent.error.message,
+    )
+  } else if ((recent.count ?? 0) >= CHECKOUT_MAX_PENDING_PER_WINDOW) {
+    return fail(
+      ErrorCodes.RATE_LIMITED,
+      'Too many checkout attempts, try again in a few minutes',
+    )
+  }
+
   const subscriptionId = randomUUID()
 
   const pending = await createPendingSubscription(db, {

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { History, KeyRound, Save, UserCircle, X } from 'lucide-react'
+import { CreditCard, History, KeyRound, Save, UserCircle, X } from 'lucide-react'
 import { createSupabaseBrowserClient } from '@/lib/db/browser'
 import { useScrollLock } from '@/lib/hooks/use-scroll-lock'
 import type { AccountProfile } from './account-service'
@@ -41,6 +41,8 @@ export function AccountDialog({
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
+  const [openingPortal, setOpeningPortal] = useState(false)
+  const [portalError, setPortalError] = useState<string | null>(null)
 
   useScrollLock(open)
 
@@ -127,6 +129,25 @@ export function AccountDialog({
       setPasswordError('Não foi possível alterar a senha.')
     } finally {
       setSavingPassword(false)
+    }
+  }
+
+  async function openBillingPortal() {
+    setOpeningPortal(true)
+    setPortalError(null)
+
+    try {
+      const response = await fetch('/api/billing/portal', { method: 'POST' })
+      const json: ApiEnvelope<{ portal_url: string }> = await response.json()
+      if (!json.success) {
+        setPortalError('Não foi possível abrir o portal de assinatura.')
+        return
+      }
+      window.location.assign(json.data.portal_url)
+    } catch {
+      setPortalError('Não foi possível abrir o portal de assinatura.')
+    } finally {
+      setOpeningPortal(false)
     }
   }
 
@@ -344,7 +365,7 @@ export function AccountDialog({
             </div>
 
             {profile.isPayingOrExPaying && (
-              <div className="border-t border-[color:var(--line)] px-5 py-4">
+              <div className="flex flex-col gap-3 border-t border-[color:var(--line)] px-5 py-4">
                 <Link
                   href="/history"
                   data-testid="account-history-link"
@@ -353,6 +374,21 @@ export function AccountDialog({
                   <History size={18} />
                   Ver Histórico de Questões
                 </Link>
+                <button
+                  type="button"
+                  onClick={openBillingPortal}
+                  disabled={openingPortal}
+                  data-testid="account-billing-portal"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-[color:var(--line-2)] bg-white px-4 py-3 font-semibold text-[var(--ink)] transition hover:text-[var(--teal)] disabled:text-[var(--hint)]"
+                >
+                  <CreditCard size={18} />
+                  {openingPortal ? 'Abrindo portal...' : 'Gerenciar assinatura'}
+                </button>
+                {portalError && (
+                  <p className="rounded-[var(--radius-sm)] bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger)]">
+                    {portalError}
+                  </p>
+                )}
               </div>
             )}
           </div>
