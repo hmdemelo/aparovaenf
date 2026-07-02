@@ -18,8 +18,11 @@ const DELETABLE_AUTHOR_NO_Q_ID = '00000000-dddd-0000-0000-000000000002'
 const DELETABLE_AUTHOR_WITH_Q_ID = '00000000-dddd-0000-0000-000000000003'
 const TRANSFER_TARGET_AUTHOR_ID = '00000000-dddd-0000-0000-000000000004'
 
+// Unique per run so an interrupted previous run cannot leave an auth user
+// holding the email while the fixed test UUID is still missing.
+const RUN_TAG = Date.now()
 function makeEmail(tag: string) {
-  return `delete-test-${tag}@aprovaenf.local`
+  return `delete-test-${tag}-${RUN_TAG}@aprovaenf.local`
 }
 
 d('admin delete operations (local Supabase)', () => {
@@ -41,6 +44,7 @@ d('admin delete operations (local Supabase)', () => {
     role: 'student' | 'author' | 'admin' = 'student',
   ) {
     const { error } = await service.auth.admin.createUser({
+      id: userId,
       email,
       password: seedPassword!,
       email_confirm: true,
