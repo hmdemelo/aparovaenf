@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { UserPlus } from 'lucide-react'
 
 /**
- * Shown after the 2 free anonymous answers. Invites the visitor to create an
- * account to unlock 3 more free questions.
+ * Shown when an unauthenticated visitor reaches the feed API. Invites the
+ * visitor to create an account to unlock the 3 free questions.
  */
 export function SignupGate({ careerSlug }: { careerSlug: string }) {
   const next = encodeURIComponent(`/feed?career=${careerSlug}`)
@@ -21,8 +21,8 @@ export function SignupGate({ careerSlug }: { careerSlug: string }) {
         Crie sua conta para continuar
       </h2>
       <p className="text-sm leading-relaxed text-[var(--muted)]">
-        Você respondeu suas 2 questões gratuitas. Cadastre-se e ganhe mais 3
-        questões para continuar praticando.
+        Cadastre-se gratuitamente e ganhe 3 questões comentadas para começar a
+        praticar.
       </p>
       <Link
         href={`/signup?next=${next}`}

@@ -18,6 +18,9 @@ export type AnswerHistoryItem = {
   careerSlug: string | null
 }
 
+/** Upper bound for retention lists until "load more" pagination ships. */
+export const ANSWER_HISTORY_LIST_LIMIT = 50
+
 export async function listAnswerHistory(
   db: Db,
   userId: string,
@@ -30,6 +33,7 @@ export async function listAnswerHistory(
     )
     .eq('user_id', userId)
     .order('answered_at', { ascending: false })
+    .limit(ANSWER_HISTORY_LIST_LIMIT)
 
   const items: AnswerHistoryItem[] = []
   for (const row of data ?? []) {

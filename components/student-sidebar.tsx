@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BookOpen, ChevronLeft, ChevronRight, Heart, History, XCircle } from 'lucide-react'
+import { BarChart3, BookOpen, ChevronLeft, ChevronRight, Heart, History, XCircle } from 'lucide-react'
 import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { AccountDialog } from '@/features/account/account-dialog'
 import { LogoutButton } from '@/components/logout-button'
@@ -141,6 +141,15 @@ export function StudentSidebar({
         >
           <History size={18} />
           {!isCollapsed && <span>Histórico</span>}
+        </Link>
+        <Link
+          href="/estatisticas"
+          className={`aprova-nav-item ${isRouteActive('/estatisticas') ? 'aprova-nav-item-active' : ''} ${isCollapsed ? 'justify-center' : ''}`}
+          title="Estatísticas"
+          aria-current={isRouteActive('/estatisticas') ? 'page' : undefined}
+        >
+          <BarChart3 size={18} />
+          {!isCollapsed && <span>Estatísticas</span>}
         </Link>
       </nav>
 

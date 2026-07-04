@@ -65,6 +65,9 @@ export type FavoriteListItem = {
   favoritedAt: string
 }
 
+/** Upper bound for retention lists until "load more" pagination ships. */
+export const FAVORITES_LIST_LIMIT = 50
+
 export async function listFavorites(
   db: Db,
   userId: string,
@@ -74,6 +77,7 @@ export async function listFavorites(
     .select('created_at, question:questions(id, statement, subject:subjects(name))')
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
+    .limit(FAVORITES_LIST_LIMIT)
 
   return (data ?? [])
     .map((row) => {

@@ -12,9 +12,17 @@ export const dynamic = 'force-dynamic'
 export default async function FeedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ career?: string; board?: string }>
+  searchParams: Promise<{
+    career?: string
+    board?: string
+    question?: string
+    subject?: string
+    tags?: string
+    difficulty?: string
+  }>
 }) {
-  const { career, board } = await searchParams
+  const { career, board, question, subject, tags, difficulty } =
+    await searchParams
   if (!career) redirect('/')
 
   const next = `/feed?career=${career}${board ? `&board=${board}` : ''}`
@@ -39,6 +47,12 @@ export default async function FeedPage({
       careerSlug={career}
       boardSlug={board}
       filterOptions={filterOptions}
+      initialQuestionId={question}
+      initialFilters={{
+        subjectId: subject,
+        tagIds: tags ? tags.split(',').filter(Boolean) : undefined,
+        difficulty,
+      }}
     />
   )
 }

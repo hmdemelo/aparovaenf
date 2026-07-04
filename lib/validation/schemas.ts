@@ -127,6 +127,9 @@ export const feedQuerySchema = z.object({
   career: z.string().min(1, 'career is required'),
   board: z.string().min(1).optional(),
   subject: uuidSchema.optional(),
+  // Specific question to (re)load, e.g. "Refazer" from the error list.
+  question: uuidSchema.optional(),
+  difficulty: difficultySchema.optional(),
   // Comma-separated tag ids, parsed into a list of uuids.
   tags: z
     .string()
@@ -146,7 +149,6 @@ export type FeedQuery = z.infer<typeof feedQuerySchema>
 export const answerInputSchema = z.object({
   question_id: uuidSchema,
   alternative_id: uuidSchema,
-  anonymous_session_id: uuidSchema.optional(),
 })
 export type AnswerInput = z.infer<typeof answerInputSchema>
 

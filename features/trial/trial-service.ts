@@ -1,9 +1,9 @@
 /**
  * Trial rules — the core gating logic for the student learning loop.
  *
- * Product rules (constitution + spec FR-003..FR-006):
- *  - A visitor may answer 2 questions before signup is required.
- *  - A registered non-subscriber may answer 3 more (5 free in total).
+ * Product rules (decided 2026-07: the feed is login-only):
+ *  - Anonymous visitors cannot answer; they are sent to signup first.
+ *  - A registered non-subscriber may answer 3 free questions.
  *  - Only *answered* questions consume trial; viewing does not.
  *  - Active subscribers have an unlimited feed.
  *
@@ -11,26 +11,22 @@
  * Callers supply the answered counts; persistence lives in the feed repository.
  */
 
-export const ANONYMOUS_TRIAL_LIMIT = 2
 export const POST_SIGNUP_TRIAL_LIMIT = 3
-export const TOTAL_FREE_LIMIT = 5
 
 export type TrialContext = {
   /** Whether the request belongs to an authenticated user. */
   isAuthenticated: boolean
   /** Whether the user has an active subscription. */
   isSubscriber: boolean
-  /** Answers made in the anonymous (pre-signup) session. */
-  answeredBeforeSignup: number
-  /** Answers made by the authenticated user (post-signup). */
+  /** Answers made by the authenticated user. */
   answeredAfterSignup: number
 }
 
 export type TrialStatus = {
-  answeredBeforeSignup: number
   answeredAfterSignup: number
-  totalFreeAnswered: number
-  /** Anonymous visitor reached the pre-signup limit. */
+  /** Free questions still available to a registered non-subscriber; null for subscribers. */
+  remainingFree: number | null
+  /** Anonymous visitor must sign up before answering. */
   signupRequired: boolean
   /** Registered non-subscriber reached the free limit. */
   paywallRequired: boolean
@@ -40,14 +36,11 @@ export type TrialStatus = {
 }
 
 export function evaluateTrial(ctx: TrialContext): TrialStatus {
-  const totalFreeAnswered = ctx.answeredBeforeSignup + ctx.answeredAfterSignup
-
   // Subscribers bypass all gates.
   if (ctx.isSubscriber) {
     return {
-      answeredBeforeSignup: ctx.answeredBeforeSignup,
       answeredAfterSignup: ctx.answeredAfterSignup,
-      totalFreeAnswered,
+      remainingFree: null,
       signupRequired: false,
       paywallRequired: false,
       subscriptionActive: true,
@@ -55,25 +48,23 @@ export function evaluateTrial(ctx: TrialContext): TrialStatus {
     }
   }
 
+  // The feed is login-only: anonymous visitors always go to signup first.
   if (!ctx.isAuthenticated) {
-    const signupRequired = ctx.answeredBeforeSignup >= ANONYMOUS_TRIAL_LIMIT
     return {
-      answeredBeforeSignup: ctx.answeredBeforeSignup,
       answeredAfterSignup: 0,
-      totalFreeAnswered: ctx.answeredBeforeSignup,
-      signupRequired,
+      remainingFree: 0,
+      signupRequired: true,
       paywallRequired: false,
       subscriptionActive: false,
-      canAnswer: !signupRequired,
+      canAnswer: false,
     }
   }
 
   // Authenticated non-subscriber: 3 free answers after signup.
   const paywallRequired = ctx.answeredAfterSignup >= POST_SIGNUP_TRIAL_LIMIT
   return {
-    answeredBeforeSignup: ctx.answeredBeforeSignup,
     answeredAfterSignup: ctx.answeredAfterSignup,
-    totalFreeAnswered,
+    remainingFree: Math.max(0, POST_SIGNUP_TRIAL_LIMIT - ctx.answeredAfterSignup),
     signupRequired: false,
     paywallRequired,
     subscriptionActive: false,

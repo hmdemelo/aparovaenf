@@ -73,6 +73,20 @@ describe('StudentLayout', () => {
     expect(container.querySelector('.aprova-bottom-nav')).not.toBeInTheDocument()
   })
 
+  it('does not render a hardcoded progress bar in the mobile header', () => {
+    const { container } = render(
+      <StudentLayout
+        account={account}
+        careerSlug="enfermeiro-a"
+        isSubscriber={false}
+      >
+        <div>Conteúdo</div>
+      </StudentLayout>,
+    )
+
+    expect(container.querySelector('.w-\\[42\\%\\]')).not.toBeInTheDocument()
+  })
+
   it('marks the current mobile route and keeps the selected career in the study link', () => {
     navigation.pathname = '/favorites'
     navigation.search = 'career=tecnico-em-enfermagem'

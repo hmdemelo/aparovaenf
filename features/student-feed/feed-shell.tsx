@@ -1,20 +1,28 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowUp, SlidersHorizontal, X } from 'lucide-react'
 import { QuestionCard } from './question-card'
 import { AnswerFeedback } from './answer-feedback'
 import { SignupGate } from '@/features/trial/signup-gate'
-import { Paywall } from '@/features/billing/paywall'
 import { usePullToAdvance } from '@/lib/hooks/use-pull-to-advance'
 import type { FeedFilterOptions } from './feed-filter-options'
-import type { AnswerResponse, FeedNextResponse, FeedQuestionDto } from './types'
+import type {
+  AnswerResponse,
+  FeedNextResponse,
+  FeedQuestionDto,
+  TrialStatusDto,
+} from './types'
 
 type ApiEnvelope<T> =
   | { success: true; data: T }
   | { success: false; error: { code: string; message: string } }
 
-type Gate = 'none' | 'signup' | 'paywall'
+type Gate = 'none' | 'signup'
+
+// Session study goal backing the real progress bar (replaces the old fake 42%).
+const SESSION_GOAL = 10
 
 /**
  * Orchestrates the trial learning loop: fetch question -> answer -> feedback ->
@@ -24,15 +32,34 @@ type Gate = 'none' | 'signup' | 'paywall'
  * Instagram-style pull-up at the bottom of the page (mobile/tablet), both
  * calling advance().
  */
+export type FeedInitialFilters = {
+  subjectId?: string
+  tagIds?: string[]
+  difficulty?: string
+}
+
+const DIFFICULTY_OPTIONS = [
+  { value: 'facil', label: 'Fácil' },
+  { value: 'media', label: 'Média' },
+  { value: 'dificil', label: 'Difícil' },
+] as const
+
 export function FeedShell({
   careerSlug,
   boardSlug,
   filterOptions,
+  initialQuestionId,
+  initialFilters,
 }: {
   careerSlug: string
   boardSlug?: string
   filterOptions?: FeedFilterOptions
+  /** Loads this specific question first (e.g. "Refazer" from the error list). */
+  initialQuestionId?: string
+  /** Filters restored from the URL so reloads and shares keep the selection. */
+  initialFilters?: FeedInitialFilters
 }) {
+  const router = useRouter()
   const [question, setQuestion] = useState<FeedQuestionDto | null>(null)
   const [feedback, setFeedback] = useState<AnswerResponse | null>(null)
   const [gate, setGate] = useState<Gate>('none')
@@ -41,15 +68,31 @@ export function FeedShell({
   const [error, setError] = useState<string | null>(null)
   const [favorited, setFavorited] = useState(false)
   const [favoriteMsg, setFavoriteMsg] = useState<string | null>(null)
+  const [trialStatus, setTrialStatus] = useState<TrialStatusDto | null>(null)
+  const [sessionAnswered, setSessionAnswered] = useState(0)
 
-  // Feed filters (Subject + Board + Tags). Board is sent as a slug, subject and
-  // tags as ids; an empty value means "no filter on that dimension".
+  // Feed filters (Subject + Board + Tags + Difficulty). Board is sent as a
+  // slug, subject and tags as ids; an empty value means "no filter on that
+  // dimension". Selections are mirrored to the URL (shareable state).
   const [showFilters, setShowFilters] = useState(false)
-  const [subjectId, setSubjectId] = useState('')
+  const [subjectId, setSubjectId] = useState(initialFilters?.subjectId ?? '')
   const [boardFilterSlug, setBoardFilterSlug] = useState(boardSlug ?? '')
-  const [tagIds, setTagIds] = useState<string[]>([])
+  const [tagIds, setTagIds] = useState<string[]>(initialFilters?.tagIds ?? [])
+  const [difficulty, setDifficulty] = useState(initialFilters?.difficulty ?? '')
+
+  // Aborts the in-flight /api/feed/next request when a newer one starts (fast
+  // filter switches) or when the component unmounts.
+  const loadAbortRef = useRef<AbortController | null>(null)
+
+  // Consumed by the first successful load, then the feed resumes its normal
+  // random flow.
+  const requestedQuestionRef = useRef<string | undefined>(initialQuestionId)
 
   const loadNext = useCallback(async () => {
+    loadAbortRef.current?.abort()
+    const controller = new AbortController()
+    loadAbortRef.current = controller
+
     setLoading(true)
     setError(null)
     setFeedback(null)
@@ -60,36 +103,57 @@ export function FeedShell({
       if (boardFilterSlug) params.set('board', boardFilterSlug)
       if (subjectId) params.set('subject', subjectId)
       if (tagIds.length > 0) params.set('tags', tagIds.join(','))
-      const res = await fetch(`/api/feed/next?${params.toString()}`)
+      if (difficulty) params.set('difficulty', difficulty)
+      if (requestedQuestionRef.current) {
+        params.set('question', requestedQuestionRef.current)
+      }
+      const res = await fetch(`/api/feed/next?${params.toString()}`, {
+        signal: controller.signal,
+      })
       const json: ApiEnvelope<FeedNextResponse> = await res.json()
+      if (controller.signal.aborted) return
       if (!json.success) {
         setError(json.error.message)
         return
       }
       const { question: q, trial_status } = json.data
+      setTrialStatus(trial_status)
       if (trial_status.signup_required) {
         setGate('signup')
       } else if (trial_status.paywall_required) {
-        setGate('paywall')
-        window.location.href = '/assinar'
+        router.push('/assinar')
         return
       } else {
         setGate('none')
       }
+      requestedQuestionRef.current = undefined
       setQuestion(q)
     } catch {
+      if (controller.signal.aborted) return
       setError('Não foi possível carregar a questão.')
     } finally {
-      setLoading(false)
+      if (!controller.signal.aborted) setLoading(false)
     }
-  }, [careerSlug, boardFilterSlug, subjectId, tagIds])
+  }, [careerSlug, boardFilterSlug, subjectId, tagIds, difficulty, router])
 
   useEffect(() => {
     // On-mount data fetch (no client cache library in the MVP); loadNext owns
     // its own loading/error state transitions.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadNext()
+    return () => loadAbortRef.current?.abort()
   }, [loadNext])
+
+  useEffect(() => {
+    // Mirror the active filters to the URL so a reload or a shared link keeps
+    // the same feed configuration (project rule: URL as state).
+    const params = new URLSearchParams({ career: careerSlug })
+    if (boardFilterSlug) params.set('board', boardFilterSlug)
+    if (subjectId) params.set('subject', subjectId)
+    if (tagIds.length > 0) params.set('tags', tagIds.join(','))
+    if (difficulty) params.set('difficulty', difficulty)
+    window.history.replaceState(null, '', `/feed?${params.toString()}`)
+  }, [careerSlug, boardFilterSlug, subjectId, tagIds, difficulty])
 
   async function submitAnswer(alternativeId: string) {
     if (!question) return
@@ -109,8 +173,7 @@ export function FeedShell({
         if (json.error.code === 'signup_required') {
           setGate('signup')
         } else if (json.error.code === 'subscription_required') {
-          setGate('paywall')
-          window.location.href = '/assinar'
+          router.push('/assinar')
           return
         } else {
           setError(json.error.message)
@@ -118,6 +181,8 @@ export function FeedShell({
         return
       }
       setFeedback(json.data)
+      setTrialStatus(json.data.trial_status)
+      setSessionAnswered((n) => n + 1)
     } catch {
       setError('Não foi possível enviar a resposta.')
     } finally {
@@ -136,8 +201,15 @@ export function FeedShell({
     setFavoriteMsg(null)
     try {
       if (favorited) {
-        await fetch(`/api/favorites/${question.id}`, { method: 'DELETE' })
+        // Optimistic removal with rollback if the DELETE fails.
         setFavorited(false)
+        const res = await fetch(`/api/favorites/${question.id}`, {
+          method: 'DELETE',
+        })
+        if (!res.ok) {
+          setFavorited(true)
+          setFavoriteMsg('Não foi possível remover o favorito.')
+        }
         return
       }
       const res = await fetch('/api/favorites', {
@@ -173,7 +245,10 @@ export function FeedShell({
   }
 
   const activeFilterCount =
-    (subjectId ? 1 : 0) + (boardFilterSlug ? 1 : 0) + tagIds.length
+    (subjectId ? 1 : 0) +
+    (boardFilterSlug ? 1 : 0) +
+    (difficulty ? 1 : 0) +
+    tagIds.length
   const hasFilterOptions =
     !!filterOptions &&
     (filterOptions.subjects.length > 0 ||
@@ -246,6 +321,23 @@ export function FeedShell({
                   </label>
                 )}
 
+                <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
+                  Dificuldade
+                  <select
+                    value={difficulty}
+                    onChange={(e) => setDifficulty(e.target.value)}
+                    data-testid="filter-difficulty"
+                    className="aprova-field text-sm font-normal text-[var(--ink)]"
+                  >
+                    <option value="">Todas</option>
+                    {DIFFICULTY_OPTIONS.map((d) => (
+                      <option key={d.value} value={d.value}>
+                        {d.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
                 {filterOptions.tags.length > 0 && (
                   <div className="flex flex-col gap-2 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
                     Tags
@@ -280,6 +372,7 @@ export function FeedShell({
                       setSubjectId('')
                       setBoardFilterSlug('')
                       setTagIds([])
+                      setDifficulty('')
                     }}
                     data-testid="filter-clear"
                     className="flex items-center gap-1 self-start text-xs font-semibold text-[var(--muted)] transition hover:text-[var(--danger)]"
@@ -299,17 +392,66 @@ export function FeedShell({
           </p>
         )}
 
+        {trialStatus &&
+          !trialStatus.subscription_active &&
+          trialStatus.remaining_free !== null &&
+          trialStatus.remaining_free > 0 && (
+            <p
+              className="aprova-pill self-start bg-[var(--teal-light)] text-[var(--teal-ink)]"
+              data-testid="trial-counter"
+            >
+              {trialStatus.remaining_free === 1
+                ? '1 questão grátis restante'
+                : `${trialStatus.remaining_free} questões grátis restantes`}
+            </p>
+          )}
+
+        {sessionAnswered > 0 && (
+          <div data-testid="session-progress">
+            <div className="mb-1 flex items-center justify-between text-[11px] font-semibold text-[var(--muted)]">
+              <span>Sessão de estudo</span>
+              <span>
+                {Math.min(sessionAnswered, SESSION_GOAL)}/{SESSION_GOAL}
+              </span>
+            </div>
+            <div className="h-1 overflow-hidden rounded-full bg-[var(--surface)]">
+              <div
+                className="h-full rounded-full bg-[var(--teal-mid)] transition-[width] duration-300"
+                style={{
+                  width: `${Math.min(100, (sessionAnswered / SESSION_GOAL) * 100)}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         {loading && (
-          <div className="aprova-study-card px-5 py-12 text-center">
-            <span className="aprova-timer justify-center" aria-label="Carregando">
-              <span className="aprova-dot" aria-hidden="true" />
-              Carregando questão
-            </span>
+          <div
+            className="aprova-study-card animate-pulse p-6 sm:p-7"
+            role="status"
+            aria-label="Carregando questão"
+            data-testid="feed-skeleton"
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <div className="h-3 w-24 rounded-full bg-[var(--surface)]" />
+              <div className="h-3 w-16 rounded-full bg-[var(--surface)]" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="h-5 w-full rounded-full bg-[var(--surface)]" />
+              <div className="h-5 w-4/5 rounded-full bg-[var(--surface)]" />
+            </div>
+            <div className="mt-6 flex flex-col gap-3">
+              {[0, 1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-14 rounded-[20px] border border-[color:var(--line)] bg-[var(--surface)]"
+                />
+              ))}
+            </div>
           </div>
         )}
 
         {!loading && gate === 'signup' && <SignupGate careerSlug={careerSlug} />}
-        {!loading && gate === 'paywall' && <Paywall />}
 
         {!loading && gate === 'none' && question && (
           <article className="aprova-study-card relative p-6 sm:p-7">

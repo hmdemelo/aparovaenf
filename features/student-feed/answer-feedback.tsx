@@ -1,6 +1,7 @@
 'use client'
 
 import { ArrowRight, Check, MessageCircle, X } from 'lucide-react'
+import { RichText } from '@/lib/utils/markdown-renderer'
 import type { AnswerResponse } from './types'
 
 type AnswerFeedbackProps = {
@@ -36,7 +37,7 @@ export function AnswerFeedback({ feedback, onNext }: AnswerFeedbackProps) {
             </p>
           </div>
           <p className="text-[15px] leading-relaxed text-[#384a44]">
-            {feedback.general_comment}
+            <RichText text={feedback.general_comment} />
           </p>
         </div>
       )}
@@ -47,7 +48,7 @@ export function AnswerFeedback({ feedback, onNext }: AnswerFeedbackProps) {
             Sobre a sua resposta
           </p>
           <p className="text-sm leading-relaxed text-[#384a44]">
-            {feedback.selected_alternative_comment}
+            <RichText text={feedback.selected_alternative_comment} />
           </p>
         </div>
       )}

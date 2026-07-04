@@ -27,7 +27,6 @@ export function StudentLayout({
   const feedHref = currentCareerSlug
     ? `/feed?career=${currentCareerSlug}`
     : '/feed'
-  const isFeedPage = pathname.startsWith('/feed')
   const headerVisible = useHideOnScroll()
 
   const isActive = (path: string) => {
@@ -113,13 +112,6 @@ export function StudentLayout({
             />
           </nav>
 
-          {isFeedPage && (
-            <div className="h-2.5 w-full px-4 pb-2 pt-1">
-              <div className="h-1 overflow-hidden rounded-full bg-[var(--surface)]">
-                <div className="h-full w-[42%] rounded-full bg-[var(--teal-mid)]" />
-              </div>
-            </div>
-          )}
         </header>
 
         <div

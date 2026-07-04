@@ -42,9 +42,7 @@ export default async function HistoryPage() {
       ) : (
         <ul className="flex flex-col gap-3" data-testid="history-list">
           {history.map((item) => {
-            const href = item.careerSlug
-              ? `/feed?career=${item.careerSlug}`
-              : '/feed'
+            const href = `/questao/${item.questionId}`
             return (
               <li key={item.attemptId}>
                 <Link

@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createSupabaseServerClient } from '@/lib/db/server'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
@@ -42,19 +43,21 @@ export default async function FavoritesPage() {
       ) : (
         <ul className="flex flex-col gap-2" data-testid="favorites-list">
           {favorites.map((f) => (
-            <li
-              key={f.questionId}
-              className="rounded-[18px] border border-[color:var(--line)] bg-white/82 px-4 py-3"
-            >
-              <div className="flex flex-wrap items-center gap-x-2 text-xs font-semibold text-[var(--muted)]">
-                <span className="font-mono text-[var(--hint)]">
-                  ID {shortQuestionId(f.questionId)}
-                </span>
-                {f.subject && <span>· {f.subject}</span>}
-              </div>
-              <p className="mt-1 line-clamp-2 text-sm text-[var(--ink)]">
-                <RichText text={f.statement} />
-              </p>
+            <li key={f.questionId}>
+              <Link
+                href={`/questao/${f.questionId}`}
+                className="block rounded-[18px] border border-[color:var(--line)] bg-white/82 px-4 py-3 transition hover:border-[rgba(0,84,64,0.28)]"
+              >
+                <div className="flex flex-wrap items-center gap-x-2 text-xs font-semibold text-[var(--muted)]">
+                  <span className="font-mono text-[var(--hint)]">
+                    ID {shortQuestionId(f.questionId)}
+                  </span>
+                  {f.subject && <span>· {f.subject}</span>}
+                </div>
+                <p className="mt-1 line-clamp-2 text-sm text-[var(--ink)]">
+                  <RichText text={f.statement} />
+                </p>
+              </Link>
             </li>
           ))}
         </ul>

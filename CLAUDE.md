@@ -125,8 +125,8 @@ tests/
 ## Core Business Rules
 
 **Trial system** (enforced server-side):
-- Anonymous visitors: 2 answered questions before signup is required.
-- Registered non-subscribers: 3 more free questions after signup (5 total).
+- The feed is login-only: anonymous visitors are redirected to signup before seeing or answering any question.
+- Registered non-subscribers: 3 free questions.
 - Only answered questions consume trial — viewing does not.
 - After trial ends, non-subscribers cannot review trial questions.
 
@@ -146,7 +146,7 @@ tests/
 
 Key entities: `UserProfile` (roles: `student`, `author`, `admin`), `AuthorProfile`, `Career`, `Board`, `Subject`, `Question`, `Alternative`, `AnswerAttempt`, `Favorite`, `Subscription`, `PaymentEvent`, `ProductEvent`.
 
-`AnswerAttempt` supports anonymous attempts via `anonymous_session_id` before signup. `Question.status` transitions: `draft → published ↔ unpublished`, any state `→ archived`.
+`AnswerAttempt.anonymous_session_id` is legacy (pre-2026-07 anonymous trial); new attempts always carry `user_id`. `Question.status` transitions: `draft → published ↔ unpublished`, any state `→ archived`.
 
 After any schema change, regenerate TypeScript types with the Supabase CLI. Never use `select *` in feed or admin listing queries. Index `career_id`, `board_id`, `subject_id`, `difficulty`, `status`, and `author_id` on the questions table.
 

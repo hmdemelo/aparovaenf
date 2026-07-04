@@ -6,8 +6,6 @@ import {
   getNextQuestion,
   gradeAnswer,
   recordAnswerAttempt,
-  countAnswersBySession,
-  getAnsweredQuestionIdsBySession,
 } from '@/features/questions/question-repository'
 
 const hasLocal = loadLocalEnv()
@@ -145,8 +143,15 @@ d('student feed integration (local Supabase)', () => {
     expect(wrong!.correctAlternativeId).toBe(correctB.id)
   })
 
-  it('records an attempt and counts it toward the anonymous trial', async () => {
-    const before = await countAnswersBySession(db, SESSION_ID)
+  it('records an answer attempt', async () => {
+    const countAttempts = async () => {
+      const { count } = await db
+        .from('answer_attempts')
+        .select('id', { count: 'exact', head: true })
+        .eq('anonymous_session_id', SESSION_ID)
+      return count ?? 0
+    }
+    const before = await countAttempts()
 
     const alt = await db
       .from('alternatives')
@@ -163,10 +168,7 @@ d('student feed integration (local Supabase)', () => {
     })
     expect(res.ok).toBe(true)
 
-    const after = await countAnswersBySession(db, SESSION_ID)
+    const after = await countAttempts()
     expect(after).toBe(before + 1)
-
-    const answeredIds = await getAnsweredQuestionIdsBySession(db, SESSION_ID)
-    expect(answeredIds).toContain('00000000-0000-0000-0000-0000000000f2')
   })
 })

@@ -1,4 +1,6 @@
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { RotateCcw } from 'lucide-react'
 import { createSupabaseServerClient } from '@/lib/db/server'
 import { getCurrentUser, isSubscriber } from '@/lib/auth/roles'
 import { listErrorHistory } from '@/features/student-feed/error-history-service'
@@ -37,22 +39,42 @@ export default async function ErrorsPage() {
           {errors.map((e) => (
             <li
               key={e.questionId}
-              className="rounded-[18px] border border-[color:var(--line)] bg-white/82 p-4"
+              className="rounded-[18px] border border-[color:var(--line)] bg-white/82 p-4 transition hover:border-[rgba(0,84,64,0.28)]"
             >
-              <div className="flex flex-wrap items-center gap-x-2 text-xs font-semibold text-[var(--muted)]">
-                <span className="font-mono text-[var(--hint)]">
-                  ID {shortQuestionId(e.questionId)}
-                </span>
-                {e.subject && <span>· {e.subject}</span>}
-              </div>
-              <div className="mt-1 text-sm text-[var(--ink)]">
-                <RichText text={e.statement} />
-              </div>
-              {e.generalComment && (
-                <div className="mt-2 border-l-2 border-[var(--mint-dim)] pl-3 text-xs leading-relaxed text-[var(--muted)]">
-                  <RichText text={e.generalComment} />
+              <Link href={`/questao/${e.questionId}`} className="block">
+                <div className="flex flex-wrap items-center gap-x-2 text-xs font-semibold text-[var(--muted)]">
+                  <span className="font-mono text-[var(--hint)]">
+                    ID {shortQuestionId(e.questionId)}
+                  </span>
+                  {e.subject && <span>· {e.subject}</span>}
                 </div>
-              )}
+                <div className="mt-1 text-sm text-[var(--ink)]">
+                  <RichText text={e.statement} />
+                </div>
+                {e.generalComment && (
+                  <div className="mt-2 border-l-2 border-[var(--mint-dim)] pl-3 text-xs leading-relaxed text-[var(--muted)]">
+                    <RichText text={e.generalComment} />
+                  </div>
+                )}
+              </Link>
+              <div className="mt-3 flex items-center gap-4 text-xs font-semibold">
+                <Link
+                  href={`/questao/${e.questionId}`}
+                  className="text-[var(--muted)] underline transition hover:text-[var(--teal)]"
+                >
+                  Rever questão
+                </Link>
+                {e.careerSlug && (
+                  <Link
+                    href={`/feed?career=${e.careerSlug}&question=${e.questionId}`}
+                    data-testid="retry-question"
+                    className="inline-flex items-center gap-1 text-[var(--teal)] transition hover:text-[var(--teal-mid)]"
+                  >
+                    <RotateCcw size={14} />
+                    Refazer
+                  </Link>
+                )}
+              </div>
             </li>
           ))}
         </ul>

@@ -147,7 +147,10 @@ export function QuestionCard({
               <img
                 src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/question-images/${question.image_path}`}
                 alt="Imagem da questão"
-                className="max-h-[220px] md:max-h-[380px] w-full object-contain rounded-[12px] transition group-hover:scale-[1.01]"
+                width={800}
+                height={600}
+                loading="lazy"
+                className="h-[220px] md:h-[380px] w-full object-contain rounded-[12px] transition group-hover:scale-[1.01]"
               />
               <div className="absolute bottom-3 right-3 rounded-full bg-black/60 p-1.5 text-white opacity-0 group-hover:opacity-100 transition duration-200">
                 <ZoomIn size={16} />
@@ -161,16 +164,21 @@ export function QuestionCard({
             <RichText text={question.statement} />
           </div>
 
-          <ul className="flex flex-col gap-3">
+          <ul
+            className="flex flex-col gap-3"
+            role="radiogroup"
+            aria-label="Alternativas da questão"
+          >
             {question.alternatives.map((alt) => {
               const state = altState(alt.id)
               return (
                 <li key={alt.id}>
                   <button
                     type="button"
+                    role="radio"
                     data-testid="alternative"
                     disabled={answered || submitting}
-                    aria-pressed={selected === alt.id}
+                    aria-checked={selected === alt.id}
                     onClick={() => setSelected(alt.id)}
                     className={`group flex w-full items-start gap-4 rounded-[20px] border-[1.5px] px-4 py-4 text-left text-[15.5px] shadow-sm transition active:scale-[0.98] disabled:cursor-default disabled:active:scale-100 ${altClasses[state]}`}
                   >
@@ -232,7 +240,9 @@ export function QuestionCard({
           <img
             src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/question-images/${question.image_path}`}
             alt="Imagem ampliada da questão"
-            className="max-h-[90vh] max-w-[95vw] object-contain rounded-lg shadow-2xl transition-transform duration-300 hover:scale-105"
+            width={1600}
+            height={1200}
+            className="max-h-[90vh] max-w-[95vw] h-auto w-auto object-contain rounded-lg shadow-2xl transition-transform duration-300 hover:scale-105"
             onClick={(e) => e.stopPropagation()}
           />
           <span className="mt-4 text-xs text-white/60 select-none">

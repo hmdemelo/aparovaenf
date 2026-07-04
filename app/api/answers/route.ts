@@ -10,7 +10,6 @@ import {
   resolveTrialStatus,
   serializeTrialStatus,
 } from '@/features/trial/trial-server'
-import { ensureAnonymousSessionId } from '@/features/trial/anonymous-session'
 import { track } from '@/features/analytics/product-events-server'
 import { ProductEventNames } from '@/features/analytics/product-events'
 
@@ -55,9 +54,6 @@ export async function POST(request: NextRequest) {
     return fail(ErrorCodes.NOT_FOUND, 'Question or alternative not found')
   }
 
-  // Anonymous answers are tied to a cookie-backed session id.
-  const anonymousSessionId = userId ? null : await ensureAnonymousSessionId()
-
   const { data: ctx } = await svc
     .from('questions')
     .select('career_id, board_id')
@@ -66,7 +62,6 @@ export async function POST(request: NextRequest) {
 
   const recorded = await recordAnswerAttempt(svc, {
     userId,
-    anonymousSessionId,
     questionId: parsed.data.question_id,
     selectedAlternativeId: parsed.data.alternative_id,
     isCorrect: grading.isCorrect,
@@ -80,7 +75,6 @@ export async function POST(request: NextRequest) {
   await track({
     event_name: ProductEventNames.QUESTION_ANSWERED,
     user_id: userId,
-    anonymous_session_id: anonymousSessionId,
     career_id: ctx?.career_id ?? null,
     question_id: parsed.data.question_id,
     metadata: { is_correct: grading.isCorrect },
@@ -88,12 +82,6 @@ export async function POST(request: NextRequest) {
 
   // Re-evaluate trial after this answer to drive the next UI step.
   const after = await resolveTrialStatus()
-  if (after.status.signupRequired) {
-    await track({
-      event_name: ProductEventNames.SIGNUP_REQUIRED_SHOWN,
-      anonymous_session_id: anonymousSessionId,
-    })
-  }
   if (after.status.paywallRequired) {
     await track({
       event_name: ProductEventNames.TRIAL_FINISHED,

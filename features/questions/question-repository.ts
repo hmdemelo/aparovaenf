@@ -93,6 +93,7 @@ async function pickFilteredQuestionId(
     boardId: string | null
     subjectId: string | null
     tagIds: string[]
+    difficulty: Difficulty | null
     excludeIds: string[]
   },
 ): Promise<string | null> {
@@ -104,6 +105,7 @@ async function pickFilteredQuestionId(
     .eq('career_id', params.careerId)
   if (params.boardId) query = query.eq('board_id', params.boardId)
   if (params.subjectId) query = query.eq('subject_id', params.subjectId)
+  if (params.difficulty) query = query.eq('difficulty', params.difficulty)
   if (hasTags) query = query.in('question_tags.tag_id', params.tagIds)
 
   const { data, error } = await query.limit(500)
@@ -120,46 +122,11 @@ async function pickFilteredQuestionId(
   return ids[Math.floor(Math.random() * ids.length)]
 }
 
-/**
- * Return the next eligible question for the feed, or null when no published
- * question matches the filters / all have been answered.
- */
-export async function getNextQuestion(
+/** Load the full feed payload for a question id (no status filter). */
+async function fetchFeedQuestionById(
   db: Db,
-  params: {
-    careerSlug: string
-    boardSlug?: string
-    subjectId?: string
-    tagIds?: string[]
-    excludeIds?: string[]
-  },
+  questionId: string,
 ): Promise<FeedQuestion | null> {
-  const careerId = await resolveCareerId(db, params.careerSlug)
-  if (!careerId) return null
-
-  const boardId = params.boardSlug
-    ? await resolveBoardId(db, params.boardSlug)
-    : null
-
-  const subjectId = params.subjectId ?? null
-  const tagIds = params.tagIds ?? []
-  const excludeIds = params.excludeIds ?? []
-  const hasDynamicFilter = Boolean(subjectId) || tagIds.length > 0
-
-  // Unfiltered feed uses the DB random-pick RPC; dynamic filters (subject/tags)
-  // select in the app layer over an id-only candidate set.
-  const pickedId = hasDynamicFilter
-    ? await pickFilteredQuestionId(db, {
-        careerId,
-        boardId,
-        subjectId,
-        tagIds,
-        excludeIds,
-      })
-    : await pickRandomQuestionId(db, { careerId, boardId, excludeIds })
-
-  if (!pickedId) return null
-
   const { data, error } = await db
     .from('questions')
     .select(
@@ -170,7 +137,7 @@ export async function getNextQuestion(
        board:boards(name),
        alternatives(id, label, text, position)`,
     )
-    .eq('id', pickedId)
+    .eq('id', questionId)
     .single()
 
   if (error || !data) return null
@@ -211,6 +178,71 @@ export async function getNextQuestion(
 }
 
 /**
+ * Load a specific published question for the feed ("Refazer" flow). Returns
+ * null when the id does not exist or the question is not published.
+ */
+export async function getPublishedQuestionById(
+  db: Db,
+  questionId: string,
+): Promise<FeedQuestion | null> {
+  const { data } = await db
+    .from('questions')
+    .select('id')
+    .eq('id', questionId)
+    .eq('status', 'published')
+    .maybeSingle()
+  if (!data) return null
+  return fetchFeedQuestionById(db, questionId)
+}
+
+/**
+ * Return the next eligible question for the feed, or null when no published
+ * question matches the filters / all have been answered.
+ */
+export async function getNextQuestion(
+  db: Db,
+  params: {
+    careerSlug: string
+    boardSlug?: string
+    subjectId?: string
+    tagIds?: string[]
+    difficulty?: Difficulty
+    excludeIds?: string[]
+  },
+): Promise<FeedQuestion | null> {
+  const careerId = await resolveCareerId(db, params.careerSlug)
+  if (!careerId) return null
+
+  const boardId = params.boardSlug
+    ? await resolveBoardId(db, params.boardSlug)
+    : null
+
+  const subjectId = params.subjectId ?? null
+  const tagIds = params.tagIds ?? []
+  const difficulty = params.difficulty ?? null
+  const excludeIds = params.excludeIds ?? []
+  const hasDynamicFilter =
+    Boolean(subjectId) || tagIds.length > 0 || Boolean(difficulty)
+
+  // Unfiltered feed uses the DB random-pick RPC; dynamic filters (subject/tags/
+  // difficulty) select in the app layer over an id-only candidate set.
+  const pickedId = hasDynamicFilter
+    ? await pickFilteredQuestionId(db, {
+        careerId,
+        boardId,
+        subjectId,
+        tagIds,
+        difficulty,
+        excludeIds,
+      })
+    : await pickRandomQuestionId(db, { careerId, boardId, excludeIds })
+
+  if (!pickedId) return null
+
+  return fetchFeedQuestionById(db, pickedId)
+}
+
+/**
  * Grade a submitted answer against the stored correct alternative and return
  * the comments to show. Does not persist anything.
  */
@@ -243,18 +275,6 @@ export async function gradeAnswer(
   }
 }
 
-/** Question ids already answered by an anonymous session. */
-export async function getAnsweredQuestionIdsBySession(
-  db: Db,
-  anonymousSessionId: string,
-): Promise<string[]> {
-  const { data } = await db
-    .from('answer_attempts')
-    .select('question_id')
-    .eq('anonymous_session_id', anonymousSessionId)
-  return (data ?? []).map((r) => r.question_id)
-}
-
 /** Question ids already answered by an authenticated user. */
 export async function getAnsweredQuestionIdsByUser(
   db: Db,
@@ -265,17 +285,6 @@ export async function getAnsweredQuestionIdsByUser(
     .select('question_id')
     .eq('user_id', userId)
   return (data ?? []).map((r) => r.question_id)
-}
-
-export async function countAnswersBySession(
-  db: Db,
-  anonymousSessionId: string,
-): Promise<number> {
-  const { count } = await db
-    .from('answer_attempts')
-    .select('id', { count: 'exact', head: true })
-    .eq('anonymous_session_id', anonymousSessionId)
-  return count ?? 0
 }
 
 export async function countAnswersByUser(

@@ -1,9 +1,8 @@
 /** Client-facing shapes for the student feed, mirroring the API contract. */
 
 export type TrialStatusDto = {
-  answered_before_signup: number
   answered_after_signup: number
-  total_free_answered: number
+  remaining_free: number | null
   signup_required: boolean
   paywall_required: boolean
   subscription_active: boolean
