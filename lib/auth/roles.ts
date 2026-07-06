@@ -14,6 +14,7 @@ import type { UserRole } from '@/lib/validation/schemas'
 export type CurrentUser = {
   id: string
   email: string | null
+  name: string | null
   role: UserRole
   registrationCompleted: boolean
   forcePasswordChange: boolean
@@ -31,7 +32,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   const { data: profile } = await supabase
     .from('user_profiles')
     .select(
-      'role, email, registration_completed, force_password_change, free_access',
+      'role, email, name, registration_completed, force_password_change, free_access',
     )
     .eq('id', user.id)
     .single()
@@ -39,6 +40,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
   return {
     id: user.id,
     email: profile?.email ?? user.email ?? null,
+    name: profile?.name ?? null,
     role: (profile?.role as UserRole) ?? 'student',
     registrationCompleted: profile?.registration_completed ?? false,
     forcePasswordChange: profile?.force_password_change ?? false,

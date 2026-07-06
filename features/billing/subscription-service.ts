@@ -11,6 +11,7 @@ const PROVIDER = 'asaas'
 type CheckoutUser = {
   id: string
   email: string | null
+  name: string | null
 }
 
 type AsaasEnv = Pick<
@@ -73,8 +74,9 @@ export async function createPendingSubscription(
  * Card uses chargeTypes RECURRENT with a subscription cycle (Asaas bills the
  * card automatically each period). Pix has no recurring billing, so it is a
  * DETACHED one-time charge that prepays the plan period; access simply expires
- * at current_period_end. The payer fills their own data (name/CPF) on the
- * Asaas-hosted page, so no customer needs to be created upfront.
+ * at current_period_end. The logged-in user's name/email are sent as
+ * customerData to prefill the Asaas-hosted page; remaining fields (CPF,
+ * phone) are filled by the payer there.
  */
 export async function createAsaasCheckout(
   input: CreateCheckoutInput,
@@ -120,13 +122,31 @@ export async function createAsaasCheckout(
     },
     // Correlates webhook payments back to our local subscription row.
     externalReference: input.subscriptionId,
-    // Do NOT send customerData: a partial object (email only) makes Asaas treat
-    // it as a manual customer registration and reject the request for every
-    // missing field (name, cpfCnpj, phone, address...). Omitting it entirely
-    // lets the payer fill their own data on the Asaas-hosted page.
   }
 
-  const data = await asaasRequest(input.env, 'POST', '/checkouts', body)
+  // Prefill the hosted checkout with the logged-in user's name/email. Asaas
+  // may reject a partial customerData (no cpfCnpj/phone) as an incomplete
+  // manual customer registration, so a rejection falls back to a checkout
+  // without prefill — payment must never be blocked by this.
+  const customerData = buildCheckoutCustomerData(input.user)
+
+  let data: Record<string, unknown>
+  if (customerData) {
+    try {
+      data = await asaasRequest(input.env, 'POST', '/checkouts', {
+        ...body,
+        customerData,
+      })
+    } catch (error) {
+      console.warn(
+        '[billing.checkout] customerData prefill rejected, retrying without it',
+        error instanceof Error ? error.message : error,
+      )
+      data = await asaasRequest(input.env, 'POST', '/checkouts', body)
+    }
+  } else {
+    data = await asaasRequest(input.env, 'POST', '/checkouts', body)
+  }
 
   const checkoutId = asString(data.id)
   const checkoutUrl = firstString(data.link, data.url, data.checkoutUrl)
@@ -298,6 +318,19 @@ export async function activateSubscriptionFromWebhook(
     subscriptionId,
     userId,
     plan,
+  }
+}
+
+/** Name/email prefill for the hosted checkout; null when nothing to send. */
+function buildCheckoutCustomerData(
+  user: CheckoutUser,
+): { name?: string; email?: string } | null {
+  const name = user.name?.trim()
+  const email = user.email?.trim()
+  if (!name && !email) return null
+  return {
+    ...(name ? { name } : {}),
+    ...(email ? { email } : {}),
   }
 }
 

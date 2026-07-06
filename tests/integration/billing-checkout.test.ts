@@ -88,6 +88,7 @@ describe('POST /api/billing/checkout', () => {
     mocks.getCurrentUser.mockResolvedValue({
       id: '00000000-0000-0000-0000-0000000000a4',
       email: 'aluno@aprovaenf.local',
+      name: 'Aluno Teste',
       role: 'student',
     })
     mocks.createSupabaseServiceClient.mockReturnValue({ from: mocks.from })
@@ -143,9 +144,11 @@ describe('POST /api/billing/checkout', () => {
         },
       ],
     })
-    // Asaas rejects a partial customerData (email only) by requiring every
-    // other field; omit it so the payer fills their data on the hosted page.
-    expect(body.customerData).toBeUndefined()
+    // The logged-in user's name/email prefill the hosted checkout page.
+    expect(body.customerData).toEqual({
+      name: 'Aluno Teste',
+      email: 'aluno@aprovaenf.local',
+    })
     expect(body.callback.successUrl).toBe(
       'https://aprovaenf.test/feed?subscription=success',
     )

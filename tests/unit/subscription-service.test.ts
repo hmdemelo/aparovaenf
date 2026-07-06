@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   activateSubscriptionFromWebhook,
   cancelSubscriptionFromWebhook,
+  createAsaasCheckout,
   expireSubscriptionFromRefund,
   markSubscriptionPastDueFromWebhook,
 } from '@/features/billing/subscription-service'
@@ -362,5 +363,100 @@ describe('Asaas subscription synchronization', () => {
     })
 
     expect(result).toEqual({ ok: true })
+  })
+})
+
+describe('createAsaasCheckout customer prefill', () => {
+  const env = {
+    NODE_ENV: 'production',
+    ASAAS_API_KEY: 'prod_test_key',
+    NEXT_PUBLIC_APP_URL: 'https://app.test',
+  } as never
+
+  const checkoutOk = {
+    ok: true,
+    status: 200,
+    text: () =>
+      Promise.resolve(
+        JSON.stringify({
+          id: 'checkout-1',
+          link: 'https://asaas.test/checkout/checkout-1',
+          status: 'ACTIVE',
+        }),
+      ),
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('sends customerData with the logged-in name and email', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(checkoutOk)
+    vi.stubGlobal('fetch', fetchMock)
+
+    await createAsaasCheckout({
+      env,
+      planId: 'monthly',
+      subscriptionId: 'sub-local-1',
+      user: { id: 'user-1', email: 'hugo@example.com', name: 'Hugo Melo' },
+      paymentMethod: 'pix',
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(body.customerData).toEqual({
+      name: 'Hugo Melo',
+      email: 'hugo@example.com',
+    })
+  })
+
+  it('retries without customerData when Asaas rejects the prefill', async () => {
+    const rejected = {
+      ok: false,
+      status: 400,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            errors: [{ code: 'invalid_customerData', description: 'CPF obrigatório' }],
+          }),
+        ),
+    }
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(rejected)
+      .mockResolvedValueOnce(checkoutOk)
+    vi.stubGlobal('fetch', fetchMock)
+
+    const checkout = await createAsaasCheckout({
+      env,
+      planId: 'monthly',
+      subscriptionId: 'sub-local-1',
+      user: { id: 'user-1', email: 'hugo@example.com', name: 'Hugo Melo' },
+      paymentMethod: 'pix',
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    const firstBody = JSON.parse(fetchMock.mock.calls[0][1].body)
+    const retryBody = JSON.parse(fetchMock.mock.calls[1][1].body)
+    expect(firstBody.customerData).toBeDefined()
+    expect(retryBody.customerData).toBeUndefined()
+    expect(checkout.checkoutId).toBe('checkout-1')
+  })
+
+  it('omits customerData when the user has neither name nor email', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(checkoutOk)
+    vi.stubGlobal('fetch', fetchMock)
+
+    await createAsaasCheckout({
+      env,
+      planId: 'monthly',
+      subscriptionId: 'sub-local-1',
+      user: { id: 'user-1', email: null, name: null },
+      paymentMethod: 'pix',
+    })
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(body.customerData).toBeUndefined()
   })
 })

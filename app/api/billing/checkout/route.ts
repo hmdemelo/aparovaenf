@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       env,
       planId: parsed.data.plan,
       subscriptionId,
-      user: { id: user.id, email: user.email },
+      user: { id: user.id, email: user.email, name: user.name },
       paymentMethod: parsed.data.payment_method,
     })
   } catch (error) {
