@@ -7,8 +7,8 @@ const validEnv = {
   NEXT_PUBLIC_SUPABASE_ANON_KEY: 'anon-key-value',
   SUPABASE_SERVICE_ROLE_KEY: 'service-role-key-value',
   RESEND_API_KEY: 're_test_key',
-  STRIPE_SECRET_KEY: 'stripe-key',
-  STRIPE_WEBHOOK_SECRET: 'webhook-secret',
+  ASAAS_API_KEY: 'asaas_dev_mock_api_key',
+  ASAAS_WEBHOOK_TOKEN: 'webhook-token-value',
   NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
 }
 
@@ -17,10 +17,8 @@ describe('parseServerEnv', () => {
     const env = parseCoreServerEnv({
       ...validEnv,
       NODE_ENV: 'production',
-      STRIPE_SECRET_KEY: '',
-      STRIPE_WEBHOOK_SECRET: '',
-      STRIPE_MONTHLY_PRICE_ID: '',
-      STRIPE_ANNUAL_PRICE_ID: '',
+      ASAAS_API_KEY: '',
+      ASAAS_WEBHOOK_TOKEN: '',
       NEXT_PUBLIC_APP_URL: '',
     })
 
@@ -35,56 +33,53 @@ describe('parseServerEnv', () => {
     expect(env.NEXT_PUBLIC_APP_URL).toBe('http://localhost:3000')
   })
 
-  it('accepts optional Stripe price settings', () => {
-    const env = parseServerEnv({
-      ...validEnv,
-      STRIPE_MONTHLY_PRICE_ID: 'price_monthly',
-      STRIPE_ANNUAL_PRICE_ID: 'price_annual',
-    })
-
-    expect(env.STRIPE_MONTHLY_PRICE_ID).toBe('price_monthly')
-    expect(env.STRIPE_ANNUAL_PRICE_ID).toBe('price_annual')
-  })
-
-  it('accepts a complete live Stripe production configuration', () => {
+  it('accepts a complete live Asaas production configuration', () => {
     const env = parseServerEnv({
       ...validEnv,
       NODE_ENV: 'production',
-      STRIPE_SECRET_KEY: 'sk_live_example',
-      STRIPE_WEBHOOK_SECRET: 'whsec_example',
-      STRIPE_MONTHLY_PRICE_ID: 'price_monthly',
-      STRIPE_ANNUAL_PRICE_ID: 'price_annual',
+      ASAAS_API_KEY: '$aact_prod_example_key',
+      ASAAS_WEBHOOK_TOKEN: 'a-long-production-webhook-token',
       NEXT_PUBLIC_APP_URL: 'https://aprovaenf.com.br',
     })
 
     expect(env.NODE_ENV).toBe('production')
-    expect(env.STRIPE_SECRET_KEY).toBe('sk_live_example')
+    expect(env.ASAAS_API_KEY).toBe('$aact_prod_example_key')
   })
 
-  it('rejects mock Stripe credentials in production', () => {
+  it('rejects mock Asaas credentials in production', () => {
     expect(() =>
       parseServerEnv({
         ...validEnv,
         NODE_ENV: 'production',
-        STRIPE_SECRET_KEY: 'stripe_dev_mock_secret_key',
-        STRIPE_WEBHOOK_SECRET: 'whsec_example',
-        STRIPE_MONTHLY_PRICE_ID: 'price_monthly',
-        STRIPE_ANNUAL_PRICE_ID: 'price_annual',
+        ASAAS_API_KEY: 'asaas_dev_mock_api_key',
+        ASAAS_WEBHOOK_TOKEN: 'a-long-production-webhook-token',
         NEXT_PUBLIC_APP_URL: 'https://aprovaenf.com.br',
       }),
-    ).toThrow(/STRIPE_SECRET_KEY/)
+    ).toThrow(/ASAAS_API_KEY/)
   })
 
-  it('requires Stripe price ids and HTTPS app URL in production', () => {
+  it('rejects a sandbox Asaas key in production', () => {
     expect(() =>
       parseServerEnv({
         ...validEnv,
         NODE_ENV: 'production',
-        STRIPE_SECRET_KEY: 'sk_live_example',
-        STRIPE_WEBHOOK_SECRET: 'whsec_example',
+        ASAAS_API_KEY: '$aact_hmlg_example_key',
+        ASAAS_WEBHOOK_TOKEN: 'a-long-production-webhook-token',
+        NEXT_PUBLIC_APP_URL: 'https://aprovaenf.com.br',
+      }),
+    ).toThrow(/ASAAS_API_KEY/)
+  })
+
+  it('requires a strong webhook token and HTTPS app URL in production', () => {
+    expect(() =>
+      parseServerEnv({
+        ...validEnv,
+        NODE_ENV: 'production',
+        ASAAS_API_KEY: '$aact_prod_example_key',
+        ASAAS_WEBHOOK_TOKEN: 'short',
         NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
       }),
-    ).toThrow(/STRIPE_MONTHLY_PRICE_ID|STRIPE_ANNUAL_PRICE_ID|NEXT_PUBLIC_APP_URL/)
+    ).toThrow(/ASAAS_WEBHOOK_TOKEN|NEXT_PUBLIC_APP_URL/)
   })
 
   it('accepts optional Google OAuth settings without exposing them publicly', () => {
@@ -118,12 +113,12 @@ describe('parseServerEnv', () => {
 
   it('rejects empty strings for required secrets', () => {
     expect(() =>
-      parseServerEnv({ ...validEnv, STRIPE_SECRET_KEY: '' }),
-    ).toThrow(/STRIPE_SECRET_KEY/)
+      parseServerEnv({ ...validEnv, ASAAS_API_KEY: '' }),
+    ).toThrow(/ASAAS_API_KEY/)
   })
 
   it('aggregates multiple missing variables in a single error message', () => {
     expect(() => parseServerEnv({})).toThrow(/NEXT_PUBLIC_SUPABASE_URL/)
-    expect(() => parseServerEnv({})).toThrow(/STRIPE_WEBHOOK_SECRET/)
+    expect(() => parseServerEnv({})).toThrow(/ASAAS_WEBHOOK_TOKEN/)
   })
 })

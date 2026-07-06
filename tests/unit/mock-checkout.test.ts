@@ -8,7 +8,7 @@ vi.mock('@/features/billing/subscription-service', () => ({
   activateSubscriptionFromWebhook: mocks.activateSubscriptionFromWebhook,
 }))
 
-import { confirmStripeMockCheckout } from '@/features/billing/mock-checkout'
+import { confirmAsaasMockCheckout } from '@/features/billing/mock-checkout'
 
 function mockDb(subscription: {
   id: string
@@ -33,7 +33,7 @@ function mockDb(subscription: {
   }
 }
 
-describe('Stripe mock checkout confirmation', () => {
+describe('Asaas mock checkout confirmation', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mocks.activateSubscriptionFromWebhook.mockResolvedValue({
@@ -48,10 +48,10 @@ describe('Stripe mock checkout confirmation', () => {
   it('is disabled outside the explicit local mock mode', async () => {
     const { db } = mockDb(null)
 
-    const result = await confirmStripeMockCheckout(db as never, {
+    const result = await confirmAsaasMockCheckout(db as never, {
       env: {
         NODE_ENV: 'production',
-        STRIPE_SECRET_KEY: 'sk_live_example',
+        ASAAS_API_KEY: '$aact_prod_example',
       },
       subscriptionId: 'subscription-1',
       authenticatedUserId: 'user-1',
@@ -61,17 +61,17 @@ describe('Stripe mock checkout confirmation', () => {
     expect(db.from).not.toHaveBeenCalled()
   })
 
-  it('loads only the authenticated users pending Stripe subscription', async () => {
+  it('loads only the authenticated users pending Asaas subscription', async () => {
     const { db, chain } = mockDb({
       id: 'subscription-1',
       user_id: 'user-1',
       plan: 'annual',
     })
 
-    await confirmStripeMockCheckout(db as never, {
+    await confirmAsaasMockCheckout(db as never, {
       env: {
         NODE_ENV: 'development',
-        STRIPE_SECRET_KEY: 'stripe_dev_mock_secret_key',
+        ASAAS_API_KEY: 'asaas_dev_mock_api_key',
       },
       subscriptionId: 'subscription-1',
       authenticatedUserId: 'user-1',
@@ -79,23 +79,16 @@ describe('Stripe mock checkout confirmation', () => {
 
     expect(chain.eq).toHaveBeenCalledWith('id', 'subscription-1')
     expect(chain.eq).toHaveBeenCalledWith('user_id', 'user-1')
-    expect(chain.eq).toHaveBeenCalledWith('provider', 'stripe')
+    expect(chain.eq).toHaveBeenCalledWith('provider', 'asaas')
     expect(chain.eq).toHaveBeenCalledWith('status', 'pending')
     expect(mocks.activateSubscriptionFromWebhook).toHaveBeenCalledWith(
       db,
       expect.objectContaining({
-        type: 'checkout.session.completed',
-        data: {
-          object: expect.objectContaining({
-            payment_status: 'paid',
-            client_reference_id: 'subscription-1',
-            metadata: {
-              user_id: 'user-1',
-              plan: 'annual',
-              subscription_id: 'subscription-1',
-            },
-          }),
-        },
+        event: 'PAYMENT_CONFIRMED',
+        payment: expect.objectContaining({
+          billingType: 'CREDIT_CARD',
+          externalReference: 'subscription-1',
+        }),
       }),
     )
   })
@@ -103,10 +96,10 @@ describe('Stripe mock checkout confirmation', () => {
   it('does not activate when the pending subscription is not owned by the user', async () => {
     const { db } = mockDb(null)
 
-    const result = await confirmStripeMockCheckout(db as never, {
+    const result = await confirmAsaasMockCheckout(db as never, {
       env: {
         NODE_ENV: 'development',
-        STRIPE_SECRET_KEY: 'stripe_dev_mock_secret_key',
+        ASAAS_API_KEY: 'asaas_dev_mock_api_key',
       },
       subscriptionId: 'subscription-1',
       authenticatedUserId: 'other-user',

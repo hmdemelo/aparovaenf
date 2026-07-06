@@ -9,8 +9,8 @@ import { AprovaenfLogo } from '@/features/brand/aprovaenf-logo'
 import { track } from '@/features/analytics/product-events-server'
 import { ProductEventNames } from '@/features/analytics/product-events'
 import { PricingSection } from '@/features/billing/pricing-section'
-import { confirmStripeMockCheckout } from '@/features/billing/mock-checkout'
-import { isStripeMockMode } from '@/features/billing/stripe-config'
+import { confirmAsaasMockCheckout } from '@/features/billing/mock-checkout'
+import { isAsaasMockMode } from '@/features/billing/asaas-config'
 import { getCoreServerEnv, getServerEnv } from '@/lib/env/server'
 
 export const dynamic = 'force-dynamic'
@@ -31,9 +31,9 @@ export default async function LandingPage({
 }) {
   const params = await searchParams
   const env = getCoreServerEnv()
-  const mockCheckoutEnabled = isStripeMockMode({
+  const mockCheckoutEnabled = isAsaasMockMode({
     NODE_ENV: env.NODE_ENV,
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY ?? '',
+    ASAAS_API_KEY: process.env.ASAAS_API_KEY ?? '',
   })
   const supabase = createSupabaseServiceClient()
   const { data: careers } = await supabase
@@ -52,7 +52,7 @@ export default async function LandingPage({
     const user = await getCurrentUser()
     if (!user) return
     const db = createSupabaseServiceClient()
-    const result = await confirmStripeMockCheckout(db, {
+    const result = await confirmAsaasMockCheckout(db, {
       env: getServerEnv(),
       subscriptionId,
       authenticatedUserId: user.id,

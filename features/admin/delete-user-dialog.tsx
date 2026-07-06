@@ -80,8 +80,8 @@ export function DeleteUserDialog({
             </div>
 
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-              Usuários com assinatura ativa no Stripe não podem ser deletados
-              aqui. Cancele a assinatura no Stripe primeiro.
+              Usuários com assinatura ativa no Asaas não podem ser deletados
+              aqui. Cancele a assinatura no Asaas primeiro.
             </p>
 
             {error && (

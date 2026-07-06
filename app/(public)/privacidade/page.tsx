@@ -45,13 +45,13 @@ export default function PrivacidadePage() {
 
         <h2 className="text-base font-semibold text-[var(--ink)]">3. Processamento de Pagamentos e Cartões</h2>
         <p>
-          Para o processamento de assinaturas recorrentes (planos mensal e anual), utilizamos o gateway de pagamentos parceiro <strong>Stripe</strong>. 
-          <strong> Os seus dados de cartão de crédito nunca transitam nem são armazenados em nossos servidores.</strong> Todo o processamento de pagamento ocorre em ambiente criptografado e seguro gerenciado pela própria Stripe.
+          Para o processamento de assinaturas recorrentes (planos mensal e anual), utilizamos o gateway de pagamentos parceiro <strong>Asaas</strong>. 
+          <strong> Os seus dados de cartão de crédito nunca transitam nem são armazenados em nossos servidores.</strong> Todo o processamento de pagamento ocorre em ambiente criptografado e seguro gerenciado pelo próprio Asaas.
         </p>
 
         <h2 className="text-base font-semibold text-[var(--ink)]">4. Compartilhamento e Armazenamento</h2>
         <p>
-          Seus dados são armazenados de forma segura utilizando a infraestrutura do <strong>Supabase</strong>. Não comercializamos suas informações com terceiros em nenhuma hipótese. Os dados são compartilhados apenas com os parceiros operacionais indispensáveis citados nesta política (Supabase, Stripe e Resend).
+          Seus dados são armazenados de forma segura utilizando a infraestrutura do <strong>Supabase</strong>. Não comercializamos suas informações com terceiros em nenhuma hipótese. Os dados são compartilhados apenas com os parceiros operacionais indispensáveis citados nesta política (Supabase, Asaas e Resend).
         </p>
 
         <h2 className="text-base font-semibold text-[var(--ink)]">5. Seus Direitos (LGPD)</h2>

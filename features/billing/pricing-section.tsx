@@ -94,7 +94,7 @@ export function PricingSection() {
                       : 'bg-[var(--line)] text-[var(--muted)]'
                   }`}
                 >
-                  Pagamento com cartão
+                  Cartão ou PIX
                 </span>
               </div>
             </div>
@@ -118,7 +118,7 @@ export function PricingSection() {
         ))}
       </div>
       <p className="mt-4 text-center text-xs text-[var(--muted)]">
-        Pagamento seguro processado pela Stripe.
+        Pagamento seguro processado pelo Asaas.
       </p>
     </section>
   )

@@ -68,3 +68,4 @@ questoes_export.json
 revisao_questoes_export.md
 revisao_questoes_export_com_ids.csv
 
+.env.prod

@@ -41,8 +41,9 @@ export function AccountDialog({
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingPassword, setSavingPassword] = useState(false)
-  const [openingPortal, setOpeningPortal] = useState(false)
-  const [portalError, setPortalError] = useState<string | null>(null)
+  const [cancelingSubscription, setCancelingSubscription] = useState(false)
+  const [cancelError, setCancelError] = useState<string | null>(null)
+  const [cancelStatus, setCancelStatus] = useState<string | null>(null)
 
   useScrollLock(open)
 
@@ -132,22 +133,36 @@ export function AccountDialog({
     }
   }
 
-  async function openBillingPortal() {
-    setOpeningPortal(true)
-    setPortalError(null)
+  async function cancelSubscription() {
+    const confirmed = window.confirm(
+      'Cancelar a renovação da assinatura? Você mantém o acesso até o fim do período já pago.',
+    )
+    if (!confirmed) return
+
+    setCancelingSubscription(true)
+    setCancelError(null)
+    setCancelStatus(null)
 
     try {
-      const response = await fetch('/api/billing/portal', { method: 'POST' })
-      const json: ApiEnvelope<{ portal_url: string }> = await response.json()
+      const response = await fetch('/api/billing/cancel', { method: 'POST' })
+      const json: ApiEnvelope<{ canceled: boolean; access_until: string | null }> =
+        await response.json()
       if (!json.success) {
-        setPortalError('Não foi possível abrir o portal de assinatura.')
+        setCancelError('Não foi possível cancelar a assinatura.')
         return
       }
-      window.location.assign(json.data.portal_url)
+      const until = json.data.access_until
+        ? new Date(json.data.access_until).toLocaleDateString('pt-BR')
+        : null
+      setCancelStatus(
+        until
+          ? `Renovação cancelada. Seu acesso continua até ${until}.`
+          : 'Renovação cancelada.',
+      )
     } catch {
-      setPortalError('Não foi possível abrir o portal de assinatura.')
+      setCancelError('Não foi possível cancelar a assinatura.')
     } finally {
-      setOpeningPortal(false)
+      setCancelingSubscription(false)
     }
   }
 
@@ -376,17 +391,24 @@ export function AccountDialog({
                 </Link>
                 <button
                   type="button"
-                  onClick={openBillingPortal}
-                  disabled={openingPortal}
-                  data-testid="account-billing-portal"
+                  onClick={cancelSubscription}
+                  disabled={cancelingSubscription}
+                  data-testid="account-cancel-subscription"
                   className="inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-sm)] border border-[color:var(--line-2)] bg-white px-4 py-3 font-semibold text-[var(--ink)] transition hover:text-[var(--teal)] disabled:text-[var(--hint)]"
                 >
                   <CreditCard size={18} />
-                  {openingPortal ? 'Abrindo portal...' : 'Gerenciar assinatura'}
+                  {cancelingSubscription
+                    ? 'Cancelando...'
+                    : 'Cancelar renovação da assinatura'}
                 </button>
-                {portalError && (
+                {cancelError && (
                   <p className="rounded-[var(--radius-sm)] bg-[var(--danger-bg)] px-3 py-2 text-sm text-[var(--danger)]">
-                    {portalError}
+                    {cancelError}
+                  </p>
+                )}
+                {cancelStatus && (
+                  <p className="rounded-[var(--radius-sm)] bg-[var(--teal-light)] px-3 py-2 text-sm text-[var(--teal-ink)]">
+                    {cancelStatus}
                   </p>
                 )}
               </div>

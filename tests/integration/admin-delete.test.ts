@@ -183,12 +183,12 @@ d('admin delete operations (local Supabase)', () => {
     })
 
     it('blocks deletion when user has an active subscription', async () => {
-      // Inject a fake active subscription directly (no Stripe needed)
+      // Inject a fake active subscription directly (no Asaas needed)
       await service.from('subscriptions').insert({
         user_id: DELETABLE_STUDENT_ID,
         plan: 'monthly',
         status: 'active',
-        provider: 'stripe',
+        provider: 'asaas',
         provider_subscription_id: 'sub_test_delete_guard',
       })
 

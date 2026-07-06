@@ -1,7 +1,8 @@
 'use client'
 
-import { Check, CreditCard, Sparkles } from 'lucide-react'
+import { Check, CreditCard, QrCode, Sparkles } from 'lucide-react'
 import { useState } from 'react'
+import type { PaymentMethod } from '@/lib/validation/schemas'
 import { PLAN_LIST, type PlanId } from './plans'
 
 type ApiEnvelope<T> =
@@ -25,19 +26,22 @@ export function Paywall({
   title?: string
   description?: string
 }) {
-  const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null)
+  const [loadingCheckout, setLoadingCheckout] = useState<{
+    plan: PlanId
+    method: PaymentMethod
+  } | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  async function startCheckout(plan: PlanId) {
+  async function startCheckout(plan: PlanId, method: PaymentMethod) {
     onChoosePlan?.(plan)
-    setLoadingPlan(plan)
+    setLoadingCheckout({ plan, method })
     setError(null)
 
     try {
       const response = await fetch('/api/billing/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, payment_method: method }),
       })
       const json: ApiEnvelope<CheckoutResponse> = await response.json()
 
@@ -54,7 +58,7 @@ export function Paywall({
     } catch {
       setError('Não foi possível iniciar o checkout. Tente novamente.')
     } finally {
-      setLoadingPlan(null)
+      setLoadingCheckout(null)
     }
   }
 
@@ -113,7 +117,7 @@ export function Paywall({
                       : 'bg-[var(--line)] text-[var(--muted)]'
                   }`}
                 >
-                  Pagamento com cartão
+                  Cartão ou PIX
                 </span>
               </div>
             </div>
@@ -132,25 +136,50 @@ export function Paywall({
                 <Check size={16} className="text-[var(--mint-dim)]" /> Histórico de erros
               </li>
             </ul>
-            <button
-              type="button"
-              onClick={() => void startCheckout(plan.id)}
-              disabled={loadingPlan !== null}
-              data-testid={`checkout-${plan.id}`}
-              className={`mt-auto flex items-center justify-center gap-2 rounded-[16px] px-4 py-3 font-semibold transition active:scale-[0.98] disabled:opacity-70 ${
-                plan.id === 'annual'
-                  ? 'bg-[var(--mint-strong)] text-[var(--teal-ink)] hover:brightness-105'
-                  : 'bg-[var(--teal)] text-white hover:bg-[var(--teal-mid)]'
-              }`}
-            >
-              <CreditCard size={16} />
-              {loadingPlan === plan.id
-                ? 'Abrindo checkout...'
-                : `Assinar ${plan.label.toLowerCase()}`}
-            </button>
+            <div className="mt-auto flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => void startCheckout(plan.id, 'card')}
+                disabled={loadingCheckout !== null}
+                data-testid={`checkout-${plan.id}`}
+                className={`flex items-center justify-center gap-2 rounded-[16px] px-4 py-3 font-semibold transition active:scale-[0.98] disabled:opacity-70 ${
+                  plan.id === 'annual'
+                    ? 'bg-[var(--mint-strong)] text-[var(--teal-ink)] hover:brightness-105'
+                    : 'bg-[var(--teal)] text-white hover:bg-[var(--teal-mid)]'
+                }`}
+              >
+                <CreditCard size={16} />
+                {loadingCheckout?.plan === plan.id &&
+                loadingCheckout.method === 'card'
+                  ? 'Abrindo checkout...'
+                  : `Assinar ${plan.label.toLowerCase()}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => void startCheckout(plan.id, 'pix')}
+                disabled={loadingCheckout !== null}
+                data-testid={`checkout-${plan.id}-pix`}
+                className={`flex items-center justify-center gap-2 rounded-[16px] border px-4 py-3 font-semibold transition active:scale-[0.98] disabled:opacity-70 ${
+                  plan.id === 'annual'
+                    ? 'border-white/40 text-white hover:bg-white/10'
+                    : 'border-[color:var(--teal)] text-[var(--teal)] hover:bg-[rgba(160,243,212,0.18)]'
+                }`}
+              >
+                <QrCode size={16} />
+                {loadingCheckout?.plan === plan.id &&
+                loadingCheckout.method === 'pix'
+                  ? 'Abrindo checkout...'
+                  : 'Pagar com PIX'}
+              </button>
+            </div>
           </div>
         ))}
       </div>
+
+      <p className="text-center text-xs text-[var(--muted)]">
+        O pagamento via PIX é avulso: libera o período do plano de uma vez e
+        não renova automaticamente.
+      </p>
 
       {error && (
         <p

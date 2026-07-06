@@ -26,7 +26,7 @@ export default function TermosPage() {
           <li><strong>Bloqueio de Acesso:</strong> Ao atingir o limite de 5 questões respondidas no trial, o feed de questões será bloqueado e o usuário perderá o acesso às questões resolvidas e ao histórico até que adquira uma assinatura ativa.</li>
         </ul>
 
-        <h2 className="text-base font-semibold text-[var(--ink)]">2. Planos e Assinaturas (Stripe)</h2>
+        <h2 className="text-base font-semibold text-[var(--ink)]">2. Planos e Assinaturas (Asaas)</h2>
         <p>
           Para obter acesso ilimitado ao banco de questões, histórico de erros e sistema de favoritos, oferecemos duas modalidades de assinatura recorrente: <strong>Mensal (R$ 29,90/mês)</strong> e <strong>Anual (R$ 287,00/ano)</strong>.
         </p>

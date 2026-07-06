@@ -1,35 +1,29 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/db/database.types'
 import type { ServerEnv } from '@/lib/env/server'
+import type { PaymentMethod } from '@/lib/validation/schemas'
 import { PLANS, type PlanId } from './plans'
-import { isStripeMockMode } from './stripe-config'
-import Stripe from 'stripe'
+import { getAsaasBaseUrl, isAsaasMockMode } from './asaas-config'
 
 type Db = SupabaseClient<Database>
-const PROVIDER = 'stripe'
-
-const ACTIVATION_EVENTS = new Set([
-  'checkout.session.completed',
-  'invoice.paid',
-])
+const PROVIDER = 'asaas'
 
 type CheckoutUser = {
   id: string
   email: string | null
 }
 
+type AsaasEnv = Pick<
+  ServerEnv,
+  'NODE_ENV' | 'ASAAS_API_KEY' | 'NEXT_PUBLIC_APP_URL'
+>
+
 type CreateCheckoutInput = {
-  env: Pick<
-    ServerEnv,
-    | 'NODE_ENV'
-    | 'STRIPE_SECRET_KEY'
-    | 'NEXT_PUBLIC_APP_URL'
-    | 'STRIPE_MONTHLY_PRICE_ID'
-    | 'STRIPE_ANNUAL_PRICE_ID'
-  >
+  env: AsaasEnv
   planId: PlanId
   subscriptionId: string
   user: CheckoutUser
+  paymentMethod: PaymentMethod
 }
 
 export type ProviderCheckout = {
@@ -73,13 +67,23 @@ export async function createPendingSubscription(
   return { ok: true }
 }
 
-export async function createStripeCheckout(
+/**
+ * Creates an Asaas hosted Checkout session.
+ *
+ * Card uses chargeTypes RECURRENT with a subscription cycle (Asaas bills the
+ * card automatically each period). Pix has no recurring billing, so it is a
+ * DETACHED one-time charge that prepays the plan period; access simply expires
+ * at current_period_end. The payer fills their own data (name/CPF) on the
+ * Asaas-hosted page, so no customer needs to be created upfront.
+ */
+export async function createAsaasCheckout(
   input: CreateCheckoutInput,
 ): Promise<ProviderCheckout> {
-  const mockUrl = `${withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)}/?checkout=mock&subscription_id=${input.subscriptionId}`
+  const appUrl = withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)
+  const mockUrl = `${appUrl}/?checkout=mock&subscription_id=${input.subscriptionId}`
 
-  if (isStripeMockMode(input.env)) {
-    console.warn('[billing.checkout] Using fallback local mock checkout (detected stripe_dev_* API key)')
+  if (isAsaasMockMode(input.env)) {
+    console.warn('[billing.checkout] Using fallback local mock checkout (detected asaas_dev_* API key)')
     return {
       checkoutId: 'checkout_mock_' + input.subscriptionId,
       checkoutUrl: mockUrl,
@@ -88,60 +92,90 @@ export async function createStripeCheckout(
     }
   }
 
-  const appUrl = withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)
-  const priceId = getStripePriceId(input.planId, input.env)
+  const plan = PLANS[input.planId]
+  const isPix = input.paymentMethod === 'pix'
 
-  const stripe = new Stripe(input.env.STRIPE_SECRET_KEY)
-  const metadata = {
-    user_id: input.user.id,
-    subscription_id: input.subscriptionId,
-    plan: input.planId,
-  }
-
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ['card'],
-    line_items: [
+  const body = {
+    billingTypes: [isPix ? 'PIX' : 'CREDIT_CARD'],
+    chargeTypes: [isPix ? 'DETACHED' : 'RECURRENT'],
+    ...(isPix
+      ? {}
+      : {
+          subscription: {
+            cycle: input.planId === 'monthly' ? 'MONTHLY' : 'YEARLY',
+          },
+        }),
+    items: [
       {
-        price: priceId,
+        name: `AprovaENF PRO — ${plan.label}`,
         quantity: 1,
+        // Asaas uses decimal reais, not cents.
+        value: plan.amountCents / 100,
       },
     ],
-    mode: 'subscription',
-    customer_email: input.user.email ?? undefined,
-    client_reference_id: input.subscriptionId,
-    metadata,
-    subscription_data: { metadata },
-    success_url: `${appUrl}/feed?subscription=success`,
-    cancel_url: `${appUrl}/assinar`,
-  })
+    callback: {
+      successUrl: `${appUrl}/feed?subscription=success`,
+      cancelUrl: `${appUrl}/assinar`,
+      expiredUrl: `${appUrl}/assinar`,
+    },
+    // Correlates webhook payments back to our local subscription row.
+    externalReference: input.subscriptionId,
+    ...(input.user.email ? { customerData: { email: input.user.email } } : {}),
+  }
 
-  if (!session.url) {
-    throw new Error('Stripe Checkout Session URL was not generated')
+  const data = await asaasRequest(input.env, 'POST', '/checkouts', body)
+
+  const checkoutId = asString(data.id)
+  const checkoutUrl = firstString(data.link, data.url, data.checkoutUrl)
+  if (!checkoutId || !checkoutUrl) {
+    throw new Error(
+      `Asaas checkout response missing id or URL: ${JSON.stringify(data).slice(0, 500)}`,
+    )
   }
 
   return {
-    checkoutId: session.id,
-    checkoutUrl: session.url,
-    amountCents: PLANS[input.planId].amountCents,
-    status: session.status,
+    checkoutId,
+    checkoutUrl,
+    amountCents: plan.amountCents,
+    status: asString(data.status),
   }
 }
 
-export async function createStripeBillingPortalSession(input: {
-  env: Pick<ServerEnv, 'STRIPE_SECRET_KEY' | 'NEXT_PUBLIC_APP_URL'>
-  customerId: string
-}): Promise<{ portalUrl: string }> {
-  const stripe = new Stripe(input.env.STRIPE_SECRET_KEY)
-  const session = await stripe.billingPortal.sessions.create({
-    customer: input.customerId,
-    return_url: `${withoutTrailingSlash(input.env.NEXT_PUBLIC_APP_URL)}/feed`,
-  })
-
-  if (!session.url) {
-    throw new Error('Stripe Billing Portal session URL was not generated')
+/**
+ * Stores the Asaas checkout id on the pending row so the first payment webhook
+ * can be correlated via payment.checkoutSession even if externalReference is
+ * not propagated by Asaas. Replaced by the real subscription id on activation.
+ */
+export async function attachProviderCheckoutId(
+  db: Db,
+  subscriptionId: string,
+  providerCheckoutId: string,
+): Promise<void> {
+  const { error } = await db
+    .from('subscriptions')
+    .update({ provider_subscription_id: providerCheckoutId })
+    .eq('id', subscriptionId)
+    .eq('status', 'pending')
+  if (error) {
+    console.error('[billing.checkout] could not attach checkout id', error.message)
   }
+}
 
-  return { portalUrl: session.url }
+/** Cancels the recurring subscription at Asaas (card auto-renewal stops). */
+export async function cancelAsaasSubscription(input: {
+  env: AsaasEnv
+  providerSubscriptionId: string
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await asaasRequest(
+      input.env,
+      'DELETE',
+      `/subscriptions/${encodeURIComponent(input.providerSubscriptionId)}`,
+    )
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: (error as Error).message }
+  }
 }
 
 export async function cancelSubscriptionFromWebhook(
@@ -175,119 +209,83 @@ export async function markSubscriptionPastDueFromWebhook(
 }
 
 /**
- * Keeps the local row in sync with `customer.subscription.updated`.
- * Activation stays exclusive to checkout.session.completed/invoice.paid, so
- * this only touches rows that already left the pending state.
+ * Expires the local subscription tied to a refunded Asaas payment. Uses the
+ * same correlation chain as activation (externalReference → subscription id →
+ * checkout session id).
  */
-export async function syncSubscriptionFromUpdatedEvent(
+export async function expireSubscriptionFromRefund(
   db: Db,
   payload: unknown,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const obj = asRecord(asRecord(asRecord(payload).data).object)
-  const providerSubscriptionId = asString(obj.id)
-  if (!providerSubscriptionId) {
-    return {
-      ok: false,
-      error: 'missing Stripe subscription id on updated subscription',
-    }
-  }
+  const payment = asRecord(asRecord(payload).payment)
+  const found = await findByPaymentCorrelation(db, payment)
+  if (!found.ok) return found
+  if (!found.row) return { ok: true }
 
-  const status = asString(obj.status)
-  if (status === 'past_due') {
-    return markSubscriptionPastDueFromWebhook(db, providerSubscriptionId)
-  }
-  if (status === 'unpaid' || status === 'canceled' || status === 'incomplete_expired') {
-    return cancelSubscriptionFromWebhook(db, providerSubscriptionId)
-  }
-  if (status !== 'active' && status !== 'trialing') {
-    return { ok: true }
-  }
-
-  const period = periodFromSubscriptionItems(obj)
   const { error } = await db
     .from('subscriptions')
-    .update({
-      status: 'active',
-      ...(period.start && period.end
-        ? { current_period_start: period.start, current_period_end: period.end }
-        : {}),
-    })
-    .eq('provider', PROVIDER)
-    .eq('provider_subscription_id', providerSubscriptionId)
+    .update({ status: 'expired' })
+    .eq('id', found.row.id)
     .in('status', ['active', 'past_due'])
 
   if (error) return { ok: false, error: error.message }
   return { ok: true }
 }
 
+/**
+ * Activates from an Asaas payment webhook. Card confirms at PAYMENT_CONFIRMED
+ * (funds settle ~32 days later at PAYMENT_RECEIVED, far too late to release
+ * access); Pix credits instantly at PAYMENT_RECEIVED. Binding each billing
+ * type to a single event also prevents the CONFIRMED/RECEIVED pair from
+ * activating twice and silently extending the paid period.
+ */
 export async function activateSubscriptionFromWebhook(
   db: Db,
   payload: unknown,
 ): Promise<SubscriptionActivationResult> {
-  const activation = extractSubscriptionActivation(payload)
-  if (!activation.ok) return activation
-  if (!activation.activated) return { ok: true, activated: false }
+  const root = asRecord(payload)
+  const eventType = asString(root.event)
+  const payment = asRecord(root.payment)
+  const billingType = asString(payment.billingType)
 
-  const existing = activation.localSubscriptionId
-    ? await findLocalSubscription(db, activation.localSubscriptionId)
-    : activation.providerSubscriptionId
-      ? await findLocalSubscriptionByProviderId(
-          db,
-          activation.providerSubscriptionId,
-        )
-      : { ok: true as const, row: null }
+  const shouldActivate =
+    (eventType === 'PAYMENT_CONFIRMED' && billingType === 'CREDIT_CARD') ||
+    (eventType === 'PAYMENT_RECEIVED' && billingType === 'PIX')
+  if (!shouldActivate) return { ok: true, activated: false }
+
+  const existing = await findByPaymentCorrelation(db, payment)
   if (!existing.ok) return { ok: false, error: existing.error }
+  if (!existing.row) return { ok: false, error: 'missing subscription reference' }
 
-  const userId = activation.userId ?? existing.row?.user_id
-  if (!userId) return { ok: false, error: 'missing subscription reference' }
-  const plan = activation.plan ?? existing.row?.plan
-  if (!plan) return { ok: false, error: 'missing subscription plan in metadata' }
+  const userId = existing.row.user_id
+  const plan = planFromValue(existing.row.plan)
+  if (!plan) return { ok: false, error: 'missing subscription plan on local row' }
 
-  const subscriptionId =
-    existing.row?.id ?? activation.localSubscriptionId ?? crypto.randomUUID()
+  const subscriptionId = existing.row.id
   // A renovação reativa uma linha que já estava `active`; qualquer outro estado
-  // anterior (pending/expired/past_due) ou linha inexistente é ativação inicial.
-  const firstActivation = existing.row?.status !== 'active'
+  // anterior (pending/expired/past_due) é ativação inicial.
+  const firstActivation = existing.row.status !== 'active'
   const expired = await expireOtherActiveSubscriptions(db, userId, subscriptionId)
   if (!expired.ok) return expired
 
-  const periodStart = activation.periodStart ?? new Date().toISOString()
-  const periodEnd =
-    activation.periodEnd ?? periodForPlan(plan, new Date(periodStart)).end
-  const row = {
-    user_id: userId,
-    plan,
-    status: 'active' as const,
-    provider: PROVIDER,
-    provider_customer_id:
-      activation.providerCustomerId ?? existing.row?.provider_customer_id,
-    provider_subscription_id:
-      activation.providerSubscriptionId ??
-      existing.row?.provider_subscription_id,
-    current_period_start: periodStart,
-    current_period_end: periodEnd,
-  }
+  // Asaas payments carry no billing-period range; the paid period starts at
+  // the payment date and runs one plan cycle.
+  const paidAt = dateFromValue(payment.paymentDate) ?? new Date()
+  const period = periodForPlan(plan, paidAt)
 
-  if (existing.row) {
-    const { error } = await db
-      .from('subscriptions')
-      .update(row)
-      .eq('id', existing.row.id)
-    if (error) return { ok: false, error: error.message }
-    return {
-      ok: true,
-      activated: true,
-      firstActivation,
-      subscriptionId: existing.row.id,
-      userId,
-      plan,
-    }
-  }
-
-  const { error } = await db.from('subscriptions').insert({
-    id: subscriptionId,
-    ...row,
-  })
+  const { error } = await db
+    .from('subscriptions')
+    .update({
+      status: 'active',
+      provider: PROVIDER,
+      provider_customer_id:
+        asString(payment.customer) ?? existing.row.provider_customer_id,
+      provider_subscription_id:
+        asString(payment.subscription) ?? existing.row.provider_subscription_id,
+      current_period_start: period.start,
+      current_period_end: period.end,
+    })
+    .eq('id', subscriptionId)
   if (error) return { ok: false, error: error.message }
 
   return {
@@ -300,22 +298,62 @@ export async function activateSubscriptionFromWebhook(
   }
 }
 
-function getStripePriceId(
-  planId: PlanId,
-  env: Pick<
-    ServerEnv,
-    'STRIPE_MONTHLY_PRICE_ID' | 'STRIPE_ANNUAL_PRICE_ID'
-  >,
-): string {
-  const value =
-    planId === 'monthly'
-      ? env.STRIPE_MONTHLY_PRICE_ID
-      : env.STRIPE_ANNUAL_PRICE_ID
-  const priceId = value?.trim()
-  if (!priceId) {
-    throw new Error(`Stripe price id is not configured for plan: ${planId}`)
+async function asaasRequest(
+  env: AsaasEnv,
+  method: 'POST' | 'DELETE' | 'GET',
+  path: string,
+  body?: unknown,
+): Promise<Record<string, unknown>> {
+  const response = await fetch(`${getAsaasBaseUrl(env)}${path}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      accept: 'application/json',
+      access_token: env.ASAAS_API_KEY,
+      'User-Agent': 'aprovaenf',
+    },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  })
+
+  const text = await response.text()
+  if (!response.ok) {
+    throw new Error(
+      `Asaas ${method} ${path} failed (${response.status}): ${text.slice(0, 500)}`,
+    )
   }
-  return priceId
+  try {
+    return asRecord(JSON.parse(text))
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Correlation chain for an Asaas payment → local subscription row:
+ * 1. payment.externalReference carries our local subscription UUID (set at
+ *    checkout creation);
+ * 2. payment.subscription matches provider_subscription_id (renewals);
+ * 3. payment.checkoutSession matches provider_subscription_id, which holds the
+ *    checkout id until the first activation replaces it.
+ */
+async function findByPaymentCorrelation(
+  db: Db,
+  payment: Record<string, unknown>,
+) {
+  const localId = asString(payment.externalReference)
+  if (localId) {
+    const byId = await findLocalSubscription(db, localId)
+    if (!byId.ok || byId.row) return byId
+  }
+
+  for (const candidate of [payment.subscription, payment.checkoutSession]) {
+    const providerId = asString(candidate)
+    if (!providerId) continue
+    const byProvider = await findLocalSubscriptionByProviderId(db, providerId)
+    if (!byProvider.ok || byProvider.row) return byProvider
+  }
+
+  return { ok: true as const, row: null }
 }
 
 function withoutTrailingSlash(value: string): string {
@@ -334,10 +372,6 @@ function asString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value : null
 }
 
-function asNumber(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null
-}
-
 function firstString(...values: unknown[]): string | null {
   for (const value of values) {
     const stringValue = asString(value)
@@ -347,11 +381,16 @@ function firstString(...values: unknown[]): string | null {
 }
 
 function planFromValue(value: unknown): PlanId | null {
-  if (value === 'monthly' || value === 'MONTHLY') return 'monthly'
-  if (value === 'annual' || value === 'ANNUAL' || value === 'ANNUALLY') {
-    return 'annual'
-  }
+  if (value === 'monthly') return 'monthly'
+  if (value === 'annual') return 'annual'
   return null
+}
+
+function dateFromValue(value: unknown): Date | null {
+  const stringValue = asString(value)
+  if (!stringValue) return null
+  const parsed = new Date(stringValue)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
 function addMonths(date: Date, months: number): Date {
@@ -372,143 +411,6 @@ function periodForPlan(plan: PlanId, paidAt: Date) {
   return {
     start: start.toISOString(),
     end: end.toISOString(),
-  }
-}
-
-function extractSubscriptionActivation(payload: unknown):
-  | {
-      ok: true
-      activated: true
-      localSubscriptionId: string | null
-      userId: string | null
-      plan: PlanId | null
-      providerCustomerId: string | null
-      providerSubscriptionId: string | null
-      periodStart: string | null
-      periodEnd: string | null
-    }
-  | { ok: true; activated: false }
-  | { ok: false; error: string } {
-  const root = asRecord(payload)
-  const eventType = asString(root.type)
-  if (!eventType || !ACTIVATION_EVENTS.has(eventType)) {
-    return { ok: true, activated: false }
-  }
-
-  const data = asRecord(root.data)
-  const obj = asRecord(data.object)
-  const parent = asRecord(obj.parent)
-  const subscriptionDetails = asRecord(parent.subscription_details)
-  const metadata = {
-    ...asRecord(subscriptionDetails.metadata),
-    ...asRecord(obj.metadata),
-  }
-
-  if (
-    eventType === 'checkout.session.completed' &&
-    obj.payment_status !== 'paid'
-  ) {
-    return { ok: true, activated: false }
-  }
-
-  const localSubscriptionId = firstString(
-    metadata.subscription_id,
-    metadata.subscriptionId,
-    obj.client_reference_id,
-  )
-  const userId = firstString(
-    metadata.user_id,
-    metadata.userId,
-  )
-
-  const plan = planFromValue(metadata.plan)
-
-  const period =
-    eventType === 'invoice.paid'
-      ? periodFromInvoiceLines(obj)
-      : periodFromObjectTimestamps(obj)
-
-  return {
-    ok: true,
-    activated: true,
-    localSubscriptionId,
-    userId,
-    plan,
-    providerCustomerId: stripeObjectId(obj.customer),
-    providerSubscriptionId:
-      stripeObjectId(obj.subscription) ??
-      stripeObjectId(subscriptionDetails.subscription),
-    periodStart: period.start,
-    periodEnd: period.end,
-  }
-}
-
-type ExtractedPeriod = { start: string | null; end: string | null }
-
-/**
- * Invoice-level period_start/period_end describe the usage period (the cycle
- * that was just billed), not the period being paid for — at renewal they can
- * both equal "now", which would immediately expire the subscriber. The paid
- * billing period lives on the invoice line items.
- */
-function periodFromInvoiceLines(obj: Record<string, unknown>): ExtractedPeriod {
-  const lines = asRecord(obj.lines)
-  const data = Array.isArray(lines.data) ? lines.data : []
-
-  let best: { startSec: number; endSec: number } | null = null
-  for (const line of data) {
-    const period = asRecord(asRecord(line).period)
-    const startSec = asNumber(period.start)
-    const endSec = asNumber(period.end)
-    if (startSec === null || endSec === null || endSec <= startSec) continue
-    if (!best || endSec > best.endSec) best = { startSec, endSec }
-  }
-
-  if (!best) return { start: null, end: null }
-  return {
-    start: new Date(best.startSec * 1000).toISOString(),
-    end: new Date(best.endSec * 1000).toISOString(),
-  }
-}
-
-/**
- * Since the 2025 Stripe API versions, current_period_start/end live on the
- * subscription items instead of the subscription root. Check both.
- */
-function periodFromSubscriptionItems(
-  obj: Record<string, unknown>,
-): ExtractedPeriod {
-  const rootPeriod = periodFromObjectTimestamps(obj)
-  if (rootPeriod.start && rootPeriod.end) return rootPeriod
-
-  const items = asRecord(obj.items)
-  const data = Array.isArray(items.data) ? items.data : []
-
-  let best: { startSec: number; endSec: number } | null = null
-  for (const item of data) {
-    const record = asRecord(item)
-    const startSec = asNumber(record.current_period_start)
-    const endSec = asNumber(record.current_period_end)
-    if (startSec === null || endSec === null || endSec <= startSec) continue
-    if (!best || endSec > best.endSec) best = { startSec, endSec }
-  }
-
-  if (!best) return { start: null, end: null }
-  return {
-    start: new Date(best.startSec * 1000).toISOString(),
-    end: new Date(best.endSec * 1000).toISOString(),
-  }
-}
-
-function periodFromObjectTimestamps(
-  obj: Record<string, unknown>,
-): ExtractedPeriod {
-  const startSec =
-    asNumber(obj.period_start) ?? asNumber(obj.current_period_start)
-  const endSec = asNumber(obj.period_end) ?? asNumber(obj.current_period_end)
-  return {
-    start: startSec ? new Date(startSec * 1000).toISOString() : null,
-    end: endSec ? new Date(endSec * 1000).toISOString() : null,
   }
 }
 
@@ -540,10 +442,6 @@ async function findLocalSubscriptionByProviderId(
 
   if (error) return { ok: false as const, error: error.message }
   return { ok: true as const, row: data }
-}
-
-function stripeObjectId(value: unknown): string | null {
-  return asString(value) ?? asString(asRecord(value).id)
 }
 
 async function expireOtherActiveSubscriptions(

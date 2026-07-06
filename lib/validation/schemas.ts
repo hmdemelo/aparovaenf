@@ -329,8 +329,12 @@ export type AccountProfileInput = z.infer<typeof accountProfileInputSchema>
 
 // --- Billing --------------------------------------------------------------
 
+export const paymentMethodSchema = z.enum(['card', 'pix'])
+export type PaymentMethod = z.infer<typeof paymentMethodSchema>
+
 export const checkoutInputSchema = z.object({
   plan: planSchema,
+  payment_method: paymentMethodSchema.default('card'),
 })
 export type CheckoutInput = z.infer<typeof checkoutInputSchema>
 

@@ -8,7 +8,7 @@ import { z } from 'zod'
  * surfacing as runtime errors deep inside auth, billing, or webhook handlers.
  *
  * Only `NEXT_PUBLIC_*` values are safe to reference from browser code. The
- * service role and Stripe secrets MUST stay server-side (see the
+ * service role and Asaas secrets MUST stay server-side (see the
  * constitution: Secure Data Boundaries).
  */
 const coreServerEnvSchema = z.object({
@@ -40,18 +40,10 @@ const serverEnvSchema = coreServerEnvSchema
       .string()
       .min(1, 'RESEND_API_KEY cannot be empty')
       .optional(),
-    STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required'),
-    STRIPE_WEBHOOK_SECRET: z
+    ASAAS_API_KEY: z.string().min(1, 'ASAAS_API_KEY is required'),
+    ASAAS_WEBHOOK_TOKEN: z
       .string()
-      .min(1, 'STRIPE_WEBHOOK_SECRET is required'),
-    STRIPE_MONTHLY_PRICE_ID: z
-      .string()
-      .min(1, 'STRIPE_MONTHLY_PRICE_ID cannot be empty')
-      .optional(),
-    STRIPE_ANNUAL_PRICE_ID: z
-      .string()
-      .min(1, 'STRIPE_ANNUAL_PRICE_ID cannot be empty')
-      .optional(),
+      .min(1, 'ASAAS_WEBHOOK_TOKEN is required'),
     NEXT_PUBLIC_APP_URL: z
       .string()
       .url('NEXT_PUBLIC_APP_URL must be a valid URL'),
@@ -59,32 +51,22 @@ const serverEnvSchema = coreServerEnvSchema
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'production') return
 
-    if (!env.STRIPE_SECRET_KEY.startsWith('sk_live_')) {
+    // Asaas keys: sandbox starts with $aact_hmlg_, production with $aact_.
+    if (
+      !env.ASAAS_API_KEY.startsWith('$aact_') ||
+      env.ASAAS_API_KEY.startsWith('$aact_hmlg_')
+    ) {
       ctx.addIssue({
         code: 'custom',
-        path: ['STRIPE_SECRET_KEY'],
-        message: 'must use an sk_live_ key in production',
+        path: ['ASAAS_API_KEY'],
+        message: 'must use a production $aact_ key (not sandbox) in production',
       })
     }
-    if (!env.STRIPE_WEBHOOK_SECRET.startsWith('whsec_')) {
+    if (env.ASAAS_WEBHOOK_TOKEN.length < 16) {
       ctx.addIssue({
         code: 'custom',
-        path: ['STRIPE_WEBHOOK_SECRET'],
-        message: 'must use a whsec_ signing secret in production',
-      })
-    }
-    if (!env.STRIPE_MONTHLY_PRICE_ID?.startsWith('price_')) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['STRIPE_MONTHLY_PRICE_ID'],
-        message: 'must be configured with a price_ id in production',
-      })
-    }
-    if (!env.STRIPE_ANNUAL_PRICE_ID?.startsWith('price_')) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['STRIPE_ANNUAL_PRICE_ID'],
-        message: 'must be configured with a price_ id in production',
+        path: ['ASAAS_WEBHOOK_TOKEN'],
+        message: 'must be at least 16 characters in production',
       })
     }
 

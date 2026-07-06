@@ -2,19 +2,19 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/db/database.types'
 import type { ServerEnv } from '@/lib/env/server'
 import { activateSubscriptionFromWebhook } from './subscription-service'
-import { isStripeMockMode } from './stripe-config'
+import { isAsaasMockMode } from './asaas-config'
 
 type Db = SupabaseClient<Database>
 
-export async function confirmStripeMockCheckout(
+export async function confirmAsaasMockCheckout(
   db: Db,
   input: {
-    env: Pick<ServerEnv, 'NODE_ENV' | 'STRIPE_SECRET_KEY'>
+    env: Pick<ServerEnv, 'NODE_ENV' | 'ASAAS_API_KEY'>
     subscriptionId: string
     authenticatedUserId: string
   },
 ) {
-  if (!isStripeMockMode(input.env)) {
+  if (!isAsaasMockMode(input.env)) {
     return { ok: false as const, error: 'mock checkout is disabled' }
   }
 
@@ -23,7 +23,7 @@ export async function confirmStripeMockCheckout(
     .select('id, user_id, plan')
     .eq('id', input.subscriptionId)
     .eq('user_id', input.authenticatedUserId)
-    .eq('provider', 'stripe')
+    .eq('provider', 'asaas')
     .eq('status', 'pending')
     .maybeSingle()
 
@@ -32,22 +32,16 @@ export async function confirmStripeMockCheckout(
     return { ok: false as const, error: 'pending subscription not found' }
   }
 
+  // Mirrors the Asaas payment webhook payload shape.
   return activateSubscriptionFromWebhook(db, {
     id: `evt_mock_${crypto.randomUUID()}`,
-    type: 'checkout.session.completed',
-    data: {
-      object: {
-        id: `cs_mock_${subscription.id}`,
-        customer: `cus_mock_${subscription.user_id}`,
-        subscription: `sub_mock_${subscription.id}`,
-        payment_status: 'paid',
-        client_reference_id: subscription.id,
-        metadata: {
-          user_id: subscription.user_id,
-          plan: subscription.plan,
-          subscription_id: subscription.id,
-        },
-      },
+    event: 'PAYMENT_CONFIRMED',
+    payment: {
+      id: `pay_mock_${subscription.id}`,
+      customer: `cus_mock_${subscription.user_id}`,
+      subscription: `sub_mock_${subscription.id}`,
+      billingType: 'CREDIT_CARD',
+      externalReference: subscription.id,
     },
   })
 }

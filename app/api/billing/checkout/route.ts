@@ -3,8 +3,9 @@ import type { NextRequest } from 'next/server'
 import { ProductEventNames } from '@/features/analytics/product-events'
 import { track } from '@/features/analytics/product-events-server'
 import {
+  attachProviderCheckoutId,
   createPendingSubscription,
-  createStripeCheckout,
+  createAsaasCheckout,
 } from '@/features/billing/subscription-service'
 import { getCurrentUser } from '@/lib/auth/roles'
 import { ok, fail, ErrorCodes } from '@/lib/api/response'
@@ -80,22 +81,26 @@ export async function POST(request: NextRequest) {
 
   let checkout
   try {
-    checkout = await createStripeCheckout({
+    checkout = await createAsaasCheckout({
       env,
       planId: parsed.data.plan,
       subscriptionId,
       user: { id: user.id, email: user.email },
+      paymentMethod: parsed.data.payment_method,
     })
   } catch (error) {
     console.error('[billing.checkout] provider checkout failed', error)
     return fail(ErrorCodes.INTERNAL, 'Could not create checkout', { status: 502 })
   }
 
+  await attachProviderCheckoutId(db, subscriptionId, checkout.checkoutId)
+
   await track({
     event_name: ProductEventNames.CHECKOUT_STARTED,
     user_id: user.id,
     metadata: {
       plan: parsed.data.plan,
+      payment_method: parsed.data.payment_method,
       subscription_id: subscriptionId,
       checkout_id: checkout.checkoutId,
       amount_cents: checkout.amountCents,

@@ -1,6 +1,7 @@
 /**
  * Subscription plan constants. Prices are confirmed product decisions:
- * monthly R$ 29,90 and annual R$ 287,00. The current Stripe flow is card-only.
+ * monthly R$ 29,90 and annual R$ 287,00. Asaas accepts card (recurring) or
+ * Pix (one-time payment for the plan period, no auto-renew).
  * Amounts are in cents to avoid floating-point money bugs.
  */
 

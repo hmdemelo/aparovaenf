@@ -1,17 +1,15 @@
 import { expect, test, type Page } from '@playwright/test'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import Stripe from 'stripe'
 import type { Database } from '@/lib/db/database.types'
 import { loadLocalEnv } from '../integration/helpers/local-env'
 
 const hasLocalEnv = loadLocalEnv()
-const stripeSecret = process.env.STRIPE_SECRET_KEY
-const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+const asaasWebhookToken = process.env.ASAAS_WEBHOOK_TOKEN
 const testUserPwd = 'aprovaenf123'
 
 test.skip(
-  !hasLocalEnv || !stripeSecret || !stripeWebhookSecret,
-  'Requires local Supabase env and Stripe secrets.',
+  !hasLocalEnv || !asaasWebhookToken,
+  'Requires local Supabase env and the Asaas webhook token.',
 )
 
 async function login(page: Page, email: string, next: string) {
@@ -65,6 +63,7 @@ test('paywall starts checkout and simulated webhook unlocks the feed', async ({
 
   const service = serviceClient()
   const student = await createTemporaryStudent(service, testInfo.project.name)
+  const subscriptionId = crypto.randomUUID()
 
   try {
     await login(page, student.email, '/assinar')
@@ -83,7 +82,7 @@ test('paywall starts checkout and simulated webhook unlocks the feed', async ({
             checkout_id: 'checkout_e2e',
             checkout_url:
               'http://localhost:3000/?checkout=mock',
-            subscription_id: '00000000-0000-0000-0000-00000000c001',
+            subscription_id: subscriptionId,
             plan: 'annual',
             amount_cents: 28700,
           },
@@ -97,34 +96,35 @@ test('paywall starts checkout and simulated webhook unlocks the feed', async ({
       .toMatchObject({ plan: 'annual' })
     await expect(page).toHaveURL(/checkout=mock/, { timeout: 30_000 })
 
-    const webhookPayload = JSON.stringify({
-      id: `evt_mock_${Date.now()}`,
-      type: 'checkout.session.completed',
-      data: {
-        object: {
-          id: 'cs_mock_12345',
-          customer: 'cus_mock_' + student.userId,
-          subscription: 'sub_mock_12345',
-          payment_status: 'paid',
-          client_reference_id: '00000000-0000-0000-0000-00000000c001',
-          metadata: {
-            user_id: student.userId,
-            plan: 'annual',
-            subscription_id: '00000000-0000-0000-0000-00000000c001',
-          },
-        },
+    // A ativação Asaas correlaciona pelo externalReference com a linha local
+    // pendente, então ela precisa existir antes do webhook.
+    const pending = await service.from('subscriptions').insert({
+      id: subscriptionId,
+      user_id: student.userId,
+      plan: 'annual',
+      status: 'pending',
+      provider: 'asaas',
+    })
+    if (pending.error) throw new Error(pending.error.message)
+
+    const webhookPayload = {
+      id: `evt_e2e_${Date.now()}`,
+      event: 'PAYMENT_CONFIRMED',
+      payment: {
+        id: `pay_e2e_${Date.now()}`,
+        customer: 'cus_e2e_' + student.userId,
+        subscription: 'sub_e2e_12345',
+        billingType: 'CREDIT_CARD',
+        externalReference: subscriptionId,
+        value: 287,
       },
-    })
-    const stripeSignature = Stripe.webhooks.generateTestHeaderString({
-      payload: webhookPayload,
-      secret: stripeWebhookSecret!,
-    })
-    const webhookResponse = await page.request.post(`/api/webhooks/stripe`, {
+    }
+    const webhookResponse = await page.request.post(`/api/webhooks/asaas`, {
       headers: {
         'content-type': 'application/json',
-        'stripe-signature': stripeSignature,
+        'asaas-access-token': asaasWebhookToken!,
       },
-      data: webhookPayload,
+      data: JSON.stringify(webhookPayload),
     })
     expect(webhookResponse.status()).toBe(200)
     const webhookJson = await webhookResponse.json()

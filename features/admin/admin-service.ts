@@ -569,7 +569,7 @@ export async function updateAuthorProfile(
 // Deletion
 // =========================================================================
 
-/** Subscription statuses that still bill the customer at Stripe. */
+/** Subscription statuses that still bill the customer at Asaas. */
 const BILLABLE_SUBSCRIPTION_STATUSES = ['active', 'past_due'] as const
 
 export type DeleteUserResult =
@@ -584,9 +584,9 @@ export type DeleteUserResult =
  * Delete a user end-to-end. Requires the SERVICE-ROLE client.
  *
  * Guards before touching anything:
- * - Blocks while a billable Stripe subscription (active/past_due) exists, so the
+ * - Blocks while a billable Asaas subscription (active/past_due) exists, so the
  *   account is not removed under the recurring charge. The admin must cancel at
- *   Stripe first.
+ *   Asaas first.
  * - Blocks authors who still own questions; those go through deleteAuthor, which
  *   can reassign or remove the questions deliberately.
  *
@@ -626,7 +626,7 @@ export async function deleteUser(
       ok: false,
       code: 'active_subscription',
       message:
-        'O usuário possui uma assinatura ativa no Stripe. Cancele a assinatura no Stripe antes de deletar para evitar cobranças indevidas.',
+        'O usuário possui uma assinatura ativa no Asaas. Cancele a assinatura no Asaas antes de deletar para evitar cobranças indevidas.',
     }
   }
 
@@ -733,7 +733,7 @@ export async function deleteAuthor(
       ok: false,
       code: 'active_subscription',
       message:
-        'O autor possui uma assinatura ativa no Stripe. Cancele a assinatura no Stripe antes de deletar para evitar cobranças indevidas.',
+        'O autor possui uma assinatura ativa no Asaas. Cancele a assinatura no Asaas antes de deletar para evitar cobranças indevidas.',
     }
   }
 
