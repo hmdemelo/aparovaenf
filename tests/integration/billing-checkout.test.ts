@@ -135,7 +135,6 @@ describe('POST /api/billing/checkout', () => {
       chargeTypes: ['RECURRENT'],
       subscription: { cycle: 'YEARLY' },
       externalReference: json.data.subscription_id,
-      customerData: { email: 'aluno@aprovaenf.local' },
       items: [
         {
           name: 'AprovaENF PRO — Anual',
@@ -144,6 +143,9 @@ describe('POST /api/billing/checkout', () => {
         },
       ],
     })
+    // Asaas rejects a partial customerData (email only) by requiring every
+    // other field; omit it so the payer fills their data on the hosted page.
+    expect(body.customerData).toBeUndefined()
     expect(body.callback.successUrl).toBe(
       'https://aprovaenf.test/feed?subscription=success',
     )

@@ -120,7 +120,10 @@ export async function createAsaasCheckout(
     },
     // Correlates webhook payments back to our local subscription row.
     externalReference: input.subscriptionId,
-    ...(input.user.email ? { customerData: { email: input.user.email } } : {}),
+    // Do NOT send customerData: a partial object (email only) makes Asaas treat
+    // it as a manual customer registration and reject the request for every
+    // missing field (name, cpfCnpj, phone, address...). Omitting it entirely
+    // lets the payer fill their own data on the Asaas-hosted page.
   }
 
   const data = await asaasRequest(input.env, 'POST', '/checkouts', body)
