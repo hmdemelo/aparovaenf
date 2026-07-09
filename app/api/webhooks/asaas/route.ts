@@ -79,6 +79,17 @@ export async function POST(request: NextRequest) {
       console.error('[asaas.webhook] processing activation failed', activation.error)
       return fail(ErrorCodes.INTERNAL, 'Could not process webhook')
     }
+    if (!activation.activated) {
+      console.warn('[asaas.webhook] payment event received but not activated', {
+        eventType,
+        providerEventId,
+        paymentId: asString(payment.id),
+        billingType: asString(payment.billingType),
+        externalReference: asString(payment.externalReference),
+        checkoutSession: asString(payment.checkoutSession),
+        subscription: asString(payment.subscription),
+      })
+    }
     if (activation.activated) {
       activated = true
       await track({

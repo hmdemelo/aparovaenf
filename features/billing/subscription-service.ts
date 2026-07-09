@@ -278,7 +278,16 @@ export async function activateSubscriptionFromWebhook(
 
   const existing = await findByPaymentCorrelation(db, payment)
   if (!existing.ok) return { ok: false, error: existing.error }
-  if (!existing.row) return { ok: false, error: 'missing subscription reference' }
+  if (!existing.row) {
+    console.error('[billing.activation] no local subscription found for payment', {
+      externalReference: asString(payment.externalReference),
+      checkoutSession: asString(payment.checkoutSession),
+      providerSubscription: asString(payment.subscription),
+      paymentId: asString(payment.id),
+      billingType: asString(payment.billingType),
+    })
+    return { ok: false, error: 'missing subscription reference' }
+  }
 
   const userId = existing.row.user_id
   const plan = planFromValue(existing.row.plan)
