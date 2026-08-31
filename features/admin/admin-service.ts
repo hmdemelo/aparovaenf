@@ -30,7 +30,7 @@ export type AdminUserRow = {
 export type AdminUserStatus = {
   label:
     | 'cadastro não concluído'
-    | 'cadastro free'
+    | 'sem plano'
     | 'acesso liberado (teste)'
     | 'assinatura ativa'
     | 'pagamento pendente'
@@ -98,7 +98,7 @@ export function resolveAdminUserStatus(input: {
   }
 
   return {
-    label: 'cadastro free',
+    label: 'sem plano',
     className: 'bg-slate-100 text-slate-700 border border-slate-200/60',
   }
 }

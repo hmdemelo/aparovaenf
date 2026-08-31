@@ -10,6 +10,8 @@ import {
   resolveTrialStatus,
   serializeTrialStatus,
 } from '@/features/trial/trial-server'
+import { recordTrialConsumption } from '@/features/trial/trial-consumption'
+import { getCurrentUser } from '@/lib/auth/roles'
 import { track } from '@/features/analytics/product-events-server'
 import { ProductEventNames } from '@/features/analytics/product-events'
 
@@ -82,6 +84,18 @@ export async function POST(request: NextRequest) {
 
   // Re-evaluate trial after this answer to drive the next UI step.
   const after = await resolveTrialStatus()
+
+  // Persist the spend against the e-mail so it survives account deletion. Only
+  // non-subscribers consume trial, so there is nothing to record for a
+  // subscriber (their count is unbounded anyway).
+  if (!after.status.subscriptionActive) {
+    const current = await getCurrentUser()
+    await recordTrialConsumption(
+      svc,
+      current?.email,
+      after.status.answeredAfterSignup,
+    )
+  }
   if (after.status.paywallRequired) {
     await track({
       event_name: ProductEventNames.TRIAL_FINISHED,

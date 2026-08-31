@@ -653,6 +653,27 @@ export type Database = {
           },
         ]
       }
+      trial_consumption: {
+        Row: {
+          answered_count: number
+          email: string
+          first_answered_at: string
+          updated_at: string
+        }
+        Insert: {
+          answered_count?: number
+          email: string
+          first_answered_at?: string
+          updated_at?: string
+        }
+        Update: {
+          answered_count?: number
+          email?: string
+          first_answered_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string
@@ -704,6 +725,10 @@ export type Database = {
       next_feed_question: {
         Args: { p_board_id?: string; p_career_id: string; p_exclude?: string[] }
         Returns: string
+      }
+      record_trial_consumption: {
+        Args: { p_answered_count: number; p_email: string }
+        Returns: number
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }

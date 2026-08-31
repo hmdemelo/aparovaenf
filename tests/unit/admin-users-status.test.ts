@@ -17,7 +17,7 @@ describe('resolveAdminUserStatus', () => {
         registrationCompleted: true,
         subscriptionStatus: null,
       }).label,
-    ).toBe('cadastro free')
+    ).toBe('sem plano')
   })
 
   it('labels completed active subscribers exactly', () => {
